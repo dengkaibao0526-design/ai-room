@@ -29,8 +29,8 @@ export default function Home() {
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        messages: newMessages
-      })
+  message: input
+})
     });
 
     const data = await res.json();
