@@ -33,15 +33,25 @@ export default function Home() {
 })
     });
 
-    const data = await res.json();
+   try {
+  const data = await res.json();
 
-    setMessages([
-      ...newMessages,
-      {
-        role: "assistant",
-        content: data.reply
-      }
-    ]);
+  setMessages([
+    ...newMessages,
+    {
+      role: "assistant",
+      content: data.reply || "没有收到 AI 回复。"
+    }
+  ]);
+} catch (e) {
+  setMessages([
+    ...newMessages,
+    {
+      role: "assistant",
+      content: "连接失败：前端没有拿到 API 返回。"
+    }
+  ]);
+}
   };
 
   return (
