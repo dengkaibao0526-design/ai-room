@@ -116,7 +116,7 @@ export default function Home() {
           />
 
           <button
-            onClick={() => alert("按钮点到了")}
+            onClick={sendMessage}
             style={{
               padding: "14px 24px",
               borderRadius: 10,
