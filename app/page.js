@@ -69,7 +69,7 @@ export default function Home() {
           marginBottom: 30
         }}
       >
-        AI AVATAR / 分身对话
+        AI AVATAR / 测试
       </h1>
 
       <div
