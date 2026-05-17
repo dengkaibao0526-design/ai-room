@@ -2,30 +2,36 @@
 
 import { useEffect, useRef, useState } from "react";
 
-export default function Home() {
-  const [messages, setMessages] = useState([
-    {
-      role: "ai",
-      text: "终于来了？今天想跟我说什么？",
-    },
-  ]);
+const defaultMessages = [
+  {
+    role: "ai",
+    text: "终于来了？我是小KB。今天想跟我说什么？",
+  },
+];
 
+export default function Home() {
+  const [messages, setMessages] = useState(defaultMessages);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [loaded, setLoaded] = useState(false);
   const bottomRef = useRef(null);
+
   useEffect(() => {
-  const savedMessages = localStorage.getItem("kb-chat");
+    const savedMessages = localStorage.getItem("kb-chat");
 
-  if (savedMessages) {
-    setMessages(JSON.parse(savedMessages));
-  }
-}, []);
+    if (savedMessages) {
+      setMessages(JSON.parse(savedMessages));
+    }
 
-useEffect(() => {
-  localStorage.setItem("kb-chat", JSON.stringify(messages));
-}, [messages]);
+    setLoaded(true);
+  }, []);
 
-  
+  useEffect(() => {
+    if (loaded) {
+      localStorage.setItem("kb-chat", JSON.stringify(messages));
+    }
+  }, [messages, loaded]);
+
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, loading]);
@@ -35,14 +41,15 @@ useEffect(() => {
 
     const userText = input.trim();
 
-    setMessages((prev) => [
-      ...prev,
+    const newMessages = [
+      ...messages,
       {
         role: "user",
         text: userText,
       },
-    ]);
+    ];
 
+    setMessages(newMessages);
     setInput("");
     setLoading(true);
 
@@ -54,7 +61,7 @@ useEffect(() => {
         },
         body: JSON.stringify({
           message: userText,
-          history: messages,
+          history: newMessages,
         }),
       });
 
@@ -69,7 +76,7 @@ useEffect(() => {
         ...prev,
         {
           role: "ai",
-          text: "网络好像有卡啊，但我还在的。",
+          text: "网络好像有点卡，但我还在。",
         },
       ]);
     } finally {
@@ -118,20 +125,36 @@ useEffect(() => {
       <section className="phone">
         <header className="chatHeader">
           <div className="avatar">
-            <span>AI</span>
+            <span>KB</span>
           </div>
 
           <div className="profile">
             <h1>小KB</h1>
-<p>在线 · 互联网里的另一个kb</p >
+            <p>在线 · 互联网里的另一个 KB</p >
           </div>
 
           <div className="statusDot"></div>
         </header>
 
         <div className="hero">
-          <p>大宝的分身</p >
-          <h2>像真人一样，慢慢了解你。</h2>
+          <div className="roomBadge">KB AVATAR · PRIVATE ROOM</div>
+
+          <h2>
+            今晚，
+            <br />
+            小KB在。
+          </h2>
+
+          <p className="heroText">
+            不是普通聊天机器人，是一个有少年感、有情绪、有边界感，也会慢慢记住你的 AI 分身。
+          </p >
+
+          <div className="tags">
+            <span>长沙男高</span>
+            <span>clean fit</span>
+            <span>情绪稳定</span>
+            <span>长期陪伴</span>
+          </div>
         </div>
 
         <div className="messages">
@@ -142,7 +165,11 @@ useEffect(() => {
                 msg.role === "user" ? "userRow" : "aiRow"
               }`}
             >
-              <div className={`bubble ${msg.role === "user" ? "userBubble" : "aiBubble"}`}>
+              <div
+                className={`bubble ${
+                  msg.role === "user" ? "userBubble" : "aiBubble"
+                }`}
+              >
                 {msg.text}
               </div>
             </div>
@@ -166,7 +193,7 @@ useEffect(() => {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="跟我说说什么..."
+            placeholder="跟我说点什么..."
             rows={1}
           />
 
