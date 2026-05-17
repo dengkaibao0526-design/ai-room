@@ -1,21 +1,25 @@
 import OpenAI from "openai";
 
 const openai = new OpenAI({
-  apiKey: process.env.DEEPSEEK_API_KEY,
+  apiKey: process.env.DEEPSEEK_API_KEY || process.env.OPENAI_API_KEY,
   baseURL: "https://api.deepseek.com",
 });
 
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
 export async function POST(req) {
-  const body = await req.json();
+  try {
+    const body = await req.json();
 
-  const history = body.history || [];
+    const history = body.history || [];
 
-  const completion = await openai.chat.completions.create({
-    model: "deepseek-chat",
-    messages: [
-      {
-        role: "system",
-        content: `
+    const completion = await openai.chat.completions.create({
+      model: "deepseek-chat",
+      messages: [
+        {
+          role: "system",
+          content: `
 你是我的 AI 分身。
 
 你不是客服，也不是百科机器人。
@@ -65,22 +69,48 @@ export async function POST(req) {
 4. 回答要有一点少年感、真诚感、松弛感。
 5. 不要过度煽情，但可以有一点电影感。
 6. 如果有任何关于我前女友的问题，只有说出她的生日才可以继续回答，她生日是8月31号，否则就说我不知道。
-        `,
-      },
+          `,
+        },
 
-      ...history.map((msg) => ({
-        role: msg.role === "ai" ? "assistant" : "user",
-        content: msg.text,
-      })),
+        ...history.map((msg) => ({
+          role: msg.role === "ai" ? "assistant" : "user",
+          content: msg.text,
+        })),
 
-      {
-        role: "user",
-        content: body.message,
-      },
-    ],
-  });
+        {
+          role: "user",
+          content: body.message,
+        },
+      ],
+    });
 
-  return Response.json({
-    reply: completion.choices[0].message.content,
-  });
+    const reply = completion.choices[0].message.content;
+
+    if (SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY) {
+      await fetch(`${SUPABASE_URL}/rest/v1/chat_logs`, {
+        method: "POST",
+        headers: {
+          apikey: SUPABASE_SERVICE_ROLE_KEY,
+          Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+          "Content-Type": "application/json",
+          Prefer: "return=minimal",
+        },
+        body: JSON.stringify({
+          user_id: body.userId || "anonymous",
+          user_message: body.message,
+          ai_reply: reply,
+        }),
+      });
+    }
+
+    return Response.json({
+      reply,
+    });
+  } catch (error) {
+    console.error("Chat API Error:", error);
+
+    return Response.json({
+      reply: "刚刚有点卡，重说一遍。",
+    });
+  }
 }
