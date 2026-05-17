@@ -49,6 +49,8 @@ export default function Home() {
       },
     ];
 
+    const recentHistory = newMessages.slice(-20);
+
     setMessages(newMessages);
     setInput("");
     setLoading(true);
@@ -61,7 +63,7 @@ export default function Home() {
         },
         body: JSON.stringify({
           message: userText,
-          history: newMessages,
+          history: recentHistory,
         }),
       });
 
@@ -140,9 +142,9 @@ export default function Home() {
           <div className="roomBadge">KB AVATAR · PRIVATE ROOM</div>
 
           <h2>
-            今晚，
+            熬了好几个晚上，
             <br />
-            小KB在。
+            终于把另一个 KB 搓出来了。
           </h2>
 
           <p className="heroText">
