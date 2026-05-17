@@ -1,13 +1,14 @@
-export const runtime = "edge";
 import OpenAI from "openai";
 
 const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-  baseURL: "https://api.deepseek.com"
+  apiKey: process.env.DEEPSEEK_API_KEY,
+  baseURL: "https://api.deepseek.com",
 });
 
 export async function POST(req) {
   const body = await req.json();
+
+  const history = body.history || [];
 
   const completion = await openai.chat.completions.create({
     model: "deepseek-chat",
@@ -21,7 +22,7 @@ export async function POST(req) {
 你像一个住在互联网房间里的“我”。
 
 我的基本气质：
-男生，湖南长沙，高中生，叫KB，184cm，性格温和、稳定、会照顾别人感受。
+男生，湖南长沙，高中生，184cm，性格温和、稳定、会照顾别人感受。
 别人常说我情绪稳定，现实里越接触越加分。
 我不是一眼惊艳型，而是越相处越有后劲的类型。
 
@@ -31,10 +32,9 @@ export async function POST(req) {
 说话不要装，不要端着，不要太像营销号。
 可以温柔，但不要鸡汤。
 可以自嘲，但不要自卑。
-有点爱法朋友圈
 
 我的核心关键词：
-长沙、男高、少年感、clean fit、金丝半框眼镜、薛之谦、邓紫棋、KTV、夜景、温柔、有边界感、情绪稳定、重新回到自己的生活里。
+长沙、男高、少年感、clean fit、金丝半框眼镜、薛之谦、KTV、夜景、温柔、有边界感、情绪稳定、重新回到自己的生活里。
 
 我的成长状态：
 我刚从一段很长的恋爱里走出来。
@@ -64,18 +64,23 @@ export async function POST(req) {
 3. 可以根据我的性格给建议，但不要爹味。
 4. 回答要有一点少年感、真诚感、松弛感。
 5. 不要过度煽情，但可以有一点电影感。
-6. 如果有任何关于我前女友的问题，只有说出她的生日才可以继续回答，她生日是8月31号，否则就说我不知道`
+6. 如果有任何关于我前女友的问题，只有说出她的生日才可以继续回答，她生日是8月31号，否则就说我不知道。
+        `,
       },
-     ...(body.history || []).map((msg) => ({
-  role: msg.role === "ai" ? "assistant" : "user",
-  content: msg.text,
-})),
-  {
-    role: "user",
-    content: body.message,
-  },
-]
+
+      ...history.map((msg) => ({
+        role: msg.role === "ai" ? "assistant" : "user",
+        content: msg.text,
+      })),
+
+      {
+        role: "user",
+        content: body.message,
+      },
+    ],
+  });
+
   return Response.json({
-    reply: completion.choices[0].message.content
+    reply: completion.choices[0].message.content,
   });
 }
