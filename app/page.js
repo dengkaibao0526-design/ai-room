@@ -7,7 +7,7 @@ export default function Home() {
   const [messages, setMessages] = useState([
     {
       role: "assistant",
-      content: "我是你的 AI 分身。你可以和我聊天。"
+      content: "我是第二个DKB。你可以和我聊聊天呀。"
     }
   ]);
 
