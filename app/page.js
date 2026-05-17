@@ -1,136 +1,167 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export default function Home() {
-  const [input, setInput] = useState("");
   const [messages, setMessages] = useState([
     {
-      role: "assistant",
-      content: "我是第二个DKB。你可以和我聊聊天呀。"
-    }
+      role: "ai",
+      text: "你来了。今天想跟我说什么？",
+    },
   ]);
 
-  const sendMessage = async () => {
-    if (!input) return;
+  const [input, setInput] = useState("");
+  const [loading, setLoading] = useState(false);
+  const bottomRef = useRef(null);
 
-    const userMessage = {
-      role: "user",
-      content: input
-    };
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, loading]);
 
-    const newMessages = [...messages, userMessage];
-    setMessages(newMessages);
-    setInput("");
+  async function sendMessage() {
+    if (!input.trim() || loading) return;
 
-    const res = await fetch("/api/chat", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
+    const userText = input.trim();
+
+    setMessages((prev) => [
+      ...prev,
+      {
+        role: "user",
+        text: userText,
       },
-      body: JSON.stringify({
-  message: input
-})
-    });
+    ]);
 
-   try {
-  const data = await res.json();
+    setInput("");
+    setLoading(true);
 
-  setMessages([
-    ...newMessages,
-    {
-      role: "assistant",
-      content: data.reply || "没有收到 AI 回复。"
+    try {
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          message: userText,
+        }),
+      });
+
+      const data = await res.json();
+      const aiReply = data.reply || "网卡了，重说吧。";
+
+      typeReply(aiReply);
+    } catch (error) {
+      console.error(error);
+
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "ai",
+          text: "网络好像有卡啊，但我还在的。",
+        },
+      ]);
+    } finally {
+      setLoading(false);
     }
-  ]);
-} catch (e) {
-  setMessages([
-    ...newMessages,
-    {
-      role: "assistant",
-      content: "连接失败：前端没有拿到 API 返回。"
+  }
+
+  function typeReply(fullText) {
+    let index = 0;
+
+    setMessages((prev) => [
+      ...prev,
+      {
+        role: "ai",
+        text: "",
+      },
+    ]);
+
+    const timer = setInterval(() => {
+      index++;
+
+      setMessages((prev) => {
+        const newMessages = [...prev];
+        newMessages[newMessages.length - 1] = {
+          role: "ai",
+          text: fullText.slice(0, index),
+        };
+        return newMessages;
+      });
+
+      if (index >= fullText.length) {
+        clearInterval(timer);
+      }
+    }, 28);
+  }
+
+  function handleKeyDown(e) {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
     }
-  ]);
-}
-  };
+  }
 
   return (
-    <main
-      style={{
-        minHeight: "100vh",
-        background: "#050816",
-        color: "white",
-        padding: 20
-      }}
-    >
-      <h1
-        style={{
-          fontSize: 40,
-          marginBottom: 30
-        }}
-      >
-        AI AVATAR / 测试
-      </h1>
-
-      <div
-        style={{
-          maxWidth: 700,
-          margin: "0 auto"
-        }}
-      >
-        {messages.map((msg, index) => (
-          <div
-            key={index}
-            style={{
-              background:
-                msg.role === "user"
-                  ? "#6d28d9"
-                  : "#0f172a",
-              padding: 16,
-              borderRadius: 12,
-              marginBottom: 12
-            }}
-          >
-            {msg.content}
+    <main className="app">
+      <section className="phone">
+        <header className="chatHeader">
+          <div className="avatar">
+            <span>AI</span>
           </div>
-        ))}
 
-        <div
-          style={{
-            display: "flex",
-            gap: 10,
-            marginTop: 20
-          }}
-        >
-          <input
+          <div className="profile">
+            <h1>AI Room</h1>
+            <p>在线 · 只陪你聊天</p >
+          </div>
+
+          <div className="statusDot"></div>
+        </header>
+
+        <div className="hero">
+          <p>你的 AI 分身</p >
+          <h2>像真人一样，慢慢了解你。</h2>
+        </div>
+
+        <div className="messages">
+          {messages.map((msg, index) => (
+            <div
+              key={index}
+              className={`messageRow ${
+                msg.role === "user" ? "userRow" : "aiRow"
+              }`}
+            >
+              <div className={`bubble ${msg.role === "user" ? "userBubble" : "aiBubble"}`}>
+                {msg.text}
+              </div>
+            </div>
+          ))}
+
+          {loading && (
+            <div className="messageRow aiRow">
+              <div className="bubble aiBubble typing">
+                <span></span>
+                <span></span>
+                <span></span>
+              </div>
+            </div>
+          )}
+
+          <div ref={bottomRef}></div>
+        </div>
+
+        <div className="inputBar">
+          <textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="输入你想说的话..."
-            style={{
-              flex: 1,
-              padding: 14,
-              borderRadius: 10,
-              border: "none",
-              fontSize: 16
-            }}
+            onKeyDown={handleKeyDown}
+            placeholder="跟我说说什么..."
+            rows={1}
           />
 
-          <button
-            onClick={sendMessage}
-            style={{
-              padding: "14px 24px",
-              borderRadius: 10,
-              border: "none",
-              background: "#8b5cf6",
-              color: "white",
-              fontWeight: "bold",
-              cursor: "pointer"
-            }}
-          >
-            发送
+          <button onClick={sendMessage} disabled={loading || !input.trim()}>
+            {loading ? "..." : "发送"}
           </button>
         </div>
-      </div>
+      </section>
     </main>
   );
 }
