@@ -63,7 +63,7 @@ export default function AdminPage() {
 
           <h2 style={{ marginTop: 34 }}>最近聊天</h2>
 
-          <div style={{ display: "grid", gap: 14 }}>
+          <div style={logList}>
             {(data.logs || []).map((item) => (
               <div key={item.id} style={logCard}>
                 <p style={time}>{item.created_at}</p >
@@ -97,9 +97,12 @@ function Card({ title, value }) {
 
 const page = {
   minHeight: "100vh",
+  height: "auto",
+  overflowY: "auto",
   background: "#05030a",
   color: "white",
   padding: 24,
+  paddingBottom: 90,
   fontFamily: "-apple-system, BlinkMacSystemFont, sans-serif",
 };
 
@@ -112,6 +115,7 @@ const loginBox = {
 
 const input = {
   flex: 1,
+  minWidth: 0,
   padding: 12,
   borderRadius: 12,
   border: "1px solid rgba(255,255,255,0.15)",
@@ -126,6 +130,7 @@ const button = {
   background: "#8b5cf6",
   color: "white",
   fontWeight: 700,
+  whiteSpace: "nowrap",
 };
 
 const grid = {
@@ -141,12 +146,19 @@ const card = {
   border: "1px solid rgba(255,255,255,0.1)",
 };
 
+const logList = {
+  display: "grid",
+  gap: 14,
+  paddingBottom: 60,
+};
+
 const logCard = {
   padding: 16,
   borderRadius: 16,
   background: "rgba(255,255,255,0.08)",
   border: "1px solid rgba(255,255,255,0.1)",
   lineHeight: 1.6,
+  wordBreak: "break-word",
 };
 
 const time = {
