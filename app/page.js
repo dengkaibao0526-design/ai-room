@@ -42,6 +42,7 @@ export default function Home() {
         },
         body: JSON.stringify({
           message: userText,
+          history: messages,
         }),
       });
 
