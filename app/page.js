@@ -13,7 +13,19 @@ export default function Home() {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const bottomRef = useRef(null);
+  useEffect(() => {
+  const savedMessages = localStorage.getItem("kb-chat");
 
+  if (savedMessages) {
+    setMessages(JSON.parse(savedMessages));
+  }
+}, []);
+
+useEffect(() => {
+  localStorage.setItem("kb-chat", JSON.stringify(messages));
+}, [messages]);
+
+  
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, loading]);
