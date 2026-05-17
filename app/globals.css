@@ -22,10 +22,40 @@ body {
   justify-content: center;
   align-items: center;
   padding: 18px;
+  position: relative;
+  overflow: hidden;
   background:
-    radial-gradient(circle at top left, rgba(138, 80, 255, 0.32), transparent 34%),
-    radial-gradient(circle at bottom right, rgba(255, 80, 180, 0.18), transparent 32%),
-    linear-gradient(180deg, #05030a 0%, #090615 100%);
+    radial-gradient(circle at 18% 8%, rgba(155, 95, 255, 0.42), transparent 30%),
+    radial-gradient(circle at 86% 18%, rgba(74, 108, 255, 0.24), transparent 32%),
+    radial-gradient(circle at 50% 100%, rgba(255, 72, 170, 0.18), transparent 34%),
+    linear-gradient(135deg, #03020a 0%, #09051a 38%, #120724 72%, #05030a 100%);
+  animation: bgMove 13s ease-in-out infinite alternate;
+}
+
+.app::before,
+.app::after {
+  content: "";
+  position: absolute;
+  width: 360px;
+  height: 360px;
+  border-radius: 999px;
+  filter: blur(38px);
+  opacity: 0.42;
+  pointer-events: none;
+}
+
+.app::before {
+  left: -110px;
+  top: 12%;
+  background: rgba(139, 92, 246, 0.55);
+  animation: floatOrbOne 10s ease-in-out infinite;
+}
+
+.app::after {
+  right: -130px;
+  bottom: 8%;
+  background: rgba(236, 72, 153, 0.34);
+  animation: floatOrbTwo 12s ease-in-out infinite;
 }
 
 .phone {
@@ -35,14 +65,41 @@ body {
   border-radius: 38px;
   overflow: hidden;
   position: relative;
+  z-index: 1;
   display: flex;
   flex-direction: column;
   background: rgba(12, 10, 22, 0.72);
-  border: 1px solid rgba(255, 255, 255, 0.11);
+  border: 1px solid rgba(255, 255, 255, 0.13);
   box-shadow:
-    0 30px 100px rgba(0, 0, 0, 0.55),
-    inset 0 1px 0 rgba(255, 255, 255, 0.08);
-  backdrop-filter: blur(26px);
+    0 34px 110px rgba(0, 0, 0, 0.62),
+    0 0 80px rgba(139, 92, 246, 0.16),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(28px);
+  animation: phoneBreath 5s ease-in-out infinite;
+}
+
+.phone::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(120deg, transparent 0%, rgba(255, 255, 255, 0.06) 28%, transparent 46%),
+    radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.09), transparent 35%);
+  opacity: 0.7;
+}
+
+.phone::after {
+  content: "";
+  position: absolute;
+  width: 180px;
+  height: 4px;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.16);
+  filter: blur(0.2px);
 }
 
 .chatHeader {
@@ -53,7 +110,9 @@ body {
   gap: 12px;
   background: rgba(10, 8, 18, 0.72);
   border-bottom: 1px solid rgba(255, 255, 255, 0.07);
-  backdrop-filter: blur(18px);
+  backdrop-filter: blur(20px);
+  position: relative;
+  z-index: 2;
 }
 
 .avatar {
@@ -63,8 +122,11 @@ body {
   display: grid;
   place-items: center;
   background:
-    linear-gradient(135deg, rgba(169, 116, 255, 1), rgba(89, 48, 255, 1));
-  box-shadow: 0 0 28px rgba(138, 80, 255, 0.55);
+    linear-gradient(135deg, rgba(190, 150, 255, 1), rgba(91, 54, 255, 1));
+  box-shadow:
+    0 0 28px rgba(138, 80, 255, 0.66),
+    inset 0 1px 0 rgba(255, 255, 255, 0.28);
+  animation: avatarPulse 3.5s ease-in-out infinite;
 }
 
 .avatar span {
@@ -96,24 +158,77 @@ body {
   border-radius: 999px;
   background: #7cffb2;
   box-shadow: 0 0 16px rgba(124, 255, 178, 0.9);
+  animation: onlinePulse 1.8s ease-in-out infinite;
 }
 
 .hero {
-  padding: 18px 20px 4px;
+  padding: 22px 20px 8px;
+  position: relative;
+  z-index: 2;
+  animation: heroIn 0.65s ease both;
 }
 
-.hero p {
-  margin: 0 0 8px;
-  font-size: 12px;
-  color: rgba(197, 164, 255, 0.82);
+.roomBadge {
+  width: fit-content;
+  padding: 7px 11px;
+  margin-bottom: 14px;
+  border-radius: 999px;
+  font-size: 11px;
+  letter-spacing: 0.9px;
+  color: rgba(226, 211, 255, 0.86);
+  background: rgba(139, 92, 246, 0.15);
+  border: 1px solid rgba(196, 181, 253, 0.18);
+  box-shadow: 0 0 30px rgba(139, 92, 246, 0.18);
 }
 
 .hero h2 {
   margin: 0;
-  font-size: 25px;
-  line-height: 1.18;
-  letter-spacing: -0.9px;
-  font-weight: 780;
+  font-size: 34px;
+  line-height: 1.08;
+  letter-spacing: -1.6px;
+  font-weight: 850;
+  background: linear-gradient(135deg, #ffffff 0%, #dfd1ff 45%, #a78bfa 100%);
+  -webkit-background-clip: text;
+  color: transparent;
+  animation: titleFloat 4.5s ease-in-out infinite;
+}
+
+.heroText {
+  margin: 14px 0 0;
+  max-width: 340px;
+  font-size: 14px;
+  line-height: 1.65;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.tags span {
+  padding: 7px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.78);
+  background: rgba(255, 255, 255, 0.075);
+  border: 1px solid rgba(255, 255, 255, 0.085);
+  backdrop-filter: blur(14px);
+  animation: tagIn 0.5s ease both;
+}
+
+.tags span:nth-child(2) {
+  animation-delay: 0.06s;
+}
+
+.tags span:nth-child(3) {
+  animation-delay: 0.12s;
+}
+
+.tags span:nth-child(4) {
+  animation-delay: 0.18s;
 }
 
 .messages {
@@ -121,6 +236,8 @@ body {
   overflow-y: auto;
   padding: 18px 16px 120px;
   scroll-behavior: smooth;
+  position: relative;
+  z-index: 2;
 }
 
 .messages::-webkit-scrollbar {
@@ -148,7 +265,7 @@ body {
   line-height: 1.55;
   white-space: pre-wrap;
   word-break: break-word;
-  animation: bubbleIn 0.22s ease both;
+  animation: bubbleIn 0.26s cubic-bezier(0.2, 0.9, 0.2, 1.1) both;
 }
 
 .aiBubble {
@@ -157,6 +274,7 @@ body {
   border: 1px solid rgba(255, 255, 255, 0.075);
   border-bottom-left-radius: 7px;
   box-shadow: 0 12px 34px rgba(0, 0, 0, 0.18);
+  backdrop-filter: blur(14px);
 }
 
 .userBubble {
@@ -164,7 +282,9 @@ body {
   background:
     linear-gradient(135deg, #7c4dff 0%, #a855f7 100%);
   border-bottom-right-radius: 7px;
-  box-shadow: 0 12px 34px rgba(124, 77, 255, 0.32);
+  box-shadow:
+    0 12px 34px rgba(124, 77, 255, 0.32),
+    inset 0 1px 0 rgba(255, 255, 255, 0.18);
 }
 
 .inputBar {
@@ -179,8 +299,20 @@ body {
   border-radius: 26px;
   background: rgba(18, 15, 30, 0.86);
   border: 1px solid rgba(255, 255, 255, 0.12);
-  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.42);
+  box-shadow:
+    0 18px 50px rgba(0, 0, 0, 0.42),
+    0 0 40px rgba(139, 92, 246, 0.1);
   backdrop-filter: blur(24px);
+  z-index: 3;
+  transition: 0.22s ease;
+}
+
+.inputBar:focus-within {
+  border-color: rgba(196, 181, 253, 0.38);
+  box-shadow:
+    0 18px 56px rgba(0, 0, 0, 0.5),
+    0 0 44px rgba(139, 92, 246, 0.22);
+  transform: translateY(-2px);
 }
 
 .inputBar textarea {
@@ -217,6 +349,13 @@ body {
   transition: 0.18s ease;
 }
 
+.inputBar button:hover {
+  transform: translateY(-1px);
+  box-shadow:
+    0 12px 30px rgba(139, 92, 246, 0.55),
+    0 0 26px rgba(192, 132, 252, 0.22);
+}
+
 .inputBar button:active {
   transform: scale(0.96);
 }
@@ -251,15 +390,131 @@ body {
   animation-delay: 0.3s;
 }
 
-@keyframes bubbleIn {
+@keyframes bgMove {
+  from {
+    background-position: 0% 0%;
+  }
+
+  to {
+    background-position: 18% 8%;
+  }
+}
+
+@keyframes floatOrbOne {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+
+  50% {
+    transform: translate(40px, 60px) scale(1.08);
+  }
+}
+
+@keyframes floatOrbTwo {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+
+  50% {
+    transform: translate(-44px, -54px) scale(1.12);
+  }
+}
+
+@keyframes phoneBreath {
+  0%,
+  100% {
+    box-shadow:
+      0 34px 110px rgba(0, 0, 0, 0.62),
+      0 0 80px rgba(139, 92, 246, 0.16),
+      inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  }
+
+  50% {
+    box-shadow:
+      0 38px 125px rgba(0, 0, 0, 0.7),
+      0 0 105px rgba(139, 92, 246, 0.28),
+      inset 0 1px 0 rgba(255, 255, 255, 0.13);
+  }
+}
+
+@keyframes avatarPulse {
+  0%,
+  100% {
+    transform: scale(1);
+    box-shadow:
+      0 0 28px rgba(138, 80, 255, 0.66),
+      inset 0 1px 0 rgba(255, 255, 255, 0.28);
+  }
+
+  50% {
+    transform: scale(1.04);
+    box-shadow:
+      0 0 38px rgba(168, 85, 247, 0.82),
+      inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  }
+}
+
+@keyframes onlinePulse {
+  0%,
+  100% {
+    opacity: 0.72;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 1;
+    transform: scale(1.18);
+  }
+}
+
+@keyframes heroIn {
   from {
     opacity: 0;
-    transform: translateY(8px) scale(0.98);
+    transform: translateY(14px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes titleFloat {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-3px);
+  }
+}
+
+@keyframes tagIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.96);
   }
 
   to {
     opacity: 1;
     transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes bubbleIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+    filter: blur(3px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
   }
 }
 
@@ -282,6 +537,12 @@ body {
     padding: 0;
   }
 
+  .app::before,
+  .app::after {
+    width: 260px;
+    height: 260px;
+  }
+
   .phone {
     max-width: none;
     height: 100vh;
@@ -289,12 +550,16 @@ body {
     border: 0;
   }
 
+  .phone::after {
+    top: 8px;
+  }
+
   .chatHeader {
     padding-top: 20px;
   }
 
   .hero h2 {
-    font-size: 24px;
+    font-size: 28px;
   }
 
   .inputBar {
