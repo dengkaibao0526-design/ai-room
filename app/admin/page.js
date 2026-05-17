@@ -1,114 +1,155 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 export default function AdminPage() {
+  const [password, setPassword] = useState("");
   const [data, setData] = useState(null);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    async function load() {
+  async function loadData() {
+    setLoading(true);
+    setError("");
+    setData(null);
+
+    try {
       const res = await fetch(
-        "/api/admin/stats?password=123456"
+        `/api/admin/stats?password=${encodeURIComponent(password)}`
       );
 
       const json = await res.json();
 
+      if (!res.ok || !json.ok) {
+        setError(json.error || "后台读取失败");
+        return;
+      }
+
       setData(json);
+    } catch (err) {
+      setError("页面出错了，刷新再试一次");
+    } finally {
+      setLoading(false);
     }
-
-    load();
-  }, []);
-
-  if (!data) {
-    return (
-      <div style={{
-        color: "white",
-        padding: 40
-      }}>
-        加载中...
-      </div>
-    );
   }
 
   return (
-    <div
-      style={{
-        background: "#0f172a",
-        minHeight: "100vh",
-        color: "white",
-        padding: 30,
-        fontFamily: "Arial"
-      }}
-    >
-      <h1>AI后台</h1>
+    <main style={page}>
+      <h1>小KB 后台</h1>
 
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(3,1fr)",
-          gap: 20,
-          marginTop: 30
-        }}
-      >
-        <div style={card}>
-          <h2>总用户</h2>
-          <p>{data.stats.totalUsers}</p >
-        </div>
+      <div style={loginBox}>
+        <input
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          placeholder="输入后台密码"
+          style={input}
+        />
 
-        <div style={card}>
-          <h2>总消息</h2>
-          <p>{data.stats.totalMessages}</p >
-        </div>
-
-        <div style={card}>
-          <h2>今日消息</h2>
-          <p>{data.stats.todayMessages}</p >
-        </div>
+        <button onClick={loadData} style={button}>
+          {loading ? "加载中..." : "查看数据"}
+        </button>
       </div>
 
-      <h2 style={{ marginTop: 50 }}>
-        聊天记录
-      </h2>
+      {error && <p style={{ color: "#ff6b6b" }}>{error}</p >}
 
-      <div style={{ marginTop: 20 }}>
-        {data.logs.map((item) => (
-          <div
-            key={item.id}
-            style={{
-              background: "#1e293b",
-              padding: 20,
-              borderRadius: 12,
-              marginBottom: 20
-            }}
-          >
-            <p>
-              <b>用户：</b>
-              {item.user_message}
-            </p >
-
-            <p style={{ marginTop: 10 }}>
-              <b>AI：</b>
-              {item.ai_reply}
-            </p >
-
-            <p
-              style={{
-                marginTop: 10,
-                opacity: 0.6,
-                fontSize: 12
-              }}
-            >
-              {item.created_at}
-            </p >
+      {data && (
+        <>
+          <div style={grid}>
+            <Card title="总用户" value={data.stats?.totalUsers ?? 0} />
+            <Card title="总消息" value={data.stats?.totalMessages ?? 0} />
+            <Card title="今日消息" value={data.stats?.todayMessages ?? 0} />
+            <Card title="在线人数" value={data.stats?.onlineUsers ?? 0} />
           </div>
-        ))}
-      </div>
+
+          <h2 style={{ marginTop: 34 }}>最近聊天</h2>
+
+          <div style={{ display: "grid", gap: 14 }}>
+            {(data.logs || []).map((item) => (
+              <div key={item.id} style={logCard}>
+                <p style={time}>{item.created_at}</p >
+
+                <p>
+                  <b>用户：</b>
+                  {item.user_message}
+                </p >
+
+                <p>
+                  <b>小KB：</b>
+                  {item.ai_reply}
+                </p >
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+    </main>
+  );
+}
+
+function Card({ title, value }) {
+  return (
+    <div style={card}>
+      <p style={{ margin: 0, opacity: 0.65 }}>{title}</p >
+      <h2 style={{ margin: "8px 0 0" }}>{value}</h2>
     </div>
   );
 }
 
+const page = {
+  minHeight: "100vh",
+  background: "#05030a",
+  color: "white",
+  padding: 24,
+  fontFamily: "-apple-system, BlinkMacSystemFont, sans-serif",
+};
+
+const loginBox = {
+  display: "flex",
+  gap: 10,
+  marginTop: 20,
+  marginBottom: 24,
+};
+
+const input = {
+  flex: 1,
+  padding: 12,
+  borderRadius: 12,
+  border: "1px solid rgba(255,255,255,0.15)",
+  background: "#111827",
+  color: "white",
+};
+
+const button = {
+  padding: "12px 16px",
+  borderRadius: 12,
+  border: 0,
+  background: "#8b5cf6",
+  color: "white",
+  fontWeight: 700,
+};
+
+const grid = {
+  display: "grid",
+  gridTemplateColumns: "repeat(2, 1fr)",
+  gap: 12,
+};
+
 const card = {
-  background: "#1e293b",
-  padding: 20,
-  borderRadius: 12
+  padding: 16,
+  borderRadius: 16,
+  background: "rgba(139,92,246,0.18)",
+  border: "1px solid rgba(255,255,255,0.1)",
+};
+
+const logCard = {
+  padding: 16,
+  borderRadius: 16,
+  background: "rgba(255,255,255,0.08)",
+  border: "1px solid rgba(255,255,255,0.1)",
+  lineHeight: 1.6,
+};
+
+const time = {
+  opacity: 0.55,
+  fontSize: 12,
 };
