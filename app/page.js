@@ -2,15 +2,36 @@
 
 import { useEffect, useRef, useState } from "react";
 
-const defaultMessages = [
-  {
-    role: "ai",
-    text: "终于来了？我是小KB。今天想跟我说什么？",
-  },
-];
+function getTimeGreeting() {
+  const hour = new Date().getHours();
+
+  if (hour >= 0 && hour < 5) {
+    return "还没睡啊？这么晚了，来，慢慢说。";
+  }
+
+  if (hour >= 5 && hour < 11) {
+    return "早啊，今天醒得还挺早。";
+  }
+
+  if (hour >= 11 && hour < 18) {
+    return "来了？今天过得怎么样。";
+  }
+
+  if (hour >= 18 && hour < 23) {
+    return "晚上好，今天累不累？";
+  }
+
+  return "这么晚还来找我，今天是不是有点事。";
+}
 
 export default function Home() {
-  const [messages, setMessages] = useState(defaultMessages);
+  const [messages, setMessages] = useState([
+    {
+      role: "ai",
+      text: getTimeGreeting(),
+    },
+  ]);
+
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [loaded, setLoaded] = useState(false);
@@ -35,6 +56,17 @@ export default function Home() {
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, loading]);
+
+  function clearMemory() {
+    localStorage.removeItem("kb-chat");
+
+    setMessages([
+      {
+        role: "ai",
+        text: "好，记忆清空了。那我们重新开始。我是小KB。",
+      },
+    ]);
+  }
 
   async function sendMessage() {
     if (!input.trim() || loading) return;
@@ -134,6 +166,10 @@ export default function Home() {
             <h1>小KB</h1>
             <p>在线 · 互联网里的另一个 KB</p >
           </div>
+
+          <button className="clearBtn" onClick={clearMemory}>
+            重置
+          </button>
 
           <div className="statusDot"></div>
         </header>
