@@ -67,12 +67,15 @@ export async function POST(req) {
 6. 如果有任何关于我前女友的问题，只有说出她的生日才可以继续回答，她生日是8月31号，否则就说我不知道`
       },
       {
-        role: "user",
-        content: body.message
-      }
-    ]
-  });
+        role: msg.role === "ai" ? "assistant" : "user",
+    content: msg.text,
+  })),
 
+  {
+    role: "user",
+    content: body.message,
+  }
+]
   return Response.json({
     reply: completion.choices[0].message.content
   });
