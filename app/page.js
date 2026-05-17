@@ -6,7 +6,7 @@ export default function Home() {
   const [messages, setMessages] = useState([
     {
       role: "ai",
-      text: "你来了。今天想跟我说什么？",
+      text: "终于来了？今天想跟我说什么？",
     },
   ]);
 
@@ -109,15 +109,15 @@ export default function Home() {
           </div>
 
           <div className="profile">
-            <h1>AI Room</h1>
-            <p>在线 · 只陪你聊天</p >
+            <h1>小KB</h1>
+<p>在线 · 互联网里的另一个kb</p >
           </div>
 
           <div className="statusDot"></div>
         </header>
 
         <div className="hero">
-          <p>你的 AI 分身</p >
+          <p>大宝的分身</p >
           <h2>像真人一样，慢慢了解你。</h2>
         </div>
 
