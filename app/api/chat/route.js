@@ -73,7 +73,7 @@ export async function POST(req) {
   {
     role: "user",
     content: body.message,
-  }
+  },
 ]
   return Response.json({
     reply: completion.choices[0].message.content
