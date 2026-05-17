@@ -66,11 +66,10 @@ export async function POST(req) {
 5. 不要过度煽情，但可以有一点电影感。
 6. 如果有任何关于我前女友的问题，只有说出她的生日才可以继续回答，她生日是8月31号，否则就说我不知道`
       },
-      {
-        role: msg.role === "ai" ? "assistant" : "user",
-    content: msg.text,
-  })),
-
+     ...(body.history || []).map((msg) => ({
+  role: msg.role === "ai" ? "assistant" : "user",
+  content: msg.text,
+})),
   {
     role: "user",
     content: body.message,
