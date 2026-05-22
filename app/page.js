@@ -2,11 +2,20 @@
 
 import { useEffect, useRef, useState } from "react";
 
+const STARTER_PROMPTS = [
+  "今天有点累",
+  "随便陪我聊两句",
+  "你是谁",
+  "学习压力有点大",
+  "没人找我聊天",
+  "给我一点建议",
+];
+
 function getTimeGreeting() {
   const hour = new Date().getHours();
 
   if (hour >= 0 && hour < 5) {
-    return "还没睡啊？这么晚了，来吧，慢慢说说。";
+    return "还没睡啊？这么晚了，来，慢慢说。";
   }
 
   if (hour >= 5 && hour < 11) {
@@ -14,14 +23,14 @@ function getTimeGreeting() {
   }
 
   if (hour >= 11 && hour < 18) {
-    return "来了？今天过得咋样。";
+    return "来了？今天过得怎么样。";
   }
 
   if (hour >= 18 && hour < 23) {
     return "晚上好，今天累不累？";
   }
 
-  return "这么晚还来找我，今天是不是有点事啊。";
+  return "这么晚还来找我，今天是不是有点事。";
 }
 
 function createUserId() {
@@ -116,20 +125,24 @@ export default function Home() {
     setMessages([
       {
         role: "ai",
-        text: "好，记忆清空了。那我们重新开始吧。我是小KB。",
+        text: "好，记忆清空了。那我们重新开始。我是小KB。",
       },
     ]);
   }
 
-  async function sendMessage() {
-    if (!input.trim() || loading) return;
+  function handleStarterClick(text) {
+    setInput(text);
+  }
 
-    const userText = input.trim();
+  async function sendMessage(customText) {
+    const finalText = customText || input;
+
+    if (!finalText.trim() || loading) return;
+
+    const userText = finalText.trim();
 
     const currentUserId =
-      userId ||
-      localStorage.getItem("xiaokb_user_id") ||
-      createUserId();
+      userId || localStorage.getItem("xiaokb_user_id") || createUserId();
 
     if (!localStorage.getItem("xiaokb_user_id")) {
       localStorage.setItem("xiaokb_user_id", currentUserId);
@@ -144,7 +157,7 @@ export default function Home() {
       },
     ];
 
-    const recentHistory = newMessages.slice(-45);
+    const recentHistory = newMessages.slice(-40);
 
     setMessages(newMessages);
     setInput("");
@@ -211,7 +224,7 @@ export default function Home() {
       if (index >= fullText.length) {
         clearInterval(timer);
       }
-    }, 28);
+    }, 24);
   }
 
   function handleKeyDown(e) {
@@ -223,6 +236,8 @@ export default function Home() {
 
   return (
     <main className="app">
+      <div className="ambientGrid"></div>
+
       <section className="phone">
         <header className="chatHeader">
           <div className="avatar">
@@ -231,7 +246,7 @@ export default function Home() {
 
           <div className="profile">
             <h1>小KB</h1>
-            <p>在线 · 互联网里的另一个 KB</p >
+            <p>在线 · 长沙夜里也有人听你说话</p >
           </div>
 
           <button className="clearBtn" onClick={clearMemory}>
@@ -242,23 +257,43 @@ export default function Home() {
         </header>
 
         <div className="hero">
-          <div className="roomBadge">KB AVATAR · PRIVATE ROOM</div>
+          <div className="roomBadge">XIAOKB · PRIVATE AI ROOM</div>
 
           <h2>
-            熬了好几个晚上，
+            不是普通 AI。
             <br />
-            终于把另一个 KB 搓出来了。
+            是一个能坐会儿的房间。
           </h2>
 
           <p className="heroText">
-            不是普通聊天机器人，是一个有少年感、有情绪、有边界感，也会慢慢记住你的 AI 分身。
+            累了、无聊了、没人说话了，就进来待一会儿。
+            不用想好怎么开口，随便一句也行。
           </p >
 
           <div className="tags">
-            <span>长沙男高</span>
+            <span>长沙夜感</span>
             <span>clean fit</span>
             <span>情绪稳定</span>
-            <span>长期陪伴</span>
+            <span>少年感</span>
+          </div>
+
+          <div className="starterPanel">
+            <div className="starterTitle">
+              <span>不知道说什么？</span>
+              <em>点一句开始</em>
+            </div>
+
+            <div className="starterGrid">
+              {STARTER_PROMPTS.map((item) => (
+                <button
+                  key={item}
+                  className="starterBtn"
+                  onClick={() => handleStarterClick(item)}
+                >
+                  {item}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 
@@ -298,11 +333,11 @@ export default function Home() {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="跟我说点什么..."
+            placeholder="跟小KB说点什么..."
             rows={1}
           />
 
-          <button onClick={sendMessage} disabled={loading || !input.trim()}>
+          <button onClick={() => sendMessage()} disabled={loading || !input.trim()}>
             {loading ? "..." : "发送"}
           </button>
         </div>
