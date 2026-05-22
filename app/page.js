@@ -53,6 +53,7 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [userId, setUserId] = useState("");
+  const [showStarters, setShowStarters] = useState(true);
 
   const bottomRef = useRef(null);
 
@@ -65,6 +66,10 @@ export default function Home() {
 
         if (Array.isArray(parsedMessages)) {
           setMessages(parsedMessages);
+
+          if (parsedMessages.length > 1) {
+            setShowStarters(false);
+          }
         }
       } catch (error) {
         console.error("读取本地聊天记录失败：", error);
@@ -122,6 +127,8 @@ export default function Home() {
   function clearMemory() {
     localStorage.removeItem("kb-chat");
 
+    setShowStarters(true);
+
     setMessages([
       {
         role: "ai",
@@ -131,7 +138,10 @@ export default function Home() {
   }
 
   function handleStarterClick(text) {
-    setInput(text);
+    if (loading) return;
+
+    setShowStarters(false);
+    sendMessage(text);
   }
 
   async function sendMessage(customText) {
@@ -159,6 +169,7 @@ export default function Home() {
 
     const recentHistory = newMessages.slice(-40);
 
+    setShowStarters(false);
     setMessages(newMessages);
     setInput("");
     setLoading(true);
@@ -277,24 +288,27 @@ export default function Home() {
             <span>少年感</span>
           </div>
 
-          <div className="starterPanel">
-            <div className="starterTitle">
-              <span>不知道说什么？</span>
-              <em>点一句开始</em>
-            </div>
+          {showStarters && messages.length <= 1 && (
+            <div className="starterPanel">
+              <div className="starterTitle">
+                <span>不知道说什么？</span>
+                <em>点一句开始</em>
+              </div>
 
-            <div className="starterGrid">
-              {STARTER_PROMPTS.map((item) => (
-                <button
-                  key={item}
-                  className="starterBtn"
-                  onClick={() => handleStarterClick(item)}
-                >
-                  {item}
-                </button>
-              ))}
+              <div className="starterGrid">
+                {STARTER_PROMPTS.map((item) => (
+                  <button
+                    key={item}
+                    className="starterBtn"
+                    onClick={() => handleStarterClick(item)}
+                    disabled={loading}
+                  >
+                    {item}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
         <div className="messages">
