@@ -67,6 +67,7 @@ export default function AdminPage() {
   const logs = Array.isArray(data?.logs) ? data.logs : [];
   const keywords = Array.isArray(data?.keywords) ? data.keywords : [];
   const topics = Array.isArray(data?.topics) ? data.topics : [];
+  const feedbacks = Array.isArray(data?.feedbacks) ? data.feedbacks : [];
 
   const selectedUser = users.find((user) => user.user_id === selectedUserId);
 
@@ -91,10 +92,10 @@ export default function AdminPage() {
     <main style={styles.page}>
       <section style={styles.hero}>
         <div>
-          <div style={styles.badge}>XIAOKB ADMIN · V4</div>
+          <div style={styles.badge}>XIAOKB ADMIN · V5</div>
           <h1 style={styles.title}>小KB 后台</h1>
           <p style={styles.subtitle}>
-            数据总览、用户分组、关键词分析、话题分类、最近聊天记录
+            数据总览、用户分组、关键词分析、话题分类、用户反馈、最近聊天记录
           </p >
         </div>
 
@@ -160,6 +161,16 @@ export default function AdminPage() {
               value={stats.analyzedMessages ?? 0}
               note="本页分析最近消息"
             />
+            <StatCard
+              title="总反馈"
+              value={stats.totalFeedbacks ?? 0}
+              note="用户提交的全部反馈"
+            />
+            <StatCard
+              title="今日反馈"
+              value={stats.todayFeedbacks ?? 0}
+              note="北京时间今日反馈"
+            />
           </section>
 
           <section style={styles.metaCard}>
@@ -223,7 +234,9 @@ export default function AdminPage() {
 
                     <p style={styles.userTime}>
                       最近活跃：
-                      {user.lastSeenBeijing || user.lastMessageAtBeijing || "暂无"}
+                      {user.lastSeenBeijing ||
+                        user.lastMessageAtBeijing ||
+                        "暂无"}
                     </p >
 
                     {user.lastMessage && (
@@ -232,8 +245,7 @@ export default function AdminPage() {
                   </button>
                 ))}
               </div>
-            </div>
-            <div style={styles.sideStack}>
+            </div>            <div style={styles.sideStack}>
               <div style={styles.panel}>
                 <div style={styles.panelHeader}>
                   <h2>热门话题</h2>
@@ -253,7 +265,8 @@ export default function AdminPage() {
                   </div>
                 )}
               </div>
-               <div style={styles.panel}>
+
+              <div style={styles.panel}>
                 <div style={styles.panelHeader}>
                   <h2>关键词</h2>
                   <span>Top 30</span>
@@ -307,6 +320,51 @@ export default function AdminPage() {
               </div>
             </section>
           )}
+
+          <section style={styles.panel}>
+            <div style={styles.panelHeader}>
+              <div>
+                <h2>用户反馈</h2>
+                <p style={styles.panelSub}>
+                  最新 {feedbacks.length} 条反馈，来自前台反馈窗口
+                </p >
+              </div>
+
+              <span style={styles.feedbackCount}>
+                {stats.totalFeedbacks ?? 0} 条
+              </span>
+            </div>
+
+            {feedbacks.length === 0 ? (
+              <EmptyText text="暂无用户反馈" />
+            ) : (
+              <div style={styles.feedbackList}>
+                {feedbacks.map((item) => (
+                  <div key={item.id} style={styles.feedbackCard}>
+                    <div style={styles.feedbackTopLine}>
+                      <span style={styles.feedbackType}>
+                        {item.typeLabel || "建议"}
+                      </span>
+                      <span style={styles.feedbackTime}>
+                        {item.created_at_beijing ||
+                          formatBeijingTime(item.created_at)}
+                      </span>
+                    </div>
+
+                    <p style={styles.feedbackContent}>
+                      {item.content || "空反馈"}
+                    </p >
+
+                    <div style={styles.feedbackMeta}>
+                      <span>用户：{shortUserId(item.user_id)}</span>
+                      {item.contact ? <span>联系：{item.contact}</span> : null}
+                      {item.page ? <span>页面：{item.page}</span> : null}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
 
           <section style={styles.panel}>
             <div style={styles.panelHeader}>
@@ -429,8 +487,7 @@ const styles = {
     color: "white",
     padding: 24,
     paddingBottom: 90,
-    fontFamily:
-      "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+    fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
   },
   hero: {
     display: "flex",
@@ -468,8 +525,7 @@ const styles = {
     color: "white",
     fontWeight: 800,
     whiteSpace: "nowrap",
-  },
-    loginCard: {
+  },  loginCard: {
     display: "flex",
     gap: 12,
     marginBottom: 22,
@@ -712,5 +768,57 @@ const styles = {
   empty: {
     margin: 0,
     color: "rgba(255,255,255,0.48)",
+  },
+  feedbackCount: {
+    padding: "6px 10px",
+    borderRadius: 999,
+    background: "rgba(139,92,246,0.16)",
+    border: "1px solid rgba(167,139,250,0.22)",
+    color: "#ddd6fe",
+    fontSize: 12,
+    fontWeight: 800,
+  },
+  feedbackList: {
+    display: "grid",
+    gap: 12,
+  },
+  feedbackCard: {
+    padding: 15,
+    borderRadius: 18,
+    background: "rgba(255,255,255,0.055)",
+    border: "1px solid rgba(255,255,255,0.09)",
+    wordBreak: "break-word",
+  },
+  feedbackTopLine: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: 10,
+    marginBottom: 10,
+  },
+  feedbackType: {
+    padding: "5px 9px",
+    borderRadius: 999,
+    background: "rgba(34,197,94,0.12)",
+    color: "#bbf7d0",
+    fontSize: 12,
+    fontWeight: 800,
+  },
+  feedbackTime: {
+    color: "rgba(255,255,255,0.42)",
+    fontSize: 12,
+  },
+  feedbackContent: {
+    margin: "0 0 12px",
+    color: "rgba(255,255,255,0.9)",
+    lineHeight: 1.65,
+    fontSize: 14,
+  },
+  feedbackMeta: {
+    display: "flex",
+    flexWrap: "wrap",
+    gap: 8,
+    color: "rgba(255,255,255,0.46)",
+    fontSize: 12,
   },
 };
