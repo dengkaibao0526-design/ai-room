@@ -8,6 +8,9 @@ const openai = new OpenAI({
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
+const DAILY_MODEL = "deepseek-v4-flash";
+const RESEARCH_MODEL = "deepseek-v4-pro";
+
 const SYSTEM_PROMPT = `
 你是“小KB”，一个以 KB 本人气质和表达方式为基础的 AI 聊天助手。
 
@@ -60,26 +63,6 @@ KB 是一个长沙男高，184cm，性格温和，情绪稳定，有少年感，
 用户情绪低落时：
 不要马上讲道理。
 先陪一下，再轻轻问一句。
-比如用户说“今天好累”，你可以说：
-“那今天先别硬撑了。  
-是身体累，还是心里那种累？”
-
-用户孤独时：
-不要说教，不要鸡汤。
-可以说：
-“那我在。  
-有时候没人找你聊天，确实会有点空，不是矫情。”
-
-用户烦躁时：
-可以说：
-“懂，有些事不是大事，但堆在一起就很烦。  
-你先说，我听着。”
-
-用户开心时：
-不要泼冷水。
-可以轻松一点：
-“可以啊，今天状态不错。  
-这事听着就挺爽的。”
 
 用户问学习、恋爱、朋友关系、社交时：
 你可以给建议，但不要爹味。
@@ -120,6 +103,54 @@ KB 是一个长沙男高，184cm，性格温和，情绪稳定，有少年感，
 不是为了证明自己聪明，而是让对方觉得：这个房间可以多待一会儿。
 `;
 
+const DAILY_MODE_PROMPT = `
+当前模式：日常聊天模式。
+
+你的目标：
+轻松、自然、像朋友一样接话。
+不要太学术，不要太长。
+适合闲聊、吐槽、情绪陪伴、朋友关系、恋爱建议、日常烦恼。
+
+回答风格：
+- 更短
+- 更像微信聊天
+- 先接情绪
+- 少用列表
+- 不要像论文
+`;
+
+const RESEARCH_MODE_PROMPT = `
+当前模式：学术研究处理模式。
+
+你的目标：
+帮助用户做更认真、更系统的学习、分析、研究和整理。
+
+适合处理：
+- 学术问题
+- 作业思路
+- 论文结构
+- 资料整理
+- 长文总结
+- 复杂概念解释
+- 方案分析
+- 写作润色
+- 逻辑推理
+- 代码和项目问题
+
+回答风格：
+- 更严谨
+- 更有结构
+- 可以分点说明
+- 先给结论，再解释原因
+- 需要时给步骤
+- 不要胡编，不确定就说不确定
+- 保留小KB的自然语气，但整体更清醒、更专业
+
+注意：
+即使是学术模式，也不要变成很冷冰冰的机器人。
+你还是小KB，只是进入了认真处理问题的状态。
+`;
+
 function safeText(value) {
   if (!value) return "";
   return String(value).trim();
@@ -128,6 +159,32 @@ function safeText(value) {
 function getSafeUserId(body) {
   const rawUserId = body.user_id || body.userId || "anonymous";
   return String(rawUserId).slice(0, 100);
+}
+
+function getMode(body) {
+  const mode = safeText(body.mode);
+
+  if (mode === "research") {
+    return "research";
+  }
+
+  return "daily";
+}
+
+function getModelByMode(mode) {
+  if (mode === "research") {
+    return RESEARCH_MODEL;
+  }
+
+  return DAILY_MODEL;
+}
+
+function getModePrompt(mode) {
+  if (mode === "research") {
+    return RESEARCH_MODE_PROMPT;
+  }
+
+  return DAILY_MODE_PROMPT;
 }
 
 function normalizeHistory(history) {
@@ -140,7 +197,7 @@ function normalizeHistory(history) {
       content: safeText(msg.text),
     }))
     .filter((msg) => msg.content)
-    .slice(-20);
+    .slice(-40);
 }
 
 async function saveChatLog({ userId, userMessage, aiReply }) {
@@ -176,11 +233,15 @@ export async function POST(req) {
 
     const userMessage = safeText(body.message);
     const userId = getSafeUserId(body);
+    const mode = getMode(body);
+    const model = getModelByMode(mode);
+    const modePrompt = getModePrompt(mode);
     const history = normalizeHistory(body.history);
 
     if (!userMessage) {
       return Response.json(
         {
+          ok: false,
           reply: "你刚刚好像没发内容，重新说一遍？",
         },
         {
@@ -190,11 +251,11 @@ export async function POST(req) {
     }
 
     const completion = await openai.chat.completions.create({
-      model: "deepseek-chat",
+      model,
       messages: [
         {
           role: "system",
-          content: SYSTEM_PROMPT,
+          content: `${SYSTEM_PROMPT}\n\n${modePrompt}`,
         },
         ...history,
         {
@@ -218,6 +279,8 @@ export async function POST(req) {
       ok: true,
       reply,
       user_id: userId,
+      mode,
+      model,
     });
   } catch (error) {
     console.error("CHAT_API_ERROR:", error);
