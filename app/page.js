@@ -57,6 +57,13 @@ export default function Home() {
   const [chatMode, setChatMode] = useState("daily");
   const [showIntro, setShowIntro] = useState(false);
 
+  const [showFeedback, setShowFeedback] = useState(false);
+  const [feedbackType, setFeedbackType] = useState("suggestion");
+  const [feedbackContent, setFeedbackContent] = useState("");
+  const [feedbackContact, setFeedbackContact] = useState("");
+  const [feedbackLoading, setFeedbackLoading] = useState(false);
+  const [feedbackMessage, setFeedbackMessage] = useState("");
+
   const bottomRef = useRef(null);
 
   useEffect(() => {
@@ -168,6 +175,69 @@ export default function Home() {
 
     setShowStarters(false);
     sendMessage(text);
+  }
+
+  function openFeedback() {
+    setFeedbackMessage("");
+    setShowFeedback(true);
+  }
+
+  function closeFeedback() {
+    if (feedbackLoading) return;
+    setShowFeedback(false);
+    setFeedbackMessage("");
+  }
+
+  async function submitFeedback() {
+    const content = feedbackContent.trim();
+
+    if (!content) {
+      setFeedbackMessage("先写点反馈内容吧。");
+      return;
+    }
+
+    setFeedbackLoading(true);
+    setFeedbackMessage("");
+
+    try {
+      const currentUserId =
+        userId || localStorage.getItem("xiaokb_user_id") || "anonymous";
+
+      const res = await fetch("/api/feedback", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          user_id: currentUserId,
+          userId: currentUserId,
+          type: feedbackType,
+          content,
+          contact: feedbackContact,
+          page: "home",
+        }),
+      });
+
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok || !data.ok) {
+        throw new Error(data.error || "提交失败");
+      }
+
+      setFeedbackMessage("收到啦，感谢你给小KB提建议。");
+      setFeedbackContent("");
+      setFeedbackContact("");
+
+      setTimeout(() => {
+        setShowFeedback(false);
+        setFeedbackMessage("");
+      }, 900);
+    } catch (error) {
+      console.error("SUBMIT_FEEDBACK_ERROR:", error);
+      setFeedbackMessage("提交失败了，等下再试一下。");
+    } finally {
+      setFeedbackLoading(false);
+    }
   }
 
   async function sendMessage(customText) {
@@ -312,6 +382,84 @@ export default function Home() {
           </div>
         </div>
       )}
+
+      {showFeedback && (
+        <div className="feedbackOverlay">
+          <div className="feedbackCard">
+            <div className="feedbackTop">
+              <div>
+                <div className="feedbackBadge">FEEDBACK</div>
+                <h2>给小KB提点建议</h2>
+                <p>
+                  哪里不好用、哪里怪、你希望以后有什么功能，都可以写给大宝。
+                </p >
+              </div>
+
+              <button className="feedbackClose" onClick={closeFeedback}>
+                ×
+              </button>
+            </div>
+
+            <div className="feedbackTypes">
+              <button
+                className={feedbackType === "suggestion" ? "activeFeedbackType" : ""}
+                onClick={() => setFeedbackType("suggestion")}
+                disabled={feedbackLoading}
+              >
+                建议
+              </button>
+              <button
+                className={feedbackType === "feature" ? "activeFeedbackType" : ""}
+                onClick={() => setFeedbackType("feature")}
+                disabled={feedbackLoading}
+              >
+                想要的功能
+              </button>
+              <button
+                className={feedbackType === "bug" ? "activeFeedbackType" : ""}
+                onClick={() => setFeedbackType("bug")}
+                disabled={feedbackLoading}
+              >
+                Bug
+              </button>
+            </div>
+
+            <textarea
+              className="feedbackTextarea"
+              value={feedbackContent}
+              onChange={(e) => setFeedbackContent(e.target.value)}
+              placeholder="写点你真实的想法，比如哪里不好用、哪里还可以更好..."
+              maxLength={2000}
+              disabled={feedbackLoading}
+            />
+
+            <input
+              className="feedbackInput"
+              value={feedbackContact}
+              onChange={(e) => setFeedbackContact(e.target.value)}
+              placeholder="联系方式，可不填"
+              maxLength={200}
+              disabled={feedbackLoading}
+            />
+
+            <div className="feedbackFooter">
+              <span>{feedbackMessage}</span>
+
+              <button
+                className="feedbackSubmit"
+                onClick={submitFeedback}
+                disabled={feedbackLoading}
+              >
+                {feedbackLoading ? "提交中..." : "提交反馈"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <button className="floatingFeedback" onClick={openFeedback}>
+        反馈
+      </button>
 
       <section className="phone">
         <header className="chatHeader">
