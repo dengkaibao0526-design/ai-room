@@ -1149,3 +1149,93 @@ textarea {
     width: 100%;
   }
 }
+/* 手机优先优化：首次简介弹窗 */
+.introOverlay {
+  padding: 16px;
+  align-items: center;
+}
+
+.introCard {
+  width: min(420px, 100%);
+  max-height: min(82vh, 680px);
+  overflow-y: auto;
+  padding: 22px 20px 20px;
+  border-radius: 28px;
+}
+
+.introCard::-webkit-scrollbar {
+  width: 0;
+}
+
+.introBadge {
+  margin-bottom: 12px;
+  font-size: 10.5px;
+}
+
+.introCard h1 {
+  font-size: 28px;
+  line-height: 1.08;
+}
+
+.introCard p {
+  margin: 11px 0 0;
+  font-size: 13.5px;
+  line-height: 1.62;
+}
+
+.introList {
+  margin-top: 15px;
+  gap: 8px;
+}
+
+.introList span {
+  padding: 10px 11px;
+  border-radius: 15px;
+  font-size: 12.5px;
+  line-height: 1.45;
+}
+
+.introButton {
+  height: 56px;
+  margin-top: 18px;
+  font-size: 16px;
+  font-weight: 900;
+  letter-spacing: 0.2px;
+  box-shadow:
+    0 16px 38px rgba(139, 92, 246, 0.48),
+    0 0 30px rgba(192, 132, 252, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+@media (max-width: 520px) {
+  .introOverlay {
+    padding: 14px;
+  }
+
+  .introCard {
+    width: 100%;
+    max-height: 84vh;
+    padding: 20px 17px 17px;
+    border-radius: 26px;
+  }
+
+  .introCard h1 {
+    font-size: 25px;
+  }
+
+  .introCard p {
+    font-size: 13px;
+    line-height: 1.58;
+  }
+
+  .introList span {
+    font-size: 12px;
+    padding: 9px 10px;
+  }
+
+  .introButton {
+    height: 58px;
+    font-size: 16px;
+    margin-top: 16px;
+  }
+}
