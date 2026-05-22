@@ -24,6 +24,14 @@ function getTimeGreeting() {
   return "这么晚还来找我，今天是不是有点事。";
 }
 
+function createUserId() {
+  if (typeof crypto !== "undefined" && crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
+
+  return `user_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+}
+
 export default function Home() {
   const [messages, setMessages] = useState([
     {
@@ -35,16 +43,61 @@ export default function Home() {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [loaded, setLoaded] = useState(false);
+  const [userId, setUserId] = useState("");
+
   const bottomRef = useRef(null);
 
   useEffect(() => {
     const savedMessages = localStorage.getItem("kb-chat");
 
     if (savedMessages) {
-      setMessages(JSON.parse(savedMessages));
+      try {
+        const parsedMessages = JSON.parse(savedMessages);
+
+        if (Array.isArray(parsedMessages)) {
+          setMessages(parsedMessages);
+        }
+      } catch (error) {
+        console.error("读取本地聊天记录失败：", error);
+        localStorage.removeItem("kb-chat");
+      }
     }
 
     setLoaded(true);
+  }, []);
+
+  useEffect(() => {
+    let id = localStorage.getItem("xiaokb_user_id");
+
+    if (!id) {
+      id = createUserId();
+      localStorage.setItem("xiaokb_user_id", id);
+    }
+
+    setUserId(id);
+
+    async function pingOnline() {
+      try {
+        await fetch("/api/online", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            user_id: id,
+            userId: id,
+          }),
+        });
+      } catch (error) {
+        console.error("ONLINE_PING_ERROR:", error);
+      }
+    }
+
+    pingOnline();
+
+    const timer = setInterval(pingOnline, 30 * 1000);
+
+    return () => clearInterval(timer);
   }, []);
 
   useEffect(() => {
@@ -73,6 +126,16 @@ export default function Home() {
 
     const userText = input.trim();
 
+    const currentUserId =
+      userId ||
+      localStorage.getItem("xiaokb_user_id") ||
+      createUserId();
+
+    if (!localStorage.getItem("xiaokb_user_id")) {
+      localStorage.setItem("xiaokb_user_id", currentUserId);
+      setUserId(currentUserId);
+    }
+
     const newMessages = [
       ...messages,
       {
@@ -96,6 +159,8 @@ export default function Home() {
         body: JSON.stringify({
           message: userText,
           history: recentHistory,
+          user_id: currentUserId,
+          userId: currentUserId,
         }),
       });
 
@@ -134,10 +199,12 @@ export default function Home() {
 
       setMessages((prev) => {
         const newMessages = [...prev];
+
         newMessages[newMessages.length - 1] = {
           role: "ai",
           text: fullText.slice(0, index),
         };
+
         return newMessages;
       });
 
