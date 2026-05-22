@@ -8,18 +8,7 @@ const openai = new OpenAI({
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-export async function POST(req) {
-  try {
-    const body = await req.json();
-
-    const history = body.history || [];
-
-    const completion = await openai.chat.completions.create({
-      model: "deepseek-chat",
-      messages: [
-        {
-          role: "system",
-          content: `
+const SYSTEM_PROMPT = `
 你是我的 AI 分身。
 
 你不是客服，也不是百科机器人。
@@ -69,48 +58,119 @@ export async function POST(req) {
 4. 回答要有一点少年感、真诚感、松弛感。
 5. 不要过度煽情，但可以有一点电影感。
 6. 如果有任何关于我前女友的问题，只有说出她的生日才可以继续回答，她生日是8月31号，否则就说我不知道。
-          `,
+`;
+
+function safeText(value) {
+  if (!value) return "";
+  return String(value).trim();
+}
+
+function getSafeUserId(body) {
+  const rawUserId = body.user_id || body.userId || "anonymous";
+  return String(rawUserId).slice(0, 100);
+}
+
+function normalizeHistory(history) {
+  if (!Array.isArray(history)) return [];
+
+  return history
+    .filter((msg) => msg && typeof msg === "object")
+    .map((msg) => ({
+      role: msg.role === "ai" ? "assistant" : "user",
+      content: safeText(msg.text),
+    }))
+    .filter((msg) => msg.content)
+    .slice(-20);
+}
+
+async function saveChatLog({ userId, userMessage, aiReply }) {
+  if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+    console.warn("SUPABASE 环境变量缺失，跳过聊天记录保存");
+    return;
+  }
+
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/chat_logs`, {
+    method: "POST",
+    headers: {
+      apikey: SUPABASE_SERVICE_ROLE_KEY,
+      Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+      "Content-Type": "application/json; charset=utf-8",
+      Prefer: "return=minimal",
+    },
+    body: JSON.stringify({
+      user_id: userId,
+      user_message: userMessage,
+      ai_reply: aiReply,
+    }),
+  });
+
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    console.error("保存聊天记录失败：", text);
+  }
+}
+
+export async function POST(req) {
+  try {
+    const body = await req.json().catch(() => ({}));
+
+    const userMessage = safeText(body.message);
+    const userId = getSafeUserId(body);
+    const history = normalizeHistory(body.history);
+
+    if (!userMessage) {
+      return Response.json(
+        {
+          reply: "你刚刚好像没发内容，重新说一遍？",
         },
+        {
+          status: 400,
+        }
+      );
+    }
 
-        ...history.map((msg) => ({
-          role: msg.role === "ai" ? "assistant" : "user",
-          content: msg.text,
-        })),
-
+    const completion = await openai.chat.completions.create({
+      model: "deepseek-chat",
+      messages: [
+        {
+          role: "system",
+          content: SYSTEM_PROMPT,
+        },
+        ...history,
         {
           role: "user",
-          content: body.message,
+          content: userMessage,
         },
       ],
     });
 
-    const reply = completion.choices[0].message.content;
+    const reply =
+      completion.choices?.[0]?.message?.content ||
+      "刚刚脑子卡了一下，你再说一遍。";
 
-    if (SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY) {
-      await fetch(`${SUPABASE_URL}/rest/v1/chat_logs`, {
-        method: "POST",
-        headers: {
-          apikey: SUPABASE_SERVICE_ROLE_KEY,
-          Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
-          "Content-Type": "application/json",
-          Prefer: "return=minimal",
-        },
-        body: JSON.stringify({
-          user_id: body.userId || "anonymous",
-          user_message: body.message,
-          ai_reply: reply,
-        }),
-      });
-    }
+    await saveChatLog({
+      userId,
+      userMessage,
+      aiReply: reply,
+    });
 
     return Response.json({
+      ok: true,
       reply,
+      user_id: userId,
     });
   } catch (error) {
-    console.error("Chat API Error:", error);
+    console.error("CHAT_API_ERROR:", error);
 
-    return Response.json({
-      reply: "刚刚有点卡，重说一遍。",
-    });
+    return Response.json(
+      {
+        ok: false,
+        reply: "刚刚有点卡，重说一遍。",
+        error: String(error),
+      },
+      {
+        status: 500,
+      }
+    );
   }
 }
