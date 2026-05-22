@@ -2,7 +2,7 @@ const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
 
-const VERSION = "admin-stats-v4";
+const VERSION = "admin-stats-v5";
 
 const BEIJING_OFFSET_MS = 8 * 60 * 60 * 1000;
 const ONLINE_WINDOW_MS = 5 * 60 * 1000;
@@ -16,7 +16,6 @@ const STOP_WORDS = new Set([
   "我们",
   "你们",
   "他们",
-  "她们",
   "这个",
   "那个",
   "就是",
@@ -183,21 +182,14 @@ function getHeaders(extra = {}) {
   };
 }
 
-function getBeijingTodayRange() {
-  const now = new Date();
-  const beijingNow = new Date(now.getTime() + BEIJING_OFFSET_MS);
+function safeText(value) {
+  if (!value) return "";
+  return String(value).trim();
+}
 
-  const year = beijingNow.getUTCFullYear();
-  const month = beijingNow.getUTCMonth();
-  const date = beijingNow.getUTCDate();
-
-  const startUtc = new Date(Date.UTC(year, month, date) - BEIJING_OFFSET_MS);
-  const endUtc = new Date(startUtc.getTime() + 24 * 60 * 60 * 1000);
-
-  return {
-    startIso: startUtc.toISOString(),
-    endIso: endUtc.toISOString(),
-  };
+function normalizeUserId(value) {
+  const text = safeText(value);
+  return text || "anonymous";
 }
 
 function toBeijingText(value) {
@@ -219,14 +211,21 @@ function toBeijingText(value) {
   }
 }
 
-function safeText(value) {
-  if (!value) return "";
-  return String(value).trim();
-}
+function getBeijingTodayRange() {
+  const now = new Date();
+  const beijingNow = new Date(now.getTime() + BEIJING_OFFSET_MS);
 
-function normalizeUserId(value) {
-  const text = safeText(value);
-  return text || "anonymous";
+  const year = beijingNow.getUTCFullYear();
+  const month = beijingNow.getUTCMonth();
+  const date = beijingNow.getUTCDate();
+
+  const startUtc = new Date(Date.UTC(year, month, date) - BEIJING_OFFSET_MS);
+  const endUtc = new Date(startUtc.getTime() + 24 * 60 * 60 * 1000);
+
+  return {
+    startIso: startUtc.toISOString(),
+    endIso: endUtc.toISOString(),
+  };
 }
 
 function extractTokens(text) {
@@ -237,22 +236,18 @@ function extractTokens(text) {
   const chineseWords = content.match(/[\u4e00-\u9fa5]{2,6}/g) || [];
   const englishWords = content.match(/[a-zA-Z][a-zA-Z0-9_]{2,20}/g) || [];
 
-  const tokens = [...chineseWords, ...englishWords]
+  return [...chineseWords, ...englishWords]
     .map((word) => word.trim())
     .filter((word) => word.length >= 2)
     .filter((word) => !STOP_WORDS.has(word))
     .filter((word) => !/^\d+$/.test(word));
-
-  return tokens;
 }
 
 function analyzeKeywords(logs) {
   const counter = new Map();
 
   logs.forEach((log) => {
-    const tokens = extractTokens(log.user_message);
-
-    tokens.forEach((token) => {
+    extractTokens(log.user_message).forEach((token) => {
       counter.set(token, (counter.get(token) || 0) + 1);
     });
   });
@@ -275,20 +270,14 @@ function detectTopicsForMessage(text) {
     }
   });
 
-  if (matched.length === 0) {
-    matched.push("其他");
-  }
-
-  return matched;
+  return matched.length > 0 ? matched : ["其他"];
 }
 
 function analyzeTopics(logs) {
   const topicCounter = new Map();
 
   logs.forEach((log) => {
-    const topics = detectTopicsForMessage(log.user_message);
-
-    topics.forEach((topic) => {
+    detectTopicsForMessage(log.user_message).forEach((topic) => {
       topicCounter.set(topic, (topicCounter.get(topic) || 0) + 1);
     });
   });
@@ -320,10 +309,12 @@ function buildUsers(logs, onlineUsersMap) {
     }
 
     const user = userMap.get(userId);
-
     user.messageCount += 1;
 
-    if (!user.lastMessageAt || new Date(log.created_at) > new Date(user.lastMessageAt)) {
+    if (
+      !user.lastMessageAt ||
+      new Date(log.created_at) > new Date(user.lastMessageAt)
+    ) {
       user.lastMessage = safeText(log.user_message);
       user.lastMessageAt = log.created_at || "";
       user.lastMessageAtBeijing = toBeijingText(log.created_at);
@@ -363,6 +354,7 @@ function buildUsers(logs, onlineUsersMap) {
       });
     } else {
       const user = userMap.get(userId);
+
       user.lastSeen = onlineUser.last_seen || "";
       user.lastSeenBeijing = toBeijingText(onlineUser.last_seen);
       user.online = onlineUser.online;
@@ -484,6 +476,46 @@ async function readOnlineUsers() {
   return map;
 }
 
+async function readRecentFeedbacks(limit = 50) {
+  const params = new URLSearchParams();
+
+  params.set("select", "id,user_id,type,content,contact,page,created_at");
+  params.set("order", "created_at.desc");
+  params.set("limit", String(limit));
+
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/feedbacks?${params}`, {
+    method: "GET",
+    headers: getHeaders(),
+    cache: "no-store",
+  });
+
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`读取反馈失败：${text}`);
+  }
+
+  const json = await res.json();
+  const list = Array.isArray(json) ? json : [];
+
+  return list.map((item) => ({
+    id: item.id,
+    user_id: normalizeUserId(item.user_id),
+    type: safeText(item.type || "suggestion"),
+    typeLabel: getFeedbackTypeLabel(item.type),
+    content: safeText(item.content),
+    contact: safeText(item.contact),
+    page: safeText(item.page || "home"),
+    created_at: item.created_at,
+    created_at_beijing: toBeijingText(item.created_at),
+  }));
+}
+
+function getFeedbackTypeLabel(type) {
+  if (type === "feature") return "想要的功能";
+  if (type === "bug") return "Bug";
+  return "建议";
+}
+
 export async function GET(req) {
   try {
     if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
@@ -525,10 +557,13 @@ export async function GET(req) {
     }
 
     const { startIso, endIso } = getBeijingTodayRange();
-
     const onlineSince = new Date(Date.now() - ONLINE_WINDOW_MS).toISOString();
 
     const totalUsers = await countRows("online_users");
+    const onlineUsers = await countRows("online_users", {
+      last_seen: `gte.${onlineSince}`,
+    });
+
     const totalMessages = await countRows("chat_logs");
 
     const todayMessages = await countRows("chat_logs", {
@@ -536,16 +571,20 @@ export async function GET(req) {
       created_at: `lt.${endIso}`,
     });
 
-    const onlineUsers = await countRows("online_users", {
-      last_seen: `gte.${onlineSince}`,
-    });
-
     const todayActiveUsers = await countRows("online_users", {
       last_seen: `gte.${startIso}`,
     });
 
+    const totalFeedbacks = await countRows("feedbacks");
+
+    const todayFeedbacks = await countRows("feedbacks", {
+      created_at: `gte.${startIso}`,
+      created_at: `lt.${endIso}`,
+    });
+
     const logs = await readRecentLogs(300);
     const onlineUsersMap = await readOnlineUsers();
+    const feedbacks = await readRecentFeedbacks(50);
 
     const users = buildUsers(logs, onlineUsersMap);
     const keywords = analyzeKeywords(logs);
@@ -572,14 +611,17 @@ export async function GET(req) {
         todayMessages,
         todayActiveUsers,
         analyzedMessages: logs.length,
+        totalFeedbacks,
+        todayFeedbacks,
       },
       users,
       keywords,
       topics,
+      feedbacks,
       logs: recentLogs,
     });
   } catch (error) {
-    console.error("ADMIN_STATS_V4_ERROR:", error);
+    console.error("ADMIN_STATS_V5_ERROR:", error);
 
     return Response.json(
       {
