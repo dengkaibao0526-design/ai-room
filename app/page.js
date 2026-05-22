@@ -55,12 +55,18 @@ export default function Home() {
   const [userId, setUserId] = useState("");
   const [showStarters, setShowStarters] = useState(true);
   const [chatMode, setChatMode] = useState("daily");
+  const [showIntro, setShowIntro] = useState(false);
 
   const bottomRef = useRef(null);
 
   useEffect(() => {
     const savedMessages = localStorage.getItem("kb-chat");
     const savedMode = localStorage.getItem("xiaokb_chat_mode");
+    const introSeen = localStorage.getItem("xiaokb_intro_seen");
+
+    if (!introSeen) {
+      setShowIntro(true);
+    }
 
     if (savedMode === "daily" || savedMode === "research") {
       setChatMode(savedMode);
@@ -133,6 +139,11 @@ export default function Home() {
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, loading]);
+
+  function closeIntro() {
+    localStorage.setItem("xiaokb_intro_seen", "true");
+    setShowIntro(false);
+  }
 
   function clearMemory() {
     localStorage.removeItem("kb-chat");
@@ -264,6 +275,43 @@ export default function Home() {
   return (
     <main className="app">
       <div className="ambientGrid"></div>
+
+      {showIntro && (
+        <div className="introOverlay">
+          <div className="introCard">
+            <div className="introBadge">WELCOME TO XIAOKB</div>
+
+            <h1>欢迎来到小KB。</h1>
+
+            <p>
+              这是一个由大宝一个人慢慢搭起来的 AI 房间。
+              从最开始的想法、构思、页面设计、网站搭建，到后面的模型调试、后台统计和运营方向，
+              基本都是大宝一点点摸索出来的。
+            </p >
+
+            <p>
+              项目从 2026 年 2 月初开始实施，到 2026 年 5 月 17 日，
+              终于见到了小KB的第一个可用模型。
+              它现在还不完美，但已经能陪你聊天、帮你整理想法，也能认真处理一些学习和研究问题。
+            </p >
+
+            <p>
+              后面大宝还会继续优化小KB，也希望你常来玩玩。
+              觉得哪里好用、哪里奇怪、哪里还可以更好，都可以告诉我。
+            </p >
+
+            <div className="introList">
+              <span>日常聊天：轻松一点，像朋友一样陪你说话。</span>
+              <span>学术研究：更认真处理问题，适合学习、资料、思路整理。</span>
+              <span>这个网站还在成长，欢迎你来体验，也欢迎你提建议。</span>
+            </div>
+
+            <button className="introButton" onClick={closeIntro}>
+              进入小KB房间
+            </button>
+          </div>
+        </div>
+      )}
 
       <section className="phone">
         <header className="chatHeader">
