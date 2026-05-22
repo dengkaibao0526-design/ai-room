@@ -54,11 +54,17 @@ export default function Home() {
   const [loaded, setLoaded] = useState(false);
   const [userId, setUserId] = useState("");
   const [showStarters, setShowStarters] = useState(true);
+  const [chatMode, setChatMode] = useState("daily");
 
   const bottomRef = useRef(null);
 
   useEffect(() => {
     const savedMessages = localStorage.getItem("kb-chat");
+    const savedMode = localStorage.getItem("xiaokb_chat_mode");
+
+    if (savedMode === "daily" || savedMode === "research") {
+      setChatMode(savedMode);
+    }
 
     if (savedMessages) {
       try {
@@ -79,6 +85,10 @@ export default function Home() {
 
     setLoaded(true);
   }, []);
+
+  useEffect(() => {
+    localStorage.setItem("xiaokb_chat_mode", chatMode);
+  }, [chatMode]);
 
   useEffect(() => {
     let id = localStorage.getItem("xiaokb_user_id");
@@ -137,6 +147,11 @@ export default function Home() {
     ]);
   }
 
+  function handleModeChange(mode) {
+    if (loading) return;
+    setChatMode(mode);
+  }
+
   function handleStarterClick(text) {
     if (loading) return;
 
@@ -185,6 +200,7 @@ export default function Home() {
           history: recentHistory,
           user_id: currentUserId,
           userId: currentUserId,
+          mode: chatMode,
         }),
       });
 
@@ -257,7 +273,11 @@ export default function Home() {
 
           <div className="profile">
             <h1>小KB</h1>
-            <p>在线 · 长沙夜里也有人听你说话</p >
+            <p>
+              {chatMode === "research"
+                ? "学术研究 · Pro 模式"
+                : "在线 · 长沙夜里也有人听你说话"}
+            </p >
           </div>
 
           <button className="clearBtn" onClick={clearMemory}>
@@ -286,6 +306,28 @@ export default function Home() {
             <span>clean fit</span>
             <span>情绪稳定</span>
             <span>少年感</span>
+          </div>
+
+          <div className="modePanel">
+            <button
+              className={`modeBtn ${chatMode === "daily" ? "activeMode" : ""}`}
+              onClick={() => handleModeChange("daily")}
+              disabled={loading}
+            >
+              <strong>日常聊天</strong>
+              <span>更快 · 更像朋友</span>
+            </button>
+
+            <button
+              className={`modeBtn ${
+                chatMode === "research" ? "activeMode" : ""
+              }`}
+              onClick={() => handleModeChange("research")}
+              disabled={loading}
+            >
+              <strong>学术研究</strong>
+              <span>Pro · 更认真处理</span>
+            </button>
           </div>
 
           {showStarters && messages.length <= 1 && (
@@ -347,7 +389,11 @@ export default function Home() {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="跟小KB说点什么..."
+            placeholder={
+              chatMode === "research"
+                ? "把问题、材料、作业要求发来..."
+                : "跟小KB说点什么..."
+            }
             rows={1}
           />
 
