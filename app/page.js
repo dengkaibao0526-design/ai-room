@@ -6,7 +6,7 @@ function getTimeGreeting() {
   const hour = new Date().getHours();
 
   if (hour >= 0 && hour < 5) {
-    return "还没睡啊？这么晚了，来，慢慢说。";
+    return "还没睡啊？这么晚了，来吧，慢慢说说。";
   }
 
   if (hour >= 5 && hour < 11) {
@@ -14,14 +14,14 @@ function getTimeGreeting() {
   }
 
   if (hour >= 11 && hour < 18) {
-    return "来了？今天过得怎么样。";
+    return "来了？今天过得咋样。";
   }
 
   if (hour >= 18 && hour < 23) {
     return "晚上好，今天累不累？";
   }
 
-  return "这么晚还来找我，今天是不是有点事。";
+  return "这么晚还来找我，今天是不是有点事啊。";
 }
 
 function createUserId() {
@@ -116,7 +116,7 @@ export default function Home() {
     setMessages([
       {
         role: "ai",
-        text: "好，记忆清空了。那我们重新开始。我是小KB。",
+        text: "好，记忆清空了。那我们重新开始吧。我是小KB。",
       },
     ]);
   }
@@ -144,7 +144,7 @@ export default function Home() {
       },
     ];
 
-    const recentHistory = newMessages.slice(-20);
+    const recentHistory = newMessages.slice(-45);
 
     setMessages(newMessages);
     setInput("");
