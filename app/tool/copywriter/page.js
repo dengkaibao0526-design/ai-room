@@ -68,13 +68,16 @@ export default function CopywriterPage() {
 
   const selectedSummary = useMemo(() => {
     const platformLabel =
-      PLATFORM_OPTIONS.find((item) => item.value === platform)?.label || "朋友圈";
+      PLATFORM_OPTIONS.find((item) => item.value === platform)?.label ||
+      "朋友圈";
     const styleLabel =
-      STYLE_OPTIONS.find((item) => item.value === style)?.label || "自然朋友圈";
+      STYLE_OPTIONS.find((item) => item.value === style)?.label ||
+      "自然朋友圈";
     const lengthLabel =
       LENGTH_OPTIONS.find((item) => item.value === length)?.label || "中等";
     const intensityLabel =
-      INTENSITY_OPTIONS.find((item) => item.value === intensity)?.label || "正常";
+      INTENSITY_OPTIONS.find((item) => item.value === intensity)?.label ||
+      "正常";
     const emojiLabel =
       EMOJI_OPTIONS.find((item) => item.value === emojiMode)?.label ||
       "不要 emoji";
@@ -318,11 +321,7 @@ export default function CopywriterPage() {
               </div>
             )}
 
-            {result && (
-              <pre className="resultText">
-                {result}
-              </pre>
-            )}
+            {result && <pre className="resultText">{result}</pre>}
           </div>
         </section>
 
@@ -624,33 +623,58 @@ export default function CopywriterPage() {
         }
 
         .actionBar {
-          display: flex;
-          gap: 10px;
-          margin-top: 22px;
+          display: grid !important;
+          grid-template-columns: 1fr !important;
+          gap: 12px !important;
+          margin-top: 24px !important;
         }
 
         .primaryBtn,
         .ghostBtn,
         .copyBtn {
-          height: 48px;
-          padding: 0 18px;
           border: 0;
-          border-radius: 16px;
           cursor: pointer;
           color: white;
           font-weight: 900;
         }
 
         .primaryBtn {
-          flex: 1;
+          width: 100% !important;
+          min-height: 58px !important;
+          height: 58px !important;
+          padding: 0 20px !important;
+          border-radius: 20px !important;
+          display: flex !important;
+          align-items: center !important;
+          justify-content: center !important;
+          font-size: 16px !important;
+          font-weight: 950 !important;
+          line-height: 1 !important;
+          color: white !important;
           background:
-            radial-gradient(circle at 30% 0%, rgba(255, 255, 255, 0.24), transparent 34%),
-            linear-gradient(135deg, #8b5cf6 0%, #d946ef 100%);
-          box-shadow: 0 18px 42px rgba(139, 92, 246, 0.25);
+            radial-gradient(circle at 30% 0%, rgba(255, 255, 255, 0.28), transparent 34%),
+            linear-gradient(135deg, #8b5cf6 0%, #d946ef 100%) !important;
+          box-shadow:
+            0 18px 42px rgba(139, 92, 246, 0.34),
+            0 0 28px rgba(217, 70, 239, 0.16),
+            inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
         }
 
-        .ghostBtn,
+        .ghostBtn {
+          width: 100% !important;
+          min-height: 52px !important;
+          height: 52px !important;
+          border-radius: 20px !important;
+          font-size: 15px !important;
+          font-weight: 900 !important;
+          background: rgba(255, 255, 255, 0.075);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
         .copyBtn {
+          height: 48px;
+          padding: 0 18px;
+          border-radius: 16px;
           background: rgba(255, 255, 255, 0.075);
           border: 1px solid rgba(255, 255, 255, 0.1);
         }
@@ -658,9 +682,10 @@ export default function CopywriterPage() {
         .primaryBtn:disabled,
         .ghostBtn:disabled,
         .copyBtn:disabled {
-          opacity: 0.48;
-          cursor: not-allowed;
-          box-shadow: none;
+          opacity: 0.55 !important;
+          cursor: not-allowed !important;
+          box-shadow: none !important;
+          transform: none !important;
         }
 
         .errorBox {
@@ -819,13 +844,17 @@ export default function CopywriterPage() {
             grid-template-columns: 1fr;
           }
 
-          .actionBar {
-            flex-direction: column;
+          .primaryBtn {
+            min-height: 62px !important;
+            height: 62px !important;
+            font-size: 17px !important;
+            border-radius: 22px !important;
           }
 
-          .ghostBtn,
-          .primaryBtn {
-            width: 100%;
+          .ghostBtn {
+            min-height: 56px !important;
+            height: 56px !important;
+            border-radius: 22px !important;
           }
 
           .resultTop {
@@ -856,7 +885,9 @@ function OptionGrid({ options, value, onChange, compact = false }) {
       {options.map((item) => (
         <button
           key={item.value}
-          className={value === item.value ? "choiceBtn activeChoice" : "choiceBtn"}
+          className={
+            value === item.value ? "choiceBtn activeChoice" : "choiceBtn"
+          }
           onClick={() => onChange(item.value)}
         >
           <strong>{item.label}</strong>
