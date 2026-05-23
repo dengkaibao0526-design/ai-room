@@ -2,7 +2,7 @@ const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
 
-const VERSION = "admin-stats-v5";
+const VERSION = "admin-stats-v6-premium";
 
 const BEIJING_OFFSET_MS = 8 * 60 * 60 * 1000;
 const ONLINE_WINDOW_MS = 5 * 60 * 1000;
@@ -287,6 +287,66 @@ function analyzeTopics(logs) {
     .sort((a, b) => b.count - a.count);
 }
 
+function countByField(rows, fieldName, fallback = "unknown") {
+  const counter = new Map();
+
+  rows.forEach((row) => {
+    const value = safeText(row[fieldName]) || fallback;
+    counter.set(value, (counter.get(value) || 0) + 1);
+  });
+
+  return Array.from(counter.entries())
+    .map(([name, count]) => ({ name, count }))
+    .sort((a, b) => b.count - a.count);
+}
+
+function analyzeModes(logs) {
+  const daily = logs.filter((log) => log.mode === "daily").length;
+  const research = logs.filter((log) => log.mode === "research").length;
+  const unknown = logs.filter((log) => !log.mode).length;
+  const total = logs.length;
+
+  return {
+    total,
+    daily,
+    research,
+    unknown,
+    dailyPercent: total ? Math.round((daily / total) * 100) : 0,
+    researchPercent: total ? Math.round((research / total) * 100) : 0,
+    unknownPercent: total ? Math.round((unknown / total) * 100) : 0,
+  };
+}
+
+function analyzePerformance(logs) {
+  const withLatency = logs
+    .map((log) => Number(log.latency_ms))
+    .filter((value) => Number.isFinite(value) && value >= 0);
+
+  const successLogs = logs.filter((log) => log.success === true);
+  const failedLogs = logs.filter((log) => log.success === false);
+
+  const averageLatency = withLatency.length
+    ? Math.round(
+        withLatency.reduce((sum, value) => sum + value, 0) / withLatency.length
+      )
+    : null;
+
+  const maxLatency = withLatency.length ? Math.max(...withLatency) : null;
+  const minLatency = withLatency.length ? Math.min(...withLatency) : null;
+
+  return {
+    sampleSize: logs.length,
+    successCount: successLogs.length,
+    failedCount: failedLogs.length,
+    successRate: logs.length
+      ? Math.round((successLogs.length / logs.length) * 100)
+      : 0,
+    averageLatency,
+    maxLatency,
+    minLatency,
+  };
+}
+
 function buildUsers(logs, onlineUsersMap) {
   const userMap = new Map();
 
@@ -297,6 +357,8 @@ function buildUsers(logs, onlineUsersMap) {
       userMap.set(userId, {
         user_id: userId,
         messageCount: 0,
+        dailyCount: 0,
+        researchCount: 0,
         lastMessage: "",
         lastMessageAt: "",
         lastMessageAtBeijing: "",
@@ -310,6 +372,14 @@ function buildUsers(logs, onlineUsersMap) {
 
     const user = userMap.get(userId);
     user.messageCount += 1;
+
+    if (log.mode === "daily") {
+      user.dailyCount += 1;
+    }
+
+    if (log.mode === "research") {
+      user.researchCount += 1;
+    }
 
     if (
       !user.lastMessageAt ||
@@ -333,6 +403,10 @@ function buildUsers(logs, onlineUsersMap) {
         ai_reply: safeText(log.ai_reply),
         created_at: log.created_at,
         created_at_beijing: toBeijingText(log.created_at),
+        mode: safeText(log.mode || "unknown"),
+        model: safeText(log.model || ""),
+        latency_ms: log.latency_ms ?? null,
+        success: log.success ?? null,
         topics: messageTopics,
       });
     }
@@ -343,6 +417,8 @@ function buildUsers(logs, onlineUsersMap) {
       userMap.set(userId, {
         user_id: userId,
         messageCount: 0,
+        dailyCount: 0,
+        researchCount: 0,
         lastMessage: "",
         lastMessageAt: "",
         lastMessageAtBeijing: "",
@@ -367,10 +443,18 @@ function buildUsers(logs, onlineUsersMap) {
         .map(([name, count]) => ({ name, count }))
         .sort((a, b) => b.count - a.count);
 
+      const preferredMode =
+        user.researchCount > user.dailyCount
+          ? "research"
+          : user.dailyCount > 0
+          ? "daily"
+          : "unknown";
+
       return {
         ...user,
         topics: topTopics,
         mainTopic: topTopics[0]?.name || "暂无",
+        preferredMode,
       };
     })
     .sort((a, b) => {
@@ -384,13 +468,17 @@ function buildUsers(logs, onlineUsersMap) {
     .slice(0, 100);
 }
 
-async function countRows(table, filters = {}) {
+function appendFilterParams(params, filters = []) {
+  filters.forEach((filter) => {
+    if (!filter || !filter.key || !filter.value) return;
+    params.append(filter.key, filter.value);
+  });
+}
+
+async function countRows(table, filters = []) {
   const params = new URLSearchParams();
   params.set("select", "*");
-
-  Object.entries(filters).forEach(([key, value]) => {
-    params.append(key, value);
-  });
+  appendFilterParams(params, filters);
 
   const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${params}`, {
     method: "HEAD",
@@ -413,17 +501,34 @@ async function countRows(table, filters = {}) {
 }
 
 async function readRecentLogs(limit = 300) {
-  const params = new URLSearchParams();
+  const baseParams = new URLSearchParams();
 
-  params.set("select", "id,user_id,user_message,ai_reply,created_at");
-  params.set("order", "created_at.desc");
-  params.set("limit", String(limit));
+  baseParams.set(
+    "select",
+    "id,user_id,user_message,ai_reply,created_at,mode,model,latency_ms,success,error_message"
+  );
+  baseParams.set("order", "created_at.desc");
+  baseParams.set("limit", String(limit));
 
-  const res = await fetch(`${SUPABASE_URL}/rest/v1/chat_logs?${params}`, {
+  let res = await fetch(`${SUPABASE_URL}/rest/v1/chat_logs?${baseParams}`, {
     method: "GET",
     headers: getHeaders(),
     cache: "no-store",
   });
+
+  if (!res.ok) {
+    const fallbackParams = new URLSearchParams();
+
+    fallbackParams.set("select", "id,user_id,user_message,ai_reply,created_at");
+    fallbackParams.set("order", "created_at.desc");
+    fallbackParams.set("limit", String(limit));
+
+    res = await fetch(`${SUPABASE_URL}/rest/v1/chat_logs?${fallbackParams}`, {
+      method: "GET",
+      headers: getHeaders(),
+      cache: "no-store",
+    });
+  }
 
   if (!res.ok) {
     const text = await res.text();
@@ -477,17 +582,31 @@ async function readOnlineUsers() {
 }
 
 async function readRecentFeedbacks(limit = 50) {
-  const params = new URLSearchParams();
+  const baseParams = new URLSearchParams();
 
-  params.set("select", "id,user_id,type,content,contact,page,created_at");
-  params.set("order", "created_at.desc");
-  params.set("limit", String(limit));
+  baseParams.set("select", "id,user_id,type,content,contact,page,status,created_at");
+  baseParams.set("order", "created_at.desc");
+  baseParams.set("limit", String(limit));
 
-  const res = await fetch(`${SUPABASE_URL}/rest/v1/feedbacks?${params}`, {
+  let res = await fetch(`${SUPABASE_URL}/rest/v1/feedbacks?${baseParams}`, {
     method: "GET",
     headers: getHeaders(),
     cache: "no-store",
   });
+
+  if (!res.ok) {
+    const fallbackParams = new URLSearchParams();
+
+    fallbackParams.set("select", "id,user_id,type,content,contact,page,created_at");
+    fallbackParams.set("order", "created_at.desc");
+    fallbackParams.set("limit", String(limit));
+
+    res = await fetch(`${SUPABASE_URL}/rest/v1/feedbacks?${fallbackParams}`, {
+      method: "GET",
+      headers: getHeaders(),
+      cache: "no-store",
+    });
+  }
 
   if (!res.ok) {
     const text = await res.text();
@@ -505,6 +624,7 @@ async function readRecentFeedbacks(limit = 50) {
     content: safeText(item.content),
     contact: safeText(item.contact),
     page: safeText(item.page || "home"),
+    status: safeText(item.status || "open"),
     created_at: item.created_at,
     created_at_beijing: toBeijingText(item.created_at),
   }));
@@ -514,6 +634,22 @@ function getFeedbackTypeLabel(type) {
   if (type === "feature") return "想要的功能";
   if (type === "bug") return "Bug";
   return "建议";
+}
+
+function buildRecentLogs(logs) {
+  return logs.slice(0, 100).map((log) => ({
+    ...log,
+    user_id: normalizeUserId(log.user_id),
+    user_message: safeText(log.user_message),
+    ai_reply: safeText(log.ai_reply),
+    created_at_beijing: toBeijingText(log.created_at),
+    mode: safeText(log.mode || "unknown"),
+    model: safeText(log.model || ""),
+    latency_ms: log.latency_ms ?? null,
+    success: log.success ?? null,
+    error_message: safeText(log.error_message),
+    topics: detectTopicsForMessage(log.user_message),
+  }));
 }
 
 export async function GET(req) {
@@ -559,51 +695,59 @@ export async function GET(req) {
     const { startIso, endIso } = getBeijingTodayRange();
     const onlineSince = new Date(Date.now() - ONLINE_WINDOW_MS).toISOString();
 
-    const totalUsers = await countRows("online_users");
-    const onlineUsers = await countRows("online_users", {
-      last_seen: `gte.${onlineSince}`,
-    });
-
-    const totalMessages = await countRows("chat_logs");
-
-    const todayMessages = await countRows("chat_logs", {
-      created_at: `gte.${startIso}`,
-      created_at: `lt.${endIso}`,
-    });
-
-    const todayActiveUsers = await countRows("online_users", {
-      last_seen: `gte.${startIso}`,
-    });
-
-    const totalFeedbacks = await countRows("feedbacks");
-
-    const todayFeedbacks = await countRows("feedbacks", {
-      created_at: `gte.${startIso}`,
-      created_at: `lt.${endIso}`,
-    });
-
-    const logs = await readRecentLogs(300);
-    const onlineUsersMap = await readOnlineUsers();
-    const feedbacks = await readRecentFeedbacks(50);
+    const [
+      totalUsers,
+      onlineUsers,
+      totalMessages,
+      todayMessages,
+      todayActiveUsers,
+      totalFeedbacks,
+      todayFeedbacks,
+      logs,
+      onlineUsersMap,
+      feedbacks,
+    ] = await Promise.all([
+      countRows("online_users"),
+      countRows("online_users", [
+        { key: "last_seen", value: `gte.${onlineSince}` },
+      ]),
+      countRows("chat_logs"),
+      countRows("chat_logs", [
+        { key: "created_at", value: `gte.${startIso}` },
+        { key: "created_at", value: `lt.${endIso}` },
+      ]),
+      countRows("online_users", [
+        { key: "last_seen", value: `gte.${startIso}` },
+      ]),
+      countRows("feedbacks"),
+      countRows("feedbacks", [
+        { key: "created_at", value: `gte.${startIso}` },
+        { key: "created_at", value: `lt.${endIso}` },
+      ]),
+      readRecentLogs(300),
+      readOnlineUsers(),
+      readRecentFeedbacks(50),
+    ]);
 
     const users = buildUsers(logs, onlineUsersMap);
     const keywords = analyzeKeywords(logs);
     const topics = analyzeTopics(logs);
+    const modes = analyzeModes(logs);
+    const performance = analyzePerformance(logs);
+    const models = countByField(logs, "model", "unknown");
+    const recentLogs = buildRecentLogs(logs);
 
-    const recentLogs = logs.slice(0, 100).map((log) => ({
-      ...log,
-      user_id: normalizeUserId(log.user_id),
-      user_message: safeText(log.user_message),
-      ai_reply: safeText(log.ai_reply),
-      created_at_beijing: toBeijingText(log.created_at),
-      topics: detectTopicsForMessage(log.user_message),
-    }));
+    const openFeedbacks = feedbacks.filter(
+      (item) => item.status !== "done" && item.status !== "closed"
+    ).length;
 
     return Response.json({
       version: VERSION,
       ok: true,
       timezone: "Asia/Shanghai",
       onlineRule: "最近 5 分钟有心跳的用户算在线",
+      generated_at: new Date().toISOString(),
+      generated_at_beijing: toBeijingText(new Date().toISOString()),
       stats: {
         totalUsers,
         onlineUsers,
@@ -613,7 +757,11 @@ export async function GET(req) {
         analyzedMessages: logs.length,
         totalFeedbacks,
         todayFeedbacks,
+        openFeedbacks,
       },
+      modes,
+      models,
+      performance,
       users,
       keywords,
       topics,
@@ -621,7 +769,7 @@ export async function GET(req) {
       logs: recentLogs,
     });
   } catch (error) {
-    console.error("ADMIN_STATS_V5_ERROR:", error);
+    console.error("ADMIN_STATS_V6_ERROR:", error);
 
     return Response.json(
       {
