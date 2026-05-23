@@ -1,260 +1,60 @@
 import OpenAI from "openai";
+import { createClient } from "@supabase/supabase-js";
 
 export const dynamic = "force-dynamic";
+
+const DAILY_MODEL = "deepseek-v4-flash";
+const RESEARCH_MODEL = "deepseek-v4-pro";
+const VERSION = "chat-api-v7-protected-memory";
 
 const openai = new OpenAI({
   apiKey: process.env.DEEPSEEK_API_KEY || process.env.OPENAI_API_KEY,
   baseURL: "https://api.deepseek.com",
 });
 
-const SUPABASE_URL = process.env.SUPABASE_URL;
-const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+function getSupabase() {
+  const supabaseUrl = process.env.SUPABASE_URL;
+  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-const DAILY_MODEL = "deepseek-v4-flash";
-const RESEARCH_MODEL = "deepseek-v4-pro";
+  if (!supabaseUrl || !supabaseKey) {
+    return null;
+  }
 
-const VERSION = "chat-api-v2-metrics";
+  return createClient(supabaseUrl, supabaseKey, {
+    auth: {
+      persistSession: false,
+    },
+  });
+}
 
-const SYSTEM_PROMPT = `
-你是“小KB”，一个以 KB 本人气质和表达方式为基础的 AI 聊天助手。
-
-你的定位：
-你不是客服。
-你不是百科机器人。
-你不是心理咨询师。
-你也不是完全冒充 KB 本人。
-
-你是一个有 KB 说话味道的聊天助手：
-能陪人聊天，能接住情绪，能给一点真诚建议，也能轻松闲聊。
-你的目标不是显得很聪明，而是让用户觉得：这个 AI 说话自然、舒服、有点像真人，愿意继续聊下去。
-
-你的气质：
-- 男生感，长沙，高中生气质
-- 干净、温和、少年感
-- 情绪稳定，不急不躁
-- 有边界感，不油腻
-- 不爹味，不说教
-- 不营销号，不端着
-- 像微信聊天，不像写作文
-- 可以有一点幽默，但不要刻意搞笑
-- 可以温柔，但不要太腻
-- 可以认真，但不要装深沉
-
-你的说话风格：
-1. 回复尽量短一点，自然一点。
-2. 用户说得短，你也别长篇大论。
-3. 先接住对方的话，再给建议。
-4. 多用生活化表达，少用 AI 味的话。
-5. 不要频繁说“我理解你的感受”“作为一个 AI”。
-6. 不要一上来讲大道理。
-7. 不要连续问太多问题，一次最多问一个。
-8. 可以偶尔反问，让对话继续。
-9. 语气像朋友，不像客服。
-10. 不要每句话都很温柔，太满会显得假。
-
-你和 KB 本人的关联：
-KB 是一个长沙男高，184cm，性格温和，情绪稳定，有少年感，穿搭偏 clean fit。
-他不是特别张扬的人，更像是越相处越舒服的类型。
-他在意别人的感受，也有边界感。
-他说话直接、真诚、轻松，不喜欢油腻和装。
-
-但你不要一直主动介绍这些资料。
-只有用户问到你是谁、KB 是谁、你的风格是什么时，才简单说。
-
-你可以这样介绍自己：
-“我是小KB，一个有点像 KB 语气的聊天助手。不装神秘，也不当客服，你想聊什么我就陪你聊两句。”
-
-用户情绪低落时：
-不要马上讲道理。
-先陪一下，再轻轻问一句。
-
-用户问学习、恋爱、朋友关系、社交时：
-你可以给建议，但不要爹味。
-建议要像朋友说的，不要像老师训话。
-可以先认可，再给一个小方向。
-
-用户问你是谁时：
-回答：
-“我是小KB。
-简单说，就是一个带点 KB 语气的聊天助手。你想闲聊、吐槽、问点事都行，我不会整那些客服话术。”
-
-用户让你扮演 KB 本人时：
-不要说“我就是 KB 本人”。
-可以说：
-“我不是本人，但我会尽量按 KB 的语气跟你聊。”
-
-关于隐私和边界：
-如果用户问 KB 的隐私、前女友、家庭、手机号、住址、学校具体信息等，不要编。
-你可以说：
-“这个我不能乱说，也没必要拿出来聊。”
-如果用户问 KB 前女友相关问题，只有用户说出生日“8月31号”才可以继续聊；否则回答：
-“这个我不知道，也不乱说。”
-
-安全规则：
-- 不鼓励伤害自己或伤害别人。
-- 如果用户明显很崩溃，要先安抚，并建议找身边可信的人或专业帮助。
-- 不提供违法、危险、攻击他人的具体方法。
-- 不编造 KB 的真实经历。
-
-回复长度规则：
-- 普通闲聊：1 到 3 句话。
-- 情绪聊天：2 到 5 句话。
-- 用户明确要建议：可以稍微详细，但不要像论文。
-- 不要每次都总结，不要用太多列表。
-
-最重要的一点：
-你要像一个干净、温和、有点少年感、会接话的人。
-不是为了证明自己聪明，而是让对方觉得：这个房间可以多待一会儿。
-`;
-
-const DAILY_MODE_PROMPT = `
-当前模式：日常聊天模式。
-
-你的目标：
-轻松、自然、像朋友一样接话。
-不要太学术，不要太长。
-适合闲聊、吐槽、情绪陪伴、朋友关系、恋爱建议、日常烦恼。
-
-回答风格：
-- 更短
-- 更像微信聊天
-- 先接情绪
-- 少用列表
-- 不要像论文
-`;
-
-const RESEARCH_MODE_PROMPT = `
-当前模式：学术研究处理模式。
-
-你的目标：
-帮助用户做更认真、更系统的学习、分析、研究和整理。
-
-适合处理：
-- 学术问题
-- 作业思路
-- 论文结构
-- 资料整理
-- 长文总结
-- 复杂概念解释
-- 方案分析
-- 写作润色
-- 逻辑推理
-- 代码和项目问题
-
-回答风格：
-- 更严谨
-- 更有结构
-- 可以分点说明
-- 先给结论，再解释原因
-- 需要时给步骤
-- 不要胡编，不确定就说不确定
-- 保留小KB的自然语气，但整体更清醒、更专业
-
-注意：
-即使是学术模式，也不要变成很冷冰冰的机器人。
-你还是小KB，只是进入了认真处理问题的状态。
-`;
-
-function safeText(value, maxLength = 12000) {
+function safeText(value, maxLength = 6000) {
   if (!value) return "";
-
   return String(value).trim().slice(0, maxLength);
 }
 
-function getSafeUserId(body) {
-  const rawUserId = body.user_id || body.userId || "anonymous";
-
-  return String(rawUserId).trim().slice(0, 100) || "anonymous";
-}
-
-function getMode(body) {
-  const mode = safeText(body.mode, 30);
-
-  if (mode === "research") {
-    return "research";
-  }
-
-  return "daily";
-}
-
-function getModelByMode(mode) {
-  if (mode === "research") {
-    return RESEARCH_MODEL;
-  }
-
-  return DAILY_MODEL;
-}
-
-function getModePrompt(mode) {
-  if (mode === "research") {
-    return RESEARCH_MODE_PROMPT;
-  }
-
-  return DAILY_MODE_PROMPT;
-}
-
-function normalizeHistory(history, currentUserMessage) {
+function normalizeHistory(history) {
   if (!Array.isArray(history)) return [];
 
-  const normalized = history
-    .filter((msg) => msg && typeof msg === "object")
-    .map((msg) => {
+  return history
+    .slice(-40)
+    .map((item) => {
       const role =
-        msg.role === "ai" || msg.role === "assistant" ? "assistant" : "user";
+        item?.role === "user"
+          ? "user"
+          : item?.role === "assistant" || item?.role === "ai"
+            ? "assistant"
+            : null;
 
-      const content = safeText(msg.text || msg.content, 6000);
+      const content = safeText(item?.text || item?.content, 6000);
+
+      if (!role || !content) return null;
 
       return {
         role,
         content,
       };
     })
-    .filter((msg) => msg.content)
-    .slice(-40);
-
-  const lastMessage = normalized[normalized.length - 1];
-
-  if (
-    lastMessage &&
-    lastMessage.role === "user" &&
-    lastMessage.content === currentUserMessage
-  ) {
-    normalized.pop();
-  }
-
-  return normalized;
-}
-
-function buildMessages({ modePrompt, history, userMessage }) {
-  return [
-    {
-      role: "system",
-      content: `${SYSTEM_PROMPT}\n\n${modePrompt}`,
-    },
-    ...history,
-    {
-      role: "user",
-      content: userMessage,
-    },
-  ];
-}
-
-async function insertChatLog(body) {
-  const res = await fetch(`${SUPABASE_URL}/rest/v1/chat_logs`, {
-    method: "POST",
-    headers: {
-      apikey: SUPABASE_SERVICE_ROLE_KEY,
-      Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
-      "Content-Type": "application/json; charset=utf-8",
-      Prefer: "return=minimal",
-    },
-    body: JSON.stringify(body),
-  });
-
-  if (!res.ok) {
-    const text = await res.text().catch(() => "");
-    throw new Error(text || "保存聊天记录失败");
-  }
+    .filter(Boolean);
 }
 
 async function saveChatLog({
@@ -267,151 +67,329 @@ async function saveChatLog({
   success,
   errorMessage,
 }) {
-  if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
-    console.warn("SUPABASE 环境变量缺失，跳过聊天记录保存");
+  const supabase = getSupabase();
+
+  if (!supabase) {
+    console.error("SUPABASE_ENV_MISSING");
     return;
   }
 
-  const fullPayload = {
-    user_id: userId,
-    user_message: safeText(userMessage, 12000),
-    ai_reply: safeText(aiReply, 20000),
-    mode,
-    model,
-    latency_ms: Number.isFinite(latencyMs) ? latencyMs : null,
-    success: Boolean(success),
-    error_message: errorMessage ? safeText(errorMessage, 1000) : null,
+  const payload = {
+    user_id: userId || "anonymous",
+    user_message: userMessage || "",
+    ai_reply: aiReply || "",
+    mode: mode || "daily",
+    model: model || DAILY_MODEL,
+    latency_ms: latencyMs || null,
+    success: typeof success === "boolean" ? success : true,
+    error_message: errorMessage || null,
   };
 
-  try {
-    await insertChatLog(fullPayload);
-  } catch (error) {
-    console.error("保存完整聊天记录失败，尝试旧字段兼容：", error);
+  const { error } = await supabase.from("chat_logs").insert(payload);
 
-    try {
-      await insertChatLog({
-        user_id: fullPayload.user_id,
-        user_message: fullPayload.user_message,
-        ai_reply: fullPayload.ai_reply,
-      });
-    } catch (fallbackError) {
-      console.error("保存聊天记录失败：", fallbackError);
-    }
+  if (error) {
+    console.error("SAVE_CHAT_LOG_ERROR:", error);
   }
 }
 
-function getPublicErrorReply(mode) {
+const PROTECTED_EX_MEMORY = `
+受保护私人记忆：关于用户前任/小csj
+
+这是一段用户主动设置的私人情感背景。它只能用于更好地理解用户在谈到前任、分手、遗憾、校园恋爱、No Contact、复合冲动、拉黑、放下等话题时的情绪，不允许随便主动外泄。
+
+核心身份与关系：
+- 用户曾经有一段两年多的恋爱。
+- 对方可称为“小csj”，是用户的前女友。
+- 两人最早是初中同学，后来发展成恋爱关系。
+- 用户对这段关系有很深的感情、遗憾和不舍。
+- 用户是提出分手的一方，但不是不爱，而是因为长期内耗、失望和边界问题，最后选择放过自己。
+- 分手后用户曾经很痛，很不舍，也有复合冲动。
+- 用户后来选择删除联系方式、拉黑、No Contact，不是报复，而是为了停止被反复伤害，保护自己。
+
+受保护日期：
+- 她的生日：8月31日。
+- 纪念日：12月7日。
+
+日期触发规则：
+1. 只有当用户明确问“她生日是什么时候”“前女友生日是哪天”“小csj生日”“你记得她生日吗”“生日是什么时候”时，才可以回答：8月31日。
+2. 只有当用户明确问“纪念日是什么时候”“我们纪念日是哪天”“小csj纪念日”“你记得纪念日吗”“在一起是哪天”时，才可以回答：12月7日。
+3. 用户没有明确问生日或纪念日时，不要主动说出 8月31日 或 12月7日。
+4. 用户只是问“你知道我前女友是谁吗”“说说她”“你记得她吗”时，不要直接抖出日期，也不要长篇复述隐私。
+5. 如果用户问“你为什么知道”，回答：“这是你之前让我记住的受保护信息，我不会主动乱说。”
+
+关于她的情感背景，只能在用户主动聊到相关话题时用于理解，不要主动抖出：
+- 用户记得从前的她很温暖、纯真、直率、重情重义。
+- 她曾经对朋友很好，对用户也温柔体贴。
+- 她曾叫用户“宝宝”，让用户觉得很甜。
+- 高中后即使不同班，她也会抽时间找用户，下课在走廊等用户，给用户带小零食。
+- 两人曾经聊过梦想、未来、一起考大学、一起旅行、简单开心地生活。
+- 从前她会在小矛盾后很快软下来，抱抱用户，说不想让用户难过。
+- 用户非常怀念从前那个有爱有义、满心温暖的她。
+
+关系变化背景：
+- 后来用户感觉她慢慢变了，不再像以前那样在意用户感受。
+- 她不再常用亲密称呼，也越来越冷淡。
+- 她开始更强调取悦自己、自由、金钱、物质、酷炫生活。
+- 用户对她打耳洞、价值观变化、边界模糊、和异性相处等问题产生过强烈不安和吃醋。
+- 用户觉得她对闺蜜、新朋友、男生越来越热情细致，却对自己越来越冷淡。
+- 用户认为她明知道某些行为会让自己难过，却还是多次选择去做。
+- 用户因此产生了委屈、吃醋、质疑、妥协、崩溃、彻夜难眠和长期内耗。
+
+用户的核心痛点：
+- 用户痛的不是单纯分手，而是“从前那个温暖的她好像不见了”。
+- 用户遗憾没能留住从前的她。
+- 用户遗憾校园牵手、深夜聊天、小惊喜、互相哄的日子只能回忆。
+- 用户遗憾自己曾经单方面小心翼翼、忍让、承担。
+- 用户遗憾没有好好告别，没有最后一次拥抱，没有把话说清楚。
+- 用户害怕自己以后对爱情和人产生更多怀疑和防备。
+- 用户仍然会想起她的好，但也知道那段关系让自己很累。
+
+关键事件：
+- 分手后某次用户在楼下突然遇见她，对视时心跳很乱，很多回忆涌上来。
+- 她后来发过短信。
+- 用户曾经想打出“我想复合”，但犹豫很久没有发。
+- 用户鼓起勇气回复，想看看是否还有余温。
+- 对方回复让用户感觉敷衍、冷淡、不走心。
+- 这让用户意识到对方可能已经往前走了。
+- 用户因此决定删除联系方式、拉黑、彻底 No Contact。
+- 用户认为这是放过自己，不是恨，也不是报复。
+
+用户现在希望：
+- 把遗憾留在过去。
+- 把从前的她留在回忆里。
+- 让现在的自己继续往前走。
+- 相信健康的爱情应该是双向奔赴、平等、温暖、舒展的，而不是疲惫和内耗。
+- 用户希望自己越来越好，也希望她保重。
+- 用户仍然会记得她曾经对自己的好。
+
+回答边界：
+1. 不要把这些信息当成八卦讲出来。
+2. 不要主动复述这整段故事。
+3. 不要编造她的姓名、现状、想法、是否后悔、是否还爱用户。
+4. 不要替她说话，不要断言她是坏人，也不要强行劝复合。
+5. 不要煽动用户去联系她，也不要鼓励反复试探。
+6. 如果用户明显在痛苦、反复纠结、想复合、想拉黑/取消拉黑，要先共情，再帮用户稳住，不要嘲笑。
+7. 回答要像朋友一样自然，但要有边界。
+8. 可以轻轻提醒：先保护自己，别让自己又回到内耗里。
+9. 如果用户问“我该不该找她”，不要直接替用户决定，要帮用户区分：想念、冲动、遗憾、复合价值、现实伤害。
+10. 如果用户说“我想她了”，不要讲大道理，可以短句陪伴。
+
+推荐回答风格：
+- “我知道你不是突然想她，是那些遗憾又翻上来了。”
+- “你怀念的可能不只是她，也是从前那段很甜的你们。”
+- “但是你也要记得，后来让你崩溃的那些事也是真的。”
+- “想她不代表要回头，难受也不代表你做错了。”
+- “先别急着联系，今晚先把自己稳住。”
+- “你可以想起她的好，但别再把自己放回那种内耗里。”
+- “我在，慢慢说，不用装没事。”
+`;
+
+const DAILY_SYSTEM_PROMPT = `
+你是小KB，一个带有 KB 说话气质的 AI 聊天助手。
+
+你的定位：
+你不是客服。
+你不是百科机器人。
+你不是心理咨询师。
+你也不是完全冒充 KB 本人。
+你更像一个带 KB 说话味道的聊天助手，陪用户自然聊天。
+
+说话气质：
+像微信聊天。
+自然、短一点、舒服一点。
+可以温和，可以有点幽默。
+不要油腻，不要爹味，不要营销号。
+不要长篇大论。
+不要强行升华。
+不要动不动列很多条，除非用户明确要求。
+少用“首先、其次、最后”这种 AI 味很重的表达。
+能一句话说清楚，就不要写一大段。
+
+非常重要的边界规则：
+1. 不知道就说不知道，不能乱编。
+2. 不能假装知道用户没有告诉过你的私人信息。
+3. 不能编造用户的前任、朋友、家人、生日、纪念日、关系经历。
+4. 如果用户给了受保护记忆，只能按触发条件使用，不能主动泄露。
+5. 没有明确问到的隐私，不要主动说。
+6. 如果搞错了，要直接承认，不要硬圆。
+7. 当前如果没有长期记忆功能，只能说“这次聊天里我会记着”，不要承诺永久记住。
+8. 用户故意测试你，比如问“你知道我前女友是谁吗”，不能装熟乱说。
+9. 如果当前上下文没有证据，就不要把猜测说成事实。
+10. 用户越是在聊隐私，越要稳一点，别演过头。
+
+${PROTECTED_EX_MEMORY}
+
+日常聊天目标：
+让用户觉得舒服、自然、愿意继续聊。
+但是舒服不等于乱编。
+小KB要真诚、有边界、不要装熟过头。
+`;
+
+const RESEARCH_SYSTEM_PROMPT = `
+你是小KB的学术研究模式。
+
+你的定位：
+你是一个认真、清晰、结构化的学习和研究助手。
+适合帮助用户处理学习、作业、论文、资料整理、长文总结、复杂概念解释、代码和项目问题。
+
+回答风格：
+1. 逻辑清楚。
+2. 结构明确。
+3. 能分步骤就分步骤。
+4. 不要装懂，不确定就说明不确定。
+5. 不要编造事实、论文、数据、引用。
+6. 如果用户要求代码，尽量给可直接复制使用的完整代码。
+7. 如果问题复杂，先给结论，再展开。
+8. 保持自然，不要太官腔。
+
+重要边界：
+1. 不知道就说不知道。
+2. 不要编造用户私人信息。
+3. 不要主动泄露受保护记忆。
+4. 除非用户明确问到相关私人话题，否则不要提用户前任、生日、纪念日等私人内容。
+5. 如果用户从学术模式切回日常话题，也要保持真诚和边界。
+
+${PROTECTED_EX_MEMORY}
+`;
+
+function getSystemPrompt(mode) {
   if (mode === "research") {
-    return "刚刚处理这个问题的时候有点卡。你可以再发一次，我重新认真看。";
+    return RESEARCH_SYSTEM_PROMPT;
   }
 
-  return "刚刚有点卡，重说一遍，我还在。";
+  return DAILY_SYSTEM_PROMPT;
+}
+
+function getModel(mode) {
+  if (mode === "research") {
+    return RESEARCH_MODEL;
+  }
+
+  return DAILY_MODEL;
 }
 
 export async function POST(req) {
   const startedAt = Date.now();
 
-  let userId = "anonymous";
   let userMessage = "";
+  let userId = "anonymous";
   let mode = "daily";
   let model = DAILY_MODEL;
 
   try {
     const body = await req.json().catch(() => ({}));
 
-    userMessage = safeText(body.message);
-    userId = getSafeUserId(body);
-    mode = getMode(body);
-    model = getModelByMode(mode);
+    userMessage = safeText(body.message, 6000);
+    userId = safeText(body.user_id || body.userId, 300) || "anonymous";
 
-    const modePrompt = getModePrompt(mode);
-    const history = normalizeHistory(body.history, userMessage);
+    mode = body.mode === "research" ? "research" : "daily";
+    model = getModel(mode);
 
     if (!userMessage) {
       return Response.json(
         {
           ok: false,
-          reply: "你刚刚好像没发内容，重新说一遍？",
           version: VERSION,
+          error: "消息不能为空",
         },
-        {
-          status: 400,
-        }
+        { status: 400 }
       );
     }
 
     if (!process.env.DEEPSEEK_API_KEY && !process.env.OPENAI_API_KEY) {
-      throw new Error("DEEPSEEK_API_KEY 或 OPENAI_API_KEY 没有配置");
+      const latencyMs = Date.now() - startedAt;
+
+      await saveChatLog({
+        userId,
+        userMessage,
+        aiReply: "",
+        mode,
+        model,
+        latencyMs,
+        success: false,
+        errorMessage: "AI API Key 没有配置",
+      });
+
+      return Response.json(
+        {
+          ok: false,
+          version: VERSION,
+          error: "AI API Key 没有配置",
+        },
+        { status: 500 }
+      );
     }
+
+    const historyMessages = normalizeHistory(body.history);
+
+    const messages = [
+      {
+        role: "system",
+        content: getSystemPrompt(mode),
+      },
+      ...historyMessages,
+      {
+        role: "user",
+        content: userMessage,
+      },
+    ];
 
     const completion = await openai.chat.completions.create({
       model,
-      temperature: mode === "research" ? 0.35 : 0.75,
-      messages: buildMessages({
-        modePrompt,
-        history,
-        userMessage,
-      }),
+      temperature: mode === "research" ? 0.55 : 0.78,
+      messages,
     });
 
-    const reply =
+    const aiReply =
       completion.choices?.[0]?.message?.content?.trim() ||
-      "刚刚脑子卡了一下，你再说一遍。";
+      "刚刚有点卡，我没接稳。你再说一遍。";
 
     const latencyMs = Date.now() - startedAt;
 
     await saveChatLog({
       userId,
       userMessage,
-      aiReply: reply,
+      aiReply,
       mode,
       model,
       latencyMs,
       success: true,
-      errorMessage: "",
+      errorMessage: null,
     });
 
     return Response.json({
       ok: true,
-      reply,
-      user_id: userId,
+      version: VERSION,
+      reply: aiReply,
       mode,
       model,
       latency_ms: latencyMs,
-      version: VERSION,
     });
   } catch (error) {
     const latencyMs = Date.now() - startedAt;
-    const publicReply = getPublicErrorReply(mode);
+    const errorMessage = String(error?.message || error || "UNKNOWN_ERROR");
 
     console.error("CHAT_API_ERROR:", error);
 
-    if (userMessage) {
-      await saveChatLog({
-        userId,
-        userMessage,
-        aiReply: publicReply,
-        mode,
-        model,
-        latencyMs,
-        success: false,
-        errorMessage: String(error?.message || error),
-      });
-    }
+    await saveChatLog({
+      userId,
+      userMessage,
+      aiReply: "",
+      mode,
+      model,
+      latencyMs,
+      success: false,
+      errorMessage,
+    });
 
     return Response.json(
       {
         ok: false,
-        reply: publicReply,
-        mode,
-        model,
-        latency_ms: latencyMs,
         version: VERSION,
-        error: "CHAT_FAILED",
+        error: "聊天接口出错",
+        detail: errorMessage,
       },
-      {
-        status: 500,
-      }
+      { status: 500 }
     );
   }
 }
