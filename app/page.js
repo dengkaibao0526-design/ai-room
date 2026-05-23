@@ -2,6 +2,16 @@
 
 import { useEffect, useRef, useState } from "react";
 
+const DEFAULT_PUBLIC_SETTINGS = {
+  show_mbti: true,
+  show_copywriter: true,
+  show_feedback: true,
+  enable_research_mode: true,
+  show_intro_modal: true,
+  enable_easter_egg: true,
+  enable_chat_logging: true,
+};
+
 const STARTER_PROMPTS = {
   daily: [
     "今天有点累，陪我待会儿",
@@ -97,6 +107,9 @@ export default function Home() {
   const [showStarters, setShowStarters] = useState(true);
   const [chatMode, setChatMode] = useState("daily");
   const [showIntro, setShowIntro] = useState(false);
+  const [publicSettings, setPublicSettings] = useState(
+    DEFAULT_PUBLIC_SETTINGS
+  );
 
   const [showFeedback, setShowFeedback] = useState(false);
   const [feedbackType, setFeedbackType] = useState("suggestion");
@@ -108,7 +121,10 @@ export default function Home() {
   const bottomRef = useRef(null);
   const typingTimerRef = useRef(null);
 
-  const currentMode = MODE_DETAIL[chatMode];
+  const currentMode =
+    chatMode === "research" && publicSettings.enable_research_mode
+      ? MODE_DETAIL.research
+      : MODE_DETAIL.daily;
 
   useEffect(() => {
     const savedMessages = localStorage.getItem("kb-chat");
@@ -150,8 +166,53 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
+    async function loadPublicSettings() {
+      try {
+        const res = await fetch("/api/settings", {
+          method: "GET",
+          cache: "no-store",
+        });
+
+        const json = await res.json().catch(() => ({}));
+
+        if (json?.ok && json?.settings) {
+          const nextSettings = {
+            ...DEFAULT_PUBLIC_SETTINGS,
+            ...json.settings,
+          };
+
+          setPublicSettings(nextSettings);
+
+          if (!nextSettings.show_intro_modal) {
+            setShowIntro(false);
+          }
+
+          if (!nextSettings.show_feedback) {
+            setShowFeedback(false);
+          }
+
+          if (!nextSettings.enable_research_mode) {
+            setChatMode("daily");
+            localStorage.setItem("xiaokb_chat_mode", "daily");
+          }
+        }
+      } catch (error) {
+        console.error("LOAD_PUBLIC_SETTINGS_ERROR:", error);
+      }
+    }
+
+    loadPublicSettings();
+  }, []);
+
+  useEffect(() => {
+    if (chatMode === "research" && !publicSettings.enable_research_mode) {
+      setChatMode("daily");
+      localStorage.setItem("xiaokb_chat_mode", "daily");
+      return;
+    }
+
     localStorage.setItem("xiaokb_chat_mode", chatMode);
-  }, [chatMode]);
+  }, [chatMode, publicSettings.enable_research_mode]);
 
   useEffect(() => {
     let id = localStorage.getItem("xiaokb_user_id");
@@ -224,6 +285,10 @@ export default function Home() {
   function handleModeChange(mode) {
     if (loading || mode === chatMode) return;
 
+    if (mode === "research" && !publicSettings.enable_research_mode) {
+      return;
+    }
+
     setChatMode(mode);
 
     if (messages.length <= 1) {
@@ -239,6 +304,8 @@ export default function Home() {
   }
 
   function openFeedback() {
+    if (!publicSettings.show_feedback) return;
+
     setFeedbackMessage("");
     setShowFeedback(true);
   }
@@ -255,6 +322,11 @@ export default function Home() {
 
     if (!content) {
       setFeedbackMessage("先写点反馈内容吧。");
+      return;
+    }
+
+    if (!publicSettings.show_feedback) {
+      setFeedbackMessage("反馈入口暂时关闭了。");
       return;
     }
 
@@ -327,6 +399,11 @@ export default function Home() {
 
     const recentHistory = newMessages.slice(-40);
 
+    const finalMode =
+      chatMode === "research" && publicSettings.enable_research_mode
+        ? "research"
+        : "daily";
+
     setShowStarters(false);
     setMessages(newMessages);
     setInput("");
@@ -343,7 +420,7 @@ export default function Home() {
           history: recentHistory,
           user_id: currentUserId,
           userId: currentUserId,
-          mode: chatMode,
+          mode: finalMode,
         }),
       });
 
@@ -421,7 +498,7 @@ export default function Home() {
     <main className="app">
       <div className="ambientGrid"></div>
 
-      {showIntro && (
+      {showIntro && publicSettings.show_intro_modal && (
         <div className="introOverlay premiumIntro">
           <div className="introGlow introGlowOne"></div>
           <div className="introGlow introGlowTwo"></div>
@@ -470,10 +547,12 @@ export default function Home() {
                 <span>轻松一点，像朋友一样陪你说话。</span>
               </div>
 
-              <div className="introFeature">
-                <strong>学术研究</strong>
-                <span>更认真处理资料、作业和思路。</span>
-              </div>
+              {publicSettings.enable_research_mode && (
+                <div className="introFeature">
+                  <strong>学术研究</strong>
+                  <span>更认真处理资料、作业和思路。</span>
+                </div>
+              )}
 
               <div className="introFeature introFeatureWide">
                 <strong>持续成长中</strong>
@@ -497,7 +576,7 @@ export default function Home() {
         </div>
       )}
 
-      {showFeedback && (
+      {showFeedback && publicSettings.show_feedback && (
         <div className="feedbackOverlay">
           <div className="feedbackCard">
             <div className="feedbackTop">
@@ -575,9 +654,11 @@ export default function Home() {
         </div>
       )}
 
-      <button className="floatingFeedback" onClick={openFeedback}>
-        反馈
-      </button>
+      {publicSettings.show_feedback && (
+        <button className="floatingFeedback" onClick={openFeedback}>
+          反馈
+        </button>
+      )}
 
       <section className="phone">
         <header className="chatHeader">
@@ -608,15 +689,21 @@ export default function Home() {
 
           <p className="heroText">{currentMode.heroText}</p>
 
-          <div className="toolEntryRow">
-            <a className="gameEntryBtn" href="/game/mbti">
-              小KB MBTI 小测试
-            </a>
+          {(publicSettings.show_mbti || publicSettings.show_copywriter) && (
+            <div className="toolEntryRow">
+              {publicSettings.show_mbti && (
+                <a className="gameEntryBtn" href="/game/mbti">
+                  小KB MBTI 小测试
+                </a>
+              )}
 
-            <a className="gameEntryBtn" href="/tool/copywriter">
-              小KB文案工作台
-            </a>
-          </div>
+              {publicSettings.show_copywriter && (
+                <a className="gameEntryBtn" href="/tool/copywriter">
+                  小KB文案工作台
+                </a>
+              )}
+            </div>
+          )}
 
           <div className="tags">
             {currentMode.tags.map((tag) => (
@@ -634,16 +721,18 @@ export default function Home() {
               <span>{MODE_DETAIL.daily.modeDesc}</span>
             </button>
 
-            <button
-              className={`modeBtn ${
-                chatMode === "research" ? "activeMode" : ""
-              }`}
-              onClick={() => handleModeChange("research")}
-              disabled={loading}
-            >
-              <strong>{MODE_DETAIL.research.modeName}</strong>
-              <span>{MODE_DETAIL.research.modeDesc}</span>
-            </button>
+            {publicSettings.enable_research_mode && (
+              <button
+                className={`modeBtn ${
+                  chatMode === "research" ? "activeMode" : ""
+                }`}
+                onClick={() => handleModeChange("research")}
+                disabled={loading}
+              >
+                <strong>{MODE_DETAIL.research.modeName}</strong>
+                <span>{MODE_DETAIL.research.modeDesc}</span>
+              </button>
+            )}
           </div>
 
           {showStarters && messages.length <= 1 && (
@@ -654,7 +743,11 @@ export default function Home() {
               </div>
 
               <div className="starterGrid">
-                {STARTER_PROMPTS[chatMode].map((item) => (
+                {STARTER_PROMPTS[
+                  chatMode === "research" && publicSettings.enable_research_mode
+                    ? "research"
+                    : "daily"
+                ].map((item) => (
                   <button
                     key={item}
                     className="starterBtn"
