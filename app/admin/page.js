@@ -178,6 +178,89 @@ export default function AdminPage() {
     }
   }
 
+  async function runAdminAction(action, payload = {}, confirmText = "") {
+    if (!action || loading) return;
+
+    if (confirmText) {
+      const ok = window.confirm(confirmText);
+      if (!ok) return;
+    }
+
+    setLoading(true);
+    setError("");
+
+    try {
+      const res = await fetch("/api/admin/action", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-admin-password": password,
+        },
+        body: JSON.stringify({
+          action,
+          ...payload,
+        }),
+      });
+
+      const json = await res.json().catch(() => ({}));
+
+      if (!res.ok || !json.ok) {
+        throw new Error(json.error || json.detail || "后台操作失败");
+      }
+
+      await loadData(password);
+    } catch (err) {
+      console.error("ADMIN_ACTION_PAGE_ERROR:", err);
+      setError(err.message || "后台操作失败");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function deleteLog(id) {
+    runAdminAction(
+      "delete_log",
+      { id },
+      "确定删除这条聊天记录吗？删除后不能恢复。"
+    );
+  }
+
+  function deleteFeedback(id) {
+    runAdminAction(
+      "delete_feedback",
+      { id },
+      "确定删除这条反馈吗？删除后不能恢复。"
+    );
+  }
+
+  function clearAnonymousLogs() {
+    runAdminAction(
+      "clear_anonymous_logs",
+      {},
+      "确定清理 anonymous 旧聊天记录吗？这个操作不能恢复。"
+    );
+  }
+
+  function clearFailedLogs() {
+    runAdminAction(
+      "clear_failed_logs",
+      {},
+      "确定清理失败聊天记录吗？success=false 的记录会被删除。"
+    );
+  }
+
+  function clearSelectedUserLogs() {
+    if (!selectedUser || !selectedUser.user_id) return;
+
+    runAdminAction(
+      "clear_user_logs",
+      { user_id: selectedUser.user_id },
+      `确定删除用户 ${shortUserId(
+        selectedUser.user_id
+      )} 的全部聊天记录吗？这个操作不能恢复。`
+    );
+  }
+
   useEffect(() => {
     const savedPassword = localStorage.getItem("xiaokb_admin_password");
 
@@ -618,6 +701,15 @@ export default function AdminPage() {
                     />
                   </div>
 
+                  <div className="userDangerBox">
+                    <button
+                      onClick={clearSelectedUserLogs}
+                      disabled={loading}
+                    >
+                      删除该用户全部聊天记录
+                    </button>
+                  </div>
+
                   <div className="recentMiniList">
                     {(selectedUser.recentMessages || [])
                       .slice(0, 6)
@@ -659,22 +751,48 @@ export default function AdminPage() {
               <span>{filteredLogs.length} 条结果</span>
             </div>
 
+            <div className="dangerBar">
+              <button onClick={clearAnonymousLogs} disabled={loading}>
+                清理 anonymous 旧记录
+              </button>
+
+              <button onClick={clearFailedLogs} disabled={loading}>
+                清理失败记录
+              </button>
+
+              {selectedUser && selectedUserId !== "all" && (
+                <button onClick={clearSelectedUserLogs} disabled={loading}>
+                  删除当前用户全部聊天
+                </button>
+              )}
+            </div>
+
             <div className="logList">
               {filteredLogs.length === 0 ? (
                 <Empty text="暂无聊天记录" />
               ) : (
                 filteredLogs.map((log) => (
                   <article className="logCard" key={log.id}>
-                    <div className="logMeta">
-                      <span>
-                        {log.created_at_beijing ||
-                          formatBeijingTime(log.created_at)}
-                      </span>
-                      <span>{shortUserId(log.user_id)}</span>
-                      <span>{getModeLabel(log.mode)}</span>
-                      <span>{log.model || "unknown model"}</span>
-                      <span>{formatLatency(log.latency_ms)}</span>
-                      <span>{getSuccessLabel(log.success)}</span>
+                    <div className="logMeta logMetaWithAction">
+                      <div>
+                        <span>
+                          {log.created_at_beijing ||
+                            formatBeijingTime(log.created_at)}
+                        </span>
+                        <span>{shortUserId(log.user_id)}</span>
+                        <span>{getModeLabel(log.mode)}</span>
+                        <span>{log.model || "unknown model"}</span>
+                        <span>{formatLatency(log.latency_ms)}</span>
+                        <span>{getSuccessLabel(log.success)}</span>
+                      </div>
+
+                      <button
+                        className="miniDangerBtn"
+                        onClick={() => deleteLog(log.id)}
+                        disabled={loading}
+                      >
+                        删除
+                      </button>
                     </div>
 
                     <div className="messagePair">
@@ -776,6 +894,14 @@ export default function AdminPage() {
                           重新打开
                         </button>
                       )}
+
+                      <button
+                        className="dangerActionBtn"
+                        onClick={() => deleteFeedback(item.id)}
+                        disabled={loading}
+                      >
+                        删除反馈
+                      </button>
                     </div>
                   </article>
                 ))
@@ -1705,6 +1831,26 @@ function AdminStyles() {
         color: rgba(226, 232, 240, 0.72);
       }
 
+      .userDangerBox {
+        margin-top: 14px;
+        padding: 12px;
+        border-radius: 18px;
+        background: rgba(239, 68, 68, 0.075);
+        border: 1px solid rgba(248, 113, 113, 0.12);
+      }
+
+      .userDangerBox button {
+        height: 36px;
+        padding: 0 13px;
+        border-radius: 999px;
+        cursor: pointer;
+        color: rgba(254, 202, 202, 0.96);
+        font-size: 12px;
+        font-weight: 900;
+        background: rgba(239, 68, 68, 0.12);
+        border: 1px solid rgba(248, 113, 113, 0.18);
+      }
+
       .filterBar {
         display: flex;
         align-items: center;
@@ -1722,6 +1868,47 @@ function AdminStyles() {
         white-space: nowrap;
       }
 
+      .dangerBar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin: -4px 0 14px;
+        padding: 12px;
+        border-radius: 18px;
+        background: rgba(239, 68, 68, 0.075);
+        border: 1px solid rgba(248, 113, 113, 0.12);
+      }
+
+      .dangerBar button,
+      .miniDangerBtn,
+      .dangerActionBtn {
+        height: 34px;
+        padding: 0 12px;
+        border-radius: 999px;
+        cursor: pointer;
+        color: rgba(254, 202, 202, 0.96);
+        font-size: 12px;
+        font-weight: 900;
+        background: rgba(239, 68, 68, 0.12);
+        border: 1px solid rgba(248, 113, 113, 0.18);
+      }
+
+      .dangerBar button:hover,
+      .miniDangerBtn:hover,
+      .dangerActionBtn:hover,
+      .userDangerBox button:hover {
+        background: rgba(239, 68, 68, 0.2);
+        border-color: rgba(248, 113, 113, 0.28);
+      }
+
+      .dangerBar button:disabled,
+      .miniDangerBtn:disabled,
+      .dangerActionBtn:disabled,
+      .userDangerBox button:disabled {
+        opacity: 0.52;
+        cursor: not-allowed;
+      }
+
       .logList {
         display: grid;
         gap: 10px;
@@ -1737,6 +1924,19 @@ function AdminStyles() {
         flex-wrap: wrap;
         gap: 7px;
         margin-bottom: 12px;
+      }
+
+      .logMetaWithAction {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+      }
+
+      .logMetaWithAction > div {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 7px;
       }
 
       .messagePair {
@@ -1814,6 +2014,12 @@ function AdminStyles() {
       .feedbackActions button:disabled {
         opacity: 0.52;
         cursor: not-allowed;
+      }
+
+      .feedbackActions .dangerActionBtn {
+        color: rgba(254, 202, 202, 0.96);
+        background: rgba(239, 68, 68, 0.12);
+        border: 1px solid rgba(248, 113, 113, 0.18);
       }
 
       .settingsGrid {
@@ -2021,6 +2227,11 @@ function AdminStyles() {
         }
 
         .settingCard {
+          align-items: flex-start;
+          flex-direction: column;
+        }
+
+        .logMetaWithAction {
           align-items: flex-start;
           flex-direction: column;
         }
