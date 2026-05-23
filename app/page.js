@@ -286,7 +286,7 @@ export default function Home() {
         throw new Error(data.error || "提交失败");
       }
 
-      setFeedbackMessage("收到啦，感谢你给小KB提建议。");
+      setFeedbackMessage("收到啦，感谢你给小KB提建议，啊wu呼呼呼咦嘻嘻嘻嘻。");
       setFeedbackContent("");
       setFeedbackContact("");
 
@@ -486,7 +486,7 @@ export default function Home() {
               className="introButton premiumIntroButton"
               onClick={closeIntro}
             >
-              <span>进入小KB房间</span>
+              <span>进入房间</span>
               <em>→</em>
             </button>
 
@@ -608,9 +608,15 @@ export default function Home() {
 
           <p className="heroText">{currentMode.heroText}</p>
 
-          <a className="gameEntryBtn" href="/game/mbti">
-            小KB MBTI 小测试
-          </a>
+          <div className="toolEntryRow">
+            <a className="gameEntryBtn" href="/game/mbti">
+              小KB MBTI 小测试
+            </a>
+
+            <a className="gameEntryBtn" href="/tool/copywriter">
+              小KB文案工作台
+            </a>
+          </div>
 
           <div className="tags">
             {currentMode.tags.map((tag) => (
