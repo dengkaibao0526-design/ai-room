@@ -1701,9 +1701,3 @@ function AdminStyles() {
     `}</style>
   );
 }
-'''
-
-path = Path("/mnt/data/admin-page-v7.js")
-path.write_text(code, encoding="utf-8")
-print(f"已生成文件：{path}") 
-print(f"文件大小：{path.stat().st_size} bytes")
