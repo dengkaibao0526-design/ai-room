@@ -1,6 +1,16 @@
 export const dynamic = "force-dynamic";
 
-const VERSION = "admin-settings-v1";
+const VERSION = "admin-settings-simple-v1";
+
+const ALLOW_KEYS = [
+  "show_mbti",
+  "show_copywriter",
+  "show_feedback",
+  "enable_research_mode",
+  "show_intro_modal",
+  "enable_easter_egg",
+  "enable_chat_logging",
+];
 
 function getEnv() {
   return {
@@ -22,16 +32,16 @@ function checkPassword(req, bodyPassword) {
   if (!adminPassword) {
     return {
       ok: false,
-      error: "ADMIN_PASSWORD 未配置",
       status: 500,
+      error: "ADMIN_PASSWORD 未配置",
     };
   }
 
   if (!password || password !== adminPassword) {
     return {
       ok: false,
-      error: "后台密码错误",
       status: 401,
+      error: "后台密码错误",
     };
   }
 
@@ -46,7 +56,7 @@ function normalizeValue(value) {
   return value;
 }
 
-async function supabaseFetch(path, options = {}) {
+async function supabaseRequest(path, options = {}) {
   const { supabaseUrl, supabaseKey } = getEnv();
 
   if (!supabaseUrl || !supabaseKey) {
@@ -84,54 +94,6 @@ async function supabaseFetch(path, options = {}) {
   return data;
 }
 
-async function ensureDefaultSettings() {
-  const defaults = [
-    {
-      key: "show_mbti",
-      value: true,
-      description: "是否显示 MBTI 小测试入口",
-    },
-    {
-      key: "show_copywriter",
-      value: true,
-      description: "是否显示文案工作台入口",
-    },
-    {
-      key: "show_feedback",
-      value: true,
-      description: "是否显示反馈按钮",
-    },
-    {
-      key: "enable_research_mode",
-      value: true,
-      description: "是否开启学术研究模式",
-    },
-    {
-      key: "show_intro_modal",
-      value: true,
-      description: "是否显示首次进入简介弹窗",
-    },
-    {
-      key: "enable_easter_egg",
-      value: true,
-      description: "是否开启隐藏彩蛋",
-    },
-    {
-      key: "enable_chat_logging",
-      value: true,
-      description: "是否记录聊天日志",
-    },
-  ];
-
-  await supabaseFetch("app_settings?on_conflict=key", {
-    method: "POST",
-    headers: {
-      Prefer: "resolution=ignore-duplicates,return=minimal",
-    },
-    body: JSON.stringify(defaults),
-  });
-}
-
 export async function GET(req) {
   try {
     const auth = checkPassword(req);
@@ -147,9 +109,7 @@ export async function GET(req) {
       );
     }
 
-    await ensureDefaultSettings();
-
-    const settings = await supabaseFetch(
+    const settings = await supabaseRequest(
       "app_settings?select=key,value,description,updated_at&order=key.asc",
       {
         method: "GET",
@@ -168,7 +128,7 @@ export async function GET(req) {
       {
         ok: false,
         version: VERSION,
-        error: "读取设置失败",
+        error: "读取后台开关失败",
         detail: String(error?.message || error),
       },
       { status: 500 }
@@ -207,17 +167,7 @@ export async function POST(req) {
       );
     }
 
-    const allowKeys = [
-      "show_mbti",
-      "show_copywriter",
-      "show_feedback",
-      "enable_research_mode",
-      "show_intro_modal",
-      "enable_easter_egg",
-      "enable_chat_logging",
-    ];
-
-    if (!allowKeys.includes(key)) {
+    if (!ALLOW_KEYS.includes(key)) {
       return Response.json(
         {
           ok: false,
@@ -228,32 +178,18 @@ export async function POST(req) {
       );
     }
 
-    const descriptionMap = {
-      show_mbti: "是否显示 MBTI 小测试入口",
-      show_copywriter: "是否显示文案工作台入口",
-      show_feedback: "是否显示反馈按钮",
-      enable_research_mode: "是否开启学术研究模式",
-      show_intro_modal: "是否显示首次进入简介弹窗",
-      enable_easter_egg: "是否开启隐藏彩蛋",
-      enable_chat_logging: "是否记录聊天日志",
-    };
-
-    await supabaseFetch("app_settings?on_conflict=key", {
-      method: "POST",
+    await supabaseRequest(`app_settings?key=eq.${encodeURIComponent(key)}`, {
+      method: "PATCH",
       headers: {
-        Prefer: "resolution=merge-duplicates,return=representation",
+        Prefer: "return=minimal",
       },
-      body: JSON.stringify([
-        {
-          key,
-          value,
-          description: descriptionMap[key] || "",
-          updated_at: new Date().toISOString(),
-        },
-      ]),
+      body: JSON.stringify({
+        value,
+        updated_at: new Date().toISOString(),
+      }),
     });
 
-    const settings = await supabaseFetch(
+    const settings = await supabaseRequest(
       "app_settings?select=key,value,description,updated_at&order=key.asc",
       {
         method: "GET",
@@ -274,7 +210,7 @@ export async function POST(req) {
       {
         ok: false,
         version: VERSION,
-        error: "更新设置失败",
+        error: "更新后台开关失败",
         detail: String(error?.message || error),
       },
       { status: 500 }
