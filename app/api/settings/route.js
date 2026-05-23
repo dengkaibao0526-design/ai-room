@@ -1,6 +1,6 @@
 export const dynamic = "force-dynamic";
 
-const VERSION = "public-settings-v1";
+const VERSION = "TEST-SETTINGS-123";
 
 const DEFAULT_SETTINGS = {
   show_mbti: true,
