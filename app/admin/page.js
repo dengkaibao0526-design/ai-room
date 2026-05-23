@@ -76,6 +76,40 @@ export default function AdminPage() {
     setError("");
   }
 
+  async function updateFeedbackStatus(id, status) {
+    if (!id) return;
+
+    setLoading(true);
+    setError("");
+
+    try {
+      const res = await fetch("/api/admin/feedback-status", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-admin-password": password,
+        },
+        body: JSON.stringify({
+          id,
+          status,
+        }),
+      });
+
+      const json = await res.json().catch(() => ({}));
+
+      if (!res.ok || !json.ok) {
+        throw new Error(json.error || "更新反馈状态失败");
+      }
+
+      await loadData(password);
+    } catch (err) {
+      console.error("UPDATE_FEEDBACK_STATUS_ERROR:", err);
+      setError(err.message || "更新反馈状态失败");
+    } finally {
+      setLoading(false);
+    }
+  }
+
   useEffect(() => {
     const savedPassword = localStorage.getItem("xiaokb_admin_password");
 
@@ -629,7 +663,7 @@ export default function AdminPage() {
                           formatBeijingTime(item.created_at)}
                       </span>
                       <span>{item.typeLabel || getFeedbackLabel(item.type)}</span>
-                      <span>{item.status || "open"}</span>
+                      <span>{getFeedbackStatusLabel(item.status)}</span>
                       <span>{shortUserId(item.user_id)}</span>
                       <span>{item.page || "home"}</span>
                     </div>
@@ -644,6 +678,37 @@ export default function AdminPage() {
                     {item.contact && (
                       <div className="contactBox">联系方式：{item.contact}</div>
                     )}
+
+                    <div className="feedbackActions">
+                      {item.status !== "done" && (
+                        <button
+                          onClick={() => updateFeedbackStatus(item.id, "done")}
+                          disabled={loading}
+                        >
+                          标记已处理
+                        </button>
+                      )}
+
+                      {item.status !== "ignored" && (
+                        <button
+                          onClick={() =>
+                            updateFeedbackStatus(item.id, "ignored")
+                          }
+                          disabled={loading}
+                        >
+                          暂不处理
+                        </button>
+                      )}
+
+                      {item.status !== "open" && (
+                        <button
+                          onClick={() => updateFeedbackStatus(item.id, "open")}
+                          disabled={loading}
+                        >
+                          重新打开
+                        </button>
+                      )}
+                    </div>
                   </article>
                 ))
               )}
@@ -802,6 +867,12 @@ function getFeedbackLabel(type) {
   if (type === "feature") return "想要的功能";
   if (type === "bug") return "Bug";
   return "建议";
+}
+
+function getFeedbackStatusLabel(status) {
+  if (status === "done") return "已处理";
+  if (status === "ignored") return "暂不处理";
+  return "未处理";
 }
 
 function AdminStyles() {
@@ -1597,6 +1668,35 @@ function AdminStyles() {
         background: rgba(139, 92, 246, 0.1);
         border: 1px solid rgba(216, 180, 254, 0.14);
         font-size: 13px;
+      }
+
+      .feedbackActions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 12px;
+      }
+
+      .feedbackActions button {
+        height: 34px;
+        padding: 0 12px;
+        border-radius: 999px;
+        cursor: pointer;
+        color: rgba(255, 255, 255, 0.92);
+        font-size: 12px;
+        font-weight: 900;
+        background: rgba(255, 255, 255, 0.08);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+      }
+
+      .feedbackActions button:hover {
+        background: rgba(139, 92, 246, 0.22);
+        border-color: rgba(216, 180, 254, 0.24);
+      }
+
+      .feedbackActions button:disabled {
+        opacity: 0.52;
+        cursor: not-allowed;
       }
 
       .empty {
