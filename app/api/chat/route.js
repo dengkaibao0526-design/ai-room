@@ -1,31 +1,15 @@
 import OpenAI from "openai";
-import { createClient } from "@supabase/supabase-js";
 
 export const dynamic = "force-dynamic";
 
 const DAILY_MODEL = "deepseek-v4-flash";
 const RESEARCH_MODEL = "deepseek-v4-pro";
-const VERSION = "chat-api-v7-protected-memory";
+const VERSION = "chat-api-v7-protected-memory-fetch";
 
 const openai = new OpenAI({
   apiKey: process.env.DEEPSEEK_API_KEY || process.env.OPENAI_API_KEY,
   baseURL: "https://api.deepseek.com",
 });
-
-function getSupabase() {
-  const supabaseUrl = process.env.SUPABASE_URL;
-  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-  if (!supabaseUrl || !supabaseKey) {
-    return null;
-  }
-
-  return createClient(supabaseUrl, supabaseKey, {
-    auth: {
-      persistSession: false,
-    },
-  });
-}
 
 function safeText(value, maxLength = 6000) {
   if (!value) return "";
@@ -67,9 +51,10 @@ async function saveChatLog({
   success,
   errorMessage,
 }) {
-  const supabase = getSupabase();
+  const supabaseUrl = process.env.SUPABASE_URL;
+  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-  if (!supabase) {
+  if (!supabaseUrl || !supabaseKey) {
     console.error("SUPABASE_ENV_MISSING");
     return;
   }
@@ -85,10 +70,24 @@ async function saveChatLog({
     error_message: errorMessage || null,
   };
 
-  const { error } = await supabase.from("chat_logs").insert(payload);
+  try {
+    const res = await fetch(`${supabaseUrl}/rest/v1/chat_logs`, {
+      method: "POST",
+      headers: {
+        apikey: supabaseKey,
+        Authorization: `Bearer ${supabaseKey}`,
+        "Content-Type": "application/json",
+        Prefer: "return=minimal",
+      },
+      body: JSON.stringify(payload),
+    });
 
-  if (error) {
-    console.error("SAVE_CHAT_LOG_ERROR:", error);
+    if (!res.ok) {
+      const text = await res.text().catch(() => "");
+      console.error("SAVE_CHAT_LOG_ERROR:", res.status, text);
+    }
+  } catch (error) {
+    console.error("SAVE_CHAT_LOG_FETCH_ERROR:", error);
   }
 }
 
