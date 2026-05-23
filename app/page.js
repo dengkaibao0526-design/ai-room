@@ -165,44 +165,62 @@ export default function Home() {
     };
   }, []);
 
-  useEffect(() => {
-    async function loadPublicSettings() {
-      try {
-        const res = await fetch("/api/settings", {
-          method: "GET",
-          cache: "no-store",
-        });
+ useEffect(() => {
+  async function loadPublicSettings() {
+    try {
+      const res = await fetch(`/api/settings?t=${Date.now()}`, {
+        method: "GET",
+        cache: "no-store",
+      });
 
-        const json = await res.json().catch(() => ({}));
+      const json = await res.json().catch(() => ({}));
 
-        if (json?.ok && json?.settings) {
-          const nextSettings = {
-            ...DEFAULT_PUBLIC_SETTINGS,
-            ...json.settings,
-          };
+      if (json?.ok && json?.settings) {
+        const nextSettings = {
+          ...DEFAULT_PUBLIC_SETTINGS,
+          ...json.settings,
+        };
 
-          setPublicSettings(nextSettings);
+        setPublicSettings(nextSettings);
 
-          if (!nextSettings.show_intro_modal) {
-            setShowIntro(false);
-          }
-
-          if (!nextSettings.show_feedback) {
-            setShowFeedback(false);
-          }
-
-          if (!nextSettings.enable_research_mode) {
-            setChatMode("daily");
-            localStorage.setItem("xiaokb_chat_mode", "daily");
-          }
+        if (!nextSettings.show_intro_modal) {
+          setShowIntro(false);
         }
-      } catch (error) {
-        console.error("LOAD_PUBLIC_SETTINGS_ERROR:", error);
-      }
-    }
 
+        if (!nextSettings.show_feedback) {
+          setShowFeedback(false);
+        }
+
+        if (!nextSettings.enable_research_mode) {
+          setChatMode("daily");
+          localStorage.setItem("xiaokb_chat_mode", "daily");
+        }
+      }
+    } catch (error) {
+      console.error("LOAD_PUBLIC_SETTINGS_ERROR:", error);
+    }
+  }
+
+  loadPublicSettings();
+
+  function handleFocus() {
     loadPublicSettings();
-  }, []);
+  }
+
+  function handleVisibilityChange() {
+    if (document.visibilityState === "visible") {
+      loadPublicSettings();
+    }
+  }
+
+  window.addEventListener("focus", handleFocus);
+  document.addEventListener("visibilitychange", handleVisibilityChange);
+
+  return () => {
+    window.removeEventListener("focus", handleFocus);
+    document.removeEventListener("visibilitychange", handleVisibilityChange);
+  };
+}, []);
 
   useEffect(() => {
     if (chatMode === "research" && !publicSettings.enable_research_mode) {
