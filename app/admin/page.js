@@ -7,6 +7,7 @@ const NAV_ITEMS = [
   { key: "users", label: "用户", desc: "用户画像" },
   { key: "chats", label: "聊天", desc: "聊天审查" },
   { key: "feedbacks", label: "反馈", desc: "建议 Bug" },
+  { key: "settings", label: "设置", desc: "功能开关" },
 ];
 
 export default function AdminPage() {
@@ -17,6 +18,8 @@ export default function AdminPage() {
   const [searchText, setSearchText] = useState("");
   const [modeFilter, setModeFilter] = useState("all");
   const [feedbackFilter, setFeedbackFilter] = useState("all");
+  const [settings, setSettings] = useState([]);
+  const [settingsLoading, setSettingsLoading] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -55,12 +58,40 @@ export default function AdminPage() {
 
       setData(json);
       localStorage.setItem("xiaokb_admin_password", finalPassword);
+      await loadSettings(finalPassword);
     } catch (err) {
       console.error("ADMIN_PAGE_ERROR:", err);
       setError(err.message || "页面出错了，刷新再试一次");
       setData(null);
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function loadSettings(inputPassword) {
+    const finalPassword = inputPassword || password;
+
+    if (!finalPassword) return;
+
+    try {
+      const res = await fetch("/api/admin/settings", {
+        method: "GET",
+        cache: "no-store",
+        headers: {
+          "x-admin-password": finalPassword,
+        },
+      });
+
+      const json = await res.json().catch(() => ({}));
+
+      if (!res.ok || !json.ok) {
+        throw new Error(json.error || "读取系统开关失败");
+      }
+
+      setSettings(Array.isArray(json.settings) ? json.settings : []);
+    } catch (err) {
+      console.error("LOAD_SETTINGS_ERROR:", err);
+      setError(err.message || "读取系统开关失败");
     }
   }
 
@@ -73,6 +104,7 @@ export default function AdminPage() {
     setSearchText("");
     setModeFilter("all");
     setFeedbackFilter("all");
+    setSettings([]);
     setError("");
   }
 
@@ -107,6 +139,42 @@ export default function AdminPage() {
       setError(err.message || "更新反馈状态失败");
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function toggleSetting(key, currentValue) {
+    if (!key || settingsLoading) return;
+
+    const nextValue = !Boolean(currentValue);
+
+    setSettingsLoading(true);
+    setError("");
+
+    try {
+      const res = await fetch("/api/admin/settings", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-admin-password": password,
+        },
+        body: JSON.stringify({
+          key,
+          value: nextValue,
+        }),
+      });
+
+      const json = await res.json().catch(() => ({}));
+
+      if (!res.ok || !json.ok) {
+        throw new Error(json.error || "更新系统开关失败");
+      }
+
+      setSettings(Array.isArray(json.settings) ? json.settings : []);
+    } catch (err) {
+      console.error("TOGGLE_SETTING_ERROR:", err);
+      setError(err.message || "更新系统开关失败");
+    } finally {
+      setSettingsLoading(false);
     }
   }
 
@@ -188,7 +256,7 @@ export default function AdminPage() {
             <h1>小KB运营控制台</h1>
 
             <p>
-              输入后台密码后查看聊天、用户、在线状态、模式占比、性能表现和用户反馈。
+              输入后台密码后查看聊天、用户、在线状态、模式占比、性能表现、用户反馈和系统开关。
             </p>
 
             <div className="loginForm">
@@ -210,7 +278,7 @@ export default function AdminPage() {
             {error && <div className="errorBox">{error}</div>}
 
             <div className="loginHint">
-              V7 控制台 · 左侧导航 · 运营大屏 · 用户画像 · 聊天审查 · 反馈中心
+              V7 控制台 · 运营大屏 · 用户画像 · 聊天审查 · 反馈中心 · 系统开关
             </div>
           </section>
         </div>
@@ -715,6 +783,40 @@ export default function AdminPage() {
             </div>
           </Panel>
         )}
+
+        {view === "settings" && (
+          <Panel title="系统开关" desc="控制小KB前台功能显示和后台行为。">
+            <div className="settingsGrid">
+              {settings.length === 0 ? (
+                <Empty text="暂无开关数据，请确认 app_settings 表已初始化。" />
+              ) : (
+                settings.map((item) => (
+                  <article className="settingCard" key={item.key}>
+                    <div>
+                      <strong>{getSettingLabel(item.key)}</strong>
+                      <span>{item.description || item.key}</span>
+                      <em>Key：{item.key}</em>
+                    </div>
+
+                    <button
+                      className={item.value ? "switchBtn switchOn" : "switchBtn"}
+                      onClick={() => toggleSetting(item.key, item.value)}
+                      disabled={settingsLoading}
+                    >
+                      <i></i>
+                      <span>{item.value ? "已开启" : "已关闭"}</span>
+                    </button>
+                  </article>
+                ))
+              )}
+            </div>
+
+            <div className="settingsNotice">
+              当前已经可以修改数据库开关。下一步再让首页读取这些开关，
+              就能真正控制 MBTI、文案工作台、反馈按钮、学术模式、首次弹窗和隐藏彩蛋。
+            </div>
+          </Panel>
+        )}
       </section>
 
       <AdminStyles />
@@ -809,6 +911,7 @@ function getViewTitle(view) {
   if (view === "users") return "用户洞察";
   if (view === "chats") return "聊天审查";
   if (view === "feedbacks") return "反馈中心";
+  if (view === "settings") return "系统开关";
   return "运营总览";
 }
 
@@ -873,6 +976,20 @@ function getFeedbackStatusLabel(status) {
   if (status === "done") return "已处理";
   if (status === "ignored") return "暂不处理";
   return "未处理";
+}
+
+function getSettingLabel(key) {
+  const map = {
+    show_mbti: "显示 MBTI 小测试入口",
+    show_copywriter: "显示文案工作台入口",
+    show_feedback: "显示反馈按钮",
+    enable_research_mode: "开启学术研究模式",
+    show_intro_modal: "显示首次进入简介弹窗",
+    enable_easter_egg: "开启隐藏彩蛋",
+    enable_chat_logging: "记录聊天日志",
+  };
+
+  return map[key] || key;
 }
 
 function AdminStyles() {
@@ -1699,6 +1816,113 @@ function AdminStyles() {
         cursor: not-allowed;
       }
 
+      .settingsGrid {
+        display: grid;
+        gap: 12px;
+      }
+
+      .settingCard {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        padding: 16px;
+        border-radius: 20px;
+        background: rgba(255, 255, 255, 0.052);
+        border: 1px solid rgba(255, 255, 255, 0.075);
+      }
+
+      .settingCard strong {
+        display: block;
+        font-size: 15px;
+      }
+
+      .settingCard span {
+        display: block;
+        margin-top: 6px;
+        color: rgba(226, 232, 240, 0.58);
+        font-size: 12.5px;
+        line-height: 1.45;
+      }
+
+      .settingCard em {
+        display: block;
+        margin-top: 7px;
+        color: rgba(226, 232, 240, 0.34);
+        font-size: 11px;
+        font-style: normal;
+      }
+
+      .switchBtn {
+        position: relative;
+        flex: 0 0 auto;
+        width: 112px;
+        height: 44px;
+        border: 0;
+        border-radius: 999px;
+        cursor: pointer;
+        color: rgba(255, 255, 255, 0.72);
+        font-size: 12px;
+        font-weight: 900;
+        background: rgba(255, 255, 255, 0.08);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        transition:
+          background 0.18s ease,
+          border-color 0.18s ease,
+          opacity 0.18s ease;
+      }
+
+      .switchBtn i {
+        position: absolute;
+        left: 5px;
+        top: 5px;
+        width: 32px;
+        height: 32px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.82);
+        box-shadow: 0 8px 18px rgba(0, 0, 0, 0.24);
+        transition: transform 0.18s ease;
+      }
+
+      .switchBtn span {
+        position: relative;
+        z-index: 1;
+        display: block;
+        padding-left: 26px;
+      }
+
+      .switchOn {
+        color: white;
+        background: linear-gradient(135deg, #8b5cf6, #ec4899);
+        border-color: rgba(216, 180, 254, 0.28);
+        box-shadow: 0 14px 34px rgba(139, 92, 246, 0.22);
+      }
+
+      .switchOn i {
+        transform: translateX(70px);
+      }
+
+      .switchOn span {
+        padding-left: 0;
+        padding-right: 26px;
+      }
+
+      .switchBtn:disabled {
+        opacity: 0.55;
+        cursor: not-allowed;
+      }
+
+      .settingsNotice {
+        margin-top: 14px;
+        padding: 13px;
+        border-radius: 17px;
+        color: rgba(233, 213, 255, 0.72);
+        background: rgba(139, 92, 246, 0.1);
+        border: 1px solid rgba(216, 180, 254, 0.14);
+        font-size: 12.5px;
+        line-height: 1.6;
+      }
+
       .empty {
         padding: 22px;
         border-radius: 18px;
@@ -1728,7 +1952,7 @@ function AdminStyles() {
         }
 
         .navList {
-          grid-template-columns: repeat(4, 1fr);
+          grid-template-columns: repeat(5, 1fr);
         }
 
         .sideStatus {
@@ -1794,6 +2018,11 @@ function AdminStyles() {
 
         .healthRing {
           display: none;
+        }
+
+        .settingCard {
+          align-items: flex-start;
+          flex-direction: column;
         }
       }
     `}</style>
