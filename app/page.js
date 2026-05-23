@@ -2,35 +2,76 @@
 
 import { useEffect, useRef, useState } from "react";
 
-const STARTER_PROMPTS = [
-  "今天有点累",
-  "随便陪我聊两句",
-  "你是谁",
-  "学习压力有点大",
-  "没人找我聊天",
-  "给我一点建议",
-];
+const STARTER_PROMPTS = {
+  daily: [
+    "今天有点累，陪我待会儿",
+    "随便和我聊两句",
+    "我有点烦但说不上来",
+    "给我一点精神状态建议",
+    "讲个轻松一点的话题",
+    "你先问我一个问题",
+  ],
+  research: [
+    "帮我整理这段材料",
+    "帮我分析这个问题",
+    "把这段话改得更学术",
+    "帮我列一个论文思路",
+    "解释一个概念给我听",
+    "帮我检查逻辑漏洞",
+  ],
+};
+
+const MODE_DETAIL = {
+  daily: {
+    status: "日常聊天 · 像朋友一样陪你说话",
+    badge: "DAILY ROOM",
+    titleTop: "累了就进来",
+    titleBottom: "和小KB坐一会儿",
+    heroText:
+      "不用组织语言，也不用表现得很正常。随便一句话，小KB都会接住你。",
+    placeholder: "随便说点什么，小KB在听...",
+    starterTitle: "不知道怎么开口？",
+    starterHint: "点一句就行",
+    modeName: "日常聊天",
+    modeDesc: "更快 · 更像朋友",
+    tags: ["情绪稳定", "随便聊聊", "长沙夜感", "不催你"],
+  },
+  research: {
+    status: "学术研究 · 更认真地处理问题",
+    badge: "RESEARCH MODE",
+    titleTop: "把复杂问题",
+    titleBottom: "交给小KB拆开",
+    heroText:
+      "适合整理资料、分析逻辑、润色表达、搭论文框架，也可以帮你把一团乱的想法理清楚。",
+    placeholder: "把问题、材料、作业要求发来...",
+    starterTitle: "需要小KB怎么帮你？",
+    starterHint: "选一个任务",
+    modeName: "学术研究",
+    modeDesc: "Pro · 更认真处理",
+    tags: ["资料整理", "论文思路", "逻辑分析", "表达润色"],
+  },
+};
 
 function getTimeGreeting() {
   const hour = new Date().getHours();
 
   if (hour >= 0 && hour < 5) {
-    return "还没睡啊？这么晚了，来，慢慢说。";
+    return "这么晚还没睡啊。没关系，先不用急着解释，慢慢说。";
   }
 
   if (hour >= 5 && hour < 11) {
-    return "早啊，今天醒得还挺早。";
+    return "早啊。今天刚开始，先让脑子慢慢醒一下。";
   }
 
   if (hour >= 11 && hour < 18) {
-    return "来了？今天过得怎么样。";
+    return "来了。现在这个时间，适合把事情一点点理清楚。";
   }
 
   if (hour >= 18 && hour < 23) {
-    return "晚上好，今天累不累？";
+    return "晚上好。今天不管过得怎么样，先在这儿坐一会儿。";
   }
 
-  return "这么晚还来找我，今天是不是有点事。";
+  return "这么晚还来找我，今天应该有点事吧。";
 }
 
 function createUserId() {
@@ -65,6 +106,9 @@ export default function Home() {
   const [feedbackMessage, setFeedbackMessage] = useState("");
 
   const bottomRef = useRef(null);
+  const typingTimerRef = useRef(null);
+
+  const currentMode = MODE_DETAIL[chatMode];
 
   useEffect(() => {
     const savedMessages = localStorage.getItem("kb-chat");
@@ -97,6 +141,12 @@ export default function Home() {
     }
 
     setLoaded(true);
+
+    return () => {
+      if (typingTimerRef.current) {
+        clearInterval(typingTimerRef.current);
+      }
+    };
   }, []);
 
   useEffect(() => {
@@ -153,9 +203,15 @@ export default function Home() {
   }
 
   function clearMemory() {
+    if (typingTimerRef.current) {
+      clearInterval(typingTimerRef.current);
+      typingTimerRef.current = null;
+    }
+
     localStorage.removeItem("kb-chat");
 
     setShowStarters(true);
+    setLoading(false);
 
     setMessages([
       {
@@ -166,8 +222,13 @@ export default function Home() {
   }
 
   function handleModeChange(mode) {
-    if (loading) return;
+    if (loading || mode === chatMode) return;
+
     setChatMode(mode);
+
+    if (messages.length <= 1) {
+      setShowStarters(true);
+    }
   }
 
   function handleStarterClick(text) {
@@ -184,6 +245,7 @@ export default function Home() {
 
   function closeFeedback() {
     if (feedbackLoading) return;
+
     setShowFeedback(false);
     setFeedbackMessage("");
   }
@@ -285,18 +347,23 @@ export default function Home() {
         }),
       });
 
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        throw new Error(data.error || "聊天接口请求失败");
+      }
+
       const aiReply = data.reply || "网卡了，重说吧。";
 
-      typeReply(aiReply);
+      await typeReply(aiReply);
     } catch (error) {
-      console.error(error);
+      console.error("CHAT_ERROR:", error);
 
       setMessages((prev) => [
         ...prev,
         {
           role: "ai",
-          text: "网络好像有点卡，但我还在。",
+          text: "网络好像有点卡，但我还在。你可以再发一次。",
         },
       ]);
     } finally {
@@ -305,34 +372,42 @@ export default function Home() {
   }
 
   function typeReply(fullText) {
-    let index = 0;
-
-    setMessages((prev) => [
-      ...prev,
-      {
-        role: "ai",
-        text: "",
-      },
-    ]);
-
-    const timer = setInterval(() => {
-      index++;
-
-      setMessages((prev) => {
-        const newMessages = [...prev];
-
-        newMessages[newMessages.length - 1] = {
-          role: "ai",
-          text: fullText.slice(0, index),
-        };
-
-        return newMessages;
-      });
-
-      if (index >= fullText.length) {
-        clearInterval(timer);
+    return new Promise((resolve) => {
+      if (typingTimerRef.current) {
+        clearInterval(typingTimerRef.current);
       }
-    }, 24);
+
+      let index = 0;
+
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "ai",
+          text: "",
+        },
+      ]);
+
+      typingTimerRef.current = setInterval(() => {
+        index++;
+
+        setMessages((prev) => {
+          const newMessages = [...prev];
+
+          newMessages[newMessages.length - 1] = {
+            role: "ai",
+            text: fullText.slice(0, index),
+          };
+
+          return newMessages;
+        });
+
+        if (index >= fullText.length) {
+          clearInterval(typingTimerRef.current);
+          typingTimerRef.current = null;
+          resolve();
+        }
+      }, 18);
+    });
   }
 
   function handleKeyDown(e) {
@@ -381,13 +456,12 @@ export default function Home() {
             </h1>
 
             <p className="introDesc">
-              这是大宝一个人从 2026 年 2 月初开始慢慢搭起来的 AI 房间。
-              从想法、设计、网站搭建，到模型调试和后台运营，都是一点点摸索出来的。
+              这是大宝一个人从 2026 年 2 月初开始慢慢搭起来的 AI
+              房间。从想法、设计、网站搭建，到模型调试和后台运营，都是一点点摸索出来的。
             </p>
 
             <p className="introDesc">
-              2026 年 5 月 17 日，小KB终于见到了第一个可用模型。
-              它现在还不完美，但已经可以陪你聊天、整理想法，也能认真处理学习和研究问题。
+              2026 年 5 月 17 日，小KB终于见到了第一个可用模型。它现在还不完美，但已经可以陪你聊天、整理想法，也能认真处理学习和研究问题。
             </p>
 
             <div className="introFeatureGrid">
@@ -403,9 +477,7 @@ export default function Home() {
 
               <div className="introFeature introFeatureWide">
                 <strong>持续成长中</strong>
-                <span>
-                  觉得哪里好用、哪里奇怪，都可以直接反馈给大宝。
-                </span>
+                <span>觉得哪里好用、哪里奇怪，都可以直接反馈给大宝。</span>
               </div>
             </div>
 
@@ -432,9 +504,7 @@ export default function Home() {
               <div>
                 <div className="feedbackBadge">FEEDBACK</div>
                 <h2>给小KB提点建议</h2>
-                <p>
-                  哪里不好用、哪里怪、你希望以后有什么功能，都可以写给大宝。
-                </p>
+                <p>哪里不好用、哪里怪、你希望以后有什么功能，都可以写给大宝。</p>
               </div>
 
               <button className="feedbackClose" onClick={closeFeedback}>
@@ -517,11 +587,7 @@ export default function Home() {
 
           <div className="profile">
             <h1>小KB</h1>
-            <p>
-              {chatMode === "research"
-                ? "学术研究 · Pro 模式"
-                : "在线 · 长沙夜里也有人听你说话"}
-            </p>
+            <p>{currentMode.status}</p>
           </div>
 
           <button className="clearBtn" onClick={clearMemory}>
@@ -532,24 +598,20 @@ export default function Home() {
         </header>
 
         <div className="hero">
-          <div className="roomBadge">XIAOKB · PRIVATE AI ROOM</div>
+          <div className="roomBadge">XIAOKB · {currentMode.badge}</div>
 
           <h2>
-            不是普通 AI。
+            {currentMode.titleTop}
             <br />
-            是一个能坐会儿的房间。
+            {currentMode.titleBottom}
           </h2>
 
-          <p className="heroText">
-            累了、无聊了、没人说话了，就进来待一会儿。
-            不用想好怎么开口，随便一句也行。
-          </p>
+          <p className="heroText">{currentMode.heroText}</p>
 
           <div className="tags">
-            <span>长沙夜感</span>
-            <span>clean fit</span>
-            <span>情绪稳定</span>
-            <span>少年感</span>
+            {currentMode.tags.map((tag) => (
+              <span key={tag}>{tag}</span>
+            ))}
           </div>
 
           <div className="modePanel">
@@ -558,8 +620,8 @@ export default function Home() {
               onClick={() => handleModeChange("daily")}
               disabled={loading}
             >
-              <strong>日常聊天</strong>
-              <span>更快 · 更像朋友</span>
+              <strong>{MODE_DETAIL.daily.modeName}</strong>
+              <span>{MODE_DETAIL.daily.modeDesc}</span>
             </button>
 
             <button
@@ -569,20 +631,20 @@ export default function Home() {
               onClick={() => handleModeChange("research")}
               disabled={loading}
             >
-              <strong>学术研究</strong>
-              <span>Pro · 更认真处理</span>
+              <strong>{MODE_DETAIL.research.modeName}</strong>
+              <span>{MODE_DETAIL.research.modeDesc}</span>
             </button>
           </div>
 
           {showStarters && messages.length <= 1 && (
             <div className="starterPanel">
               <div className="starterTitle">
-                <span>不知道说什么？</span>
-                <em>点一句开始</em>
+                <span>{currentMode.starterTitle}</span>
+                <em>{currentMode.starterHint}</em>
               </div>
 
               <div className="starterGrid">
-                {STARTER_PROMPTS.map((item) => (
+                {STARTER_PROMPTS[chatMode].map((item) => (
                   <button
                     key={item}
                     className="starterBtn"
@@ -600,7 +662,7 @@ export default function Home() {
         <div className="messages">
           {messages.map((msg, index) => (
             <div
-              key={index}
+              key={`${msg.role}-${index}`}
               className={`messageRow ${
                 msg.role === "user" ? "userRow" : "aiRow"
               }`}
@@ -633,11 +695,7 @@ export default function Home() {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder={
-              chatMode === "research"
-                ? "把问题、材料、作业要求发来..."
-                : "跟小KB说点什么..."
-            }
+            placeholder={currentMode.placeholder}
             rows={1}
           />
 
