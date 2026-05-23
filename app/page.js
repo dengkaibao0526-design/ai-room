@@ -347,38 +347,80 @@ export default function Home() {
       <div className="ambientGrid"></div>
 
       {showIntro && (
-        <div className="introOverlay">
-          <div className="introCard">
-            <div className="introBadge">WELCOME TO XIAOKB</div>
+        <div className="introOverlay premiumIntro">
+          <div className="introGlow introGlowOne"></div>
+          <div className="introGlow introGlowTwo"></div>
 
-            <h1>欢迎来到小KB。</h1>
+          <div className="introCard premiumIntroCard">
+            <button
+              type="button"
+              className="introClose"
+              onClick={closeIntro}
+              aria-label="关闭简介"
+            >
+              ×
+            </button>
 
-            <p>
-              这是一个由大宝一个人慢慢搭起来的 AI 房间。
-              从最开始的想法、构思、页面设计、网站搭建，到后面的模型调试、后台统计和运营方向，
-              基本都是大宝一点点摸索出来的。
-            </p >
+            <div className="introTopLine">
+              <div className="introBadge">
+                <span className="introLiveDot"></span>
+                XIAOKB · PRIVATE AI ROOM
+              </div>
 
-            <p>
-              项目从 2026 年 2 月初开始实施，到 2026 年 5 月 17 日，
-              终于见到了小KB的第一个可用模型。
-              它现在还不完美，但已经能陪你聊天、帮你整理想法，也能认真处理一些学习和研究问题。
-            </p >
-
-            <p>
-              后面大宝还会继续优化小KB，也希望你常来玩玩。
-              觉得哪里好用、哪里奇怪、哪里还可以更好，都可以告诉我。
-            </p >
-
-            <div className="introList">
-              <span>日常聊天：轻松一点，像朋友一样陪你说话。</span>
-              <span>学术研究：更认真处理问题，适合学习、资料、思路整理。</span>
-              <span>这个网站还在成长，欢迎你来体验，也欢迎你提建议。</span>
+              <span className="introVersion">v0.1</span>
             </div>
 
-            <button className="introButton" onClick={closeIntro}>
-              进入小KB房间
+            <div className="introLogo">
+              <span>KB</span>
+            </div>
+
+            <h1 className="introTitle">
+              欢迎来到
+              <br />
+              小KB房间
+            </h1>
+
+            <p className="introDesc">
+              这是大宝一个人从 2026 年 2 月初开始慢慢搭起来的 AI 房间。
+              从想法、设计、网站搭建，到模型调试和后台运营，都是一点点摸索出来的。
+            </p>
+
+            <p className="introDesc">
+              2026 年 5 月 17 日，小KB终于见到了第一个可用模型。
+              它现在还不完美，但已经可以陪你聊天、整理想法，也能认真处理学习和研究问题。
+            </p>
+
+            <div className="introFeatureGrid">
+              <div className="introFeature">
+                <strong>日常聊天</strong>
+                <span>轻松一点，像朋友一样陪你说话。</span>
+              </div>
+
+              <div className="introFeature">
+                <strong>学术研究</strong>
+                <span>更认真处理资料、作业和思路。</span>
+              </div>
+
+              <div className="introFeature introFeatureWide">
+                <strong>持续成长中</strong>
+                <span>
+                  觉得哪里好用、哪里奇怪，都可以直接反馈给大宝。
+                </span>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              className="introButton premiumIntroButton"
+              onClick={closeIntro}
+            >
+              <span>进入小KB房间</span>
+              <em>→</em>
             </button>
+
+            <div className="introHint">
+              你可以随便说一句开始，不用想好怎么开口。
+            </div>
           </div>
         </div>
       )}
@@ -392,7 +434,7 @@ export default function Home() {
                 <h2>给小KB提点建议</h2>
                 <p>
                   哪里不好用、哪里怪、你希望以后有什么功能，都可以写给大宝。
-                </p >
+                </p>
               </div>
 
               <button className="feedbackClose" onClick={closeFeedback}>
@@ -402,19 +444,25 @@ export default function Home() {
 
             <div className="feedbackTypes">
               <button
-                className={feedbackType === "suggestion" ? "activeFeedbackType" : ""}
+                className={
+                  feedbackType === "suggestion" ? "activeFeedbackType" : ""
+                }
                 onClick={() => setFeedbackType("suggestion")}
                 disabled={feedbackLoading}
               >
                 建议
               </button>
+
               <button
-                className={feedbackType === "feature" ? "activeFeedbackType" : ""}
+                className={
+                  feedbackType === "feature" ? "activeFeedbackType" : ""
+                }
                 onClick={() => setFeedbackType("feature")}
                 disabled={feedbackLoading}
               >
                 想要的功能
               </button>
+
               <button
                 className={feedbackType === "bug" ? "activeFeedbackType" : ""}
                 onClick={() => setFeedbackType("bug")}
@@ -473,7 +521,7 @@ export default function Home() {
               {chatMode === "research"
                 ? "学术研究 · Pro 模式"
                 : "在线 · 长沙夜里也有人听你说话"}
-            </p >
+            </p>
           </div>
 
           <button className="clearBtn" onClick={clearMemory}>
@@ -495,7 +543,7 @@ export default function Home() {
           <p className="heroText">
             累了、无聊了、没人说话了，就进来待一会儿。
             不用想好怎么开口，随便一句也行。
-          </p >
+          </p>
 
           <div className="tags">
             <span>长沙夜感</span>
@@ -593,7 +641,10 @@ export default function Home() {
             rows={1}
           />
 
-          <button onClick={() => sendMessage()} disabled={loading || !input.trim()}>
+          <button
+            onClick={() => sendMessage()}
+            disabled={loading || !input.trim()}
+          >
             {loading ? "..." : "发送"}
           </button>
         </div>
