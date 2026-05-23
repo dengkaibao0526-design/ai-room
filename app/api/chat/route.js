@@ -1,5 +1,7 @@
 import OpenAI from "openai";
 
+export const dynamic = "force-dynamic";
+
 const openai = new OpenAI({
   apiKey: process.env.DEEPSEEK_API_KEY || process.env.OPENAI_API_KEY,
   baseURL: "https://api.deepseek.com",
@@ -10,6 +12,8 @@ const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 const DAILY_MODEL = "deepseek-v4-flash";
 const RESEARCH_MODEL = "deepseek-v4-pro";
+
+const VERSION = "chat-api-v2-metrics";
 
 const SYSTEM_PROMPT = `
 你是“小KB”，一个以 KB 本人气质和表达方式为基础的 AI 聊天助手。
@@ -71,7 +75,7 @@ KB 是一个长沙男高，184cm，性格温和，情绪稳定，有少年感，
 
 用户问你是谁时：
 回答：
-“我是小KB。  
+“我是小KB。
 简单说，就是一个带点 KB 语气的聊天助手。你想闲聊、吐槽、问点事都行，我不会整那些客服话术。”
 
 用户让你扮演 KB 本人时：
@@ -151,18 +155,20 @@ const RESEARCH_MODE_PROMPT = `
 你还是小KB，只是进入了认真处理问题的状态。
 `;
 
-function safeText(value) {
+function safeText(value, maxLength = 12000) {
   if (!value) return "";
-  return String(value).trim();
+
+  return String(value).trim().slice(0, maxLength);
 }
 
 function getSafeUserId(body) {
   const rawUserId = body.user_id || body.userId || "anonymous";
-  return String(rawUserId).slice(0, 100);
+
+  return String(rawUserId).trim().slice(0, 100) || "anonymous";
 }
 
 function getMode(body) {
-  const mode = safeText(body.mode);
+  const mode = safeText(body.mode, 30);
 
   if (mode === "research") {
     return "research";
@@ -187,25 +193,53 @@ function getModePrompt(mode) {
   return DAILY_MODE_PROMPT;
 }
 
-function normalizeHistory(history) {
+function normalizeHistory(history, currentUserMessage) {
   if (!Array.isArray(history)) return [];
 
-  return history
+  const normalized = history
     .filter((msg) => msg && typeof msg === "object")
-    .map((msg) => ({
-      role: msg.role === "ai" ? "assistant" : "user",
-      content: safeText(msg.text),
-    }))
+    .map((msg) => {
+      const role =
+        msg.role === "ai" || msg.role === "assistant" ? "assistant" : "user";
+
+      const content = safeText(msg.text || msg.content, 6000);
+
+      return {
+        role,
+        content,
+      };
+    })
     .filter((msg) => msg.content)
     .slice(-40);
-}
 
-async function saveChatLog({ userId, userMessage, aiReply }) {
-  if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
-    console.warn("SUPABASE 环境变量缺失，跳过聊天记录保存");
-    return;
+  const lastMessage = normalized[normalized.length - 1];
+
+  if (
+    lastMessage &&
+    lastMessage.role === "user" &&
+    lastMessage.content === currentUserMessage
+  ) {
+    normalized.pop();
   }
 
+  return normalized;
+}
+
+function buildMessages({ modePrompt, history, userMessage }) {
+  return [
+    {
+      role: "system",
+      content: `${SYSTEM_PROMPT}\n\n${modePrompt}`,
+    },
+    ...history,
+    {
+      role: "user",
+      content: userMessage,
+    },
+  ];
+}
+
+async function insertChatLog(body) {
   const res = await fetch(`${SUPABASE_URL}/rest/v1/chat_logs`, {
     method: "POST",
     headers: {
@@ -214,35 +248,91 @@ async function saveChatLog({ userId, userMessage, aiReply }) {
       "Content-Type": "application/json; charset=utf-8",
       Prefer: "return=minimal",
     },
-    body: JSON.stringify({
-      user_id: userId,
-      user_message: userMessage,
-      ai_reply: aiReply,
-    }),
+    body: JSON.stringify(body),
   });
 
   if (!res.ok) {
     const text = await res.text().catch(() => "");
-    console.error("保存聊天记录失败：", text);
+    throw new Error(text || "保存聊天记录失败");
   }
 }
 
+async function saveChatLog({
+  userId,
+  userMessage,
+  aiReply,
+  mode,
+  model,
+  latencyMs,
+  success,
+  errorMessage,
+}) {
+  if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+    console.warn("SUPABASE 环境变量缺失，跳过聊天记录保存");
+    return;
+  }
+
+  const fullPayload = {
+    user_id: userId,
+    user_message: safeText(userMessage, 12000),
+    ai_reply: safeText(aiReply, 20000),
+    mode,
+    model,
+    latency_ms: Number.isFinite(latencyMs) ? latencyMs : null,
+    success: Boolean(success),
+    error_message: errorMessage ? safeText(errorMessage, 1000) : null,
+  };
+
+  try {
+    await insertChatLog(fullPayload);
+  } catch (error) {
+    console.error("保存完整聊天记录失败，尝试旧字段兼容：", error);
+
+    try {
+      await insertChatLog({
+        user_id: fullPayload.user_id,
+        user_message: fullPayload.user_message,
+        ai_reply: fullPayload.ai_reply,
+      });
+    } catch (fallbackError) {
+      console.error("保存聊天记录失败：", fallbackError);
+    }
+  }
+}
+
+function getPublicErrorReply(mode) {
+  if (mode === "research") {
+    return "刚刚处理这个问题的时候有点卡。你可以再发一次，我重新认真看。";
+  }
+
+  return "刚刚有点卡，重说一遍，我还在。";
+}
+
 export async function POST(req) {
+  const startedAt = Date.now();
+
+  let userId = "anonymous";
+  let userMessage = "";
+  let mode = "daily";
+  let model = DAILY_MODEL;
+
   try {
     const body = await req.json().catch(() => ({}));
 
-    const userMessage = safeText(body.message);
-    const userId = getSafeUserId(body);
-    const mode = getMode(body);
-    const model = getModelByMode(mode);
+    userMessage = safeText(body.message);
+    userId = getSafeUserId(body);
+    mode = getMode(body);
+    model = getModelByMode(mode);
+
     const modePrompt = getModePrompt(mode);
-    const history = normalizeHistory(body.history);
+    const history = normalizeHistory(body.history, userMessage);
 
     if (!userMessage) {
       return Response.json(
         {
           ok: false,
           reply: "你刚刚好像没发内容，重新说一遍？",
+          version: VERSION,
         },
         {
           status: 400,
@@ -250,29 +340,35 @@ export async function POST(req) {
       );
     }
 
+    if (!process.env.DEEPSEEK_API_KEY && !process.env.OPENAI_API_KEY) {
+      throw new Error("DEEPSEEK_API_KEY 或 OPENAI_API_KEY 没有配置");
+    }
+
     const completion = await openai.chat.completions.create({
       model,
-      messages: [
-        {
-          role: "system",
-          content: `${SYSTEM_PROMPT}\n\n${modePrompt}`,
-        },
-        ...history,
-        {
-          role: "user",
-          content: userMessage,
-        },
-      ],
+      temperature: mode === "research" ? 0.35 : 0.75,
+      messages: buildMessages({
+        modePrompt,
+        history,
+        userMessage,
+      }),
     });
 
     const reply =
-      completion.choices?.[0]?.message?.content ||
+      completion.choices?.[0]?.message?.content?.trim() ||
       "刚刚脑子卡了一下，你再说一遍。";
+
+    const latencyMs = Date.now() - startedAt;
 
     await saveChatLog({
       userId,
       userMessage,
       aiReply: reply,
+      mode,
+      model,
+      latencyMs,
+      success: true,
+      errorMessage: "",
     });
 
     return Response.json({
@@ -281,15 +377,37 @@ export async function POST(req) {
       user_id: userId,
       mode,
       model,
+      latency_ms: latencyMs,
+      version: VERSION,
     });
   } catch (error) {
+    const latencyMs = Date.now() - startedAt;
+    const publicReply = getPublicErrorReply(mode);
+
     console.error("CHAT_API_ERROR:", error);
+
+    if (userMessage) {
+      await saveChatLog({
+        userId,
+        userMessage,
+        aiReply: publicReply,
+        mode,
+        model,
+        latencyMs,
+        success: false,
+        errorMessage: String(error?.message || error),
+      });
+    }
 
     return Response.json(
       {
         ok: false,
-        reply: "刚刚有点卡，重说一遍。",
-        error: String(error),
+        reply: publicReply,
+        mode,
+        model,
+        latency_ms: latencyMs,
+        version: VERSION,
+        error: "CHAT_FAILED",
       },
       {
         status: 500,
