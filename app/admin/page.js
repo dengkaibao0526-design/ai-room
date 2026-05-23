@@ -10,6 +10,16 @@ const NAV_ITEMS = [
   { key: "settings", label: "设置", desc: "功能开关" },
 ];
 
+const SETTING_DESCRIPTION_MAP = {
+  show_mbti: "是否显示 MBTI 小测试入口",
+  show_copywriter: "是否显示文案工作台入口",
+  show_feedback: "是否显示反馈按钮",
+  enable_research_mode: "是否开启学术研究模式",
+  show_intro_modal: "是否显示首次进入简介弹窗",
+  enable_easter_egg: "是否开启隐藏彩蛋",
+  enable_chat_logging: "是否记录聊天日志",
+};
+
 export default function AdminPage() {
   const [password, setPassword] = useState("");
   const [data, setData] = useState(null);
@@ -74,7 +84,7 @@ export default function AdminPage() {
     if (!finalPassword) return;
 
     try {
-      const res = await fetch("/api/admin/settings", {
+      const res = await fetch(`/api/admin/settings?t=${Date.now()}`, {
         method: "GET",
         cache: "no-store",
         headers: {
@@ -84,11 +94,38 @@ export default function AdminPage() {
 
       const json = await res.json().catch(() => ({}));
 
-      if (!res.ok || !json.ok) {
-        throw new Error(json.error || "读取系统开关失败");
+      if (
+        res.ok &&
+        json.ok &&
+        Array.isArray(json.settings) &&
+        json.settings.length > 0
+      ) {
+        setSettings(json.settings);
+        return;
       }
 
-      setSettings(Array.isArray(json.settings) ? json.settings : []);
+      const publicRes = await fetch(`/api/settings?t=${Date.now()}`, {
+        method: "GET",
+        cache: "no-store",
+      });
+
+      const publicJson = await publicRes.json().catch(() => ({}));
+
+      if (publicJson?.ok && publicJson?.settings) {
+        const fallbackSettings = Object.entries(publicJson.settings).map(
+          ([key, value]) => ({
+            key,
+            value,
+            description: SETTING_DESCRIPTION_MAP[key] || key,
+            updated_at: publicJson.generated_at || new Date().toISOString(),
+          })
+        );
+
+        setSettings(fallbackSettings);
+        return;
+      }
+
+      throw new Error(json.error || "读取系统开关失败");
     } catch (err) {
       console.error("LOAD_SETTINGS_ERROR:", err);
       setError(err.message || "读取系统开关失败");
@@ -145,7 +182,7 @@ export default function AdminPage() {
   async function toggleSetting(key, currentValue) {
     if (!key || settingsLoading) return;
 
-    const nextValue = !Boolean(currentValue);
+    const nextValue = !normalizeSettingValue(currentValue);
 
     setSettingsLoading(true);
     setError("");
@@ -166,10 +203,14 @@ export default function AdminPage() {
       const json = await res.json().catch(() => ({}));
 
       if (!res.ok || !json.ok) {
-        throw new Error(json.error || "更新系统开关失败");
+        throw new Error(json.error || json.detail || "更新系统开关失败");
       }
 
-      setSettings(Array.isArray(json.settings) ? json.settings : []);
+      if (Array.isArray(json.settings) && json.settings.length > 0) {
+        setSettings(json.settings);
+      } else {
+        await loadSettings(password);
+      }
     } catch (err) {
       console.error("TOGGLE_SETTING_ERROR:", err);
       setError(err.message || "更新系统开关失败");
@@ -702,10 +743,7 @@ export default function AdminPage() {
                   </div>
 
                   <div className="userDangerBox">
-                    <button
-                      onClick={clearSelectedUserLogs}
-                      disabled={loading}
-                    >
+                    <button onClick={clearSelectedUserLogs} disabled={loading}>
                       删除该用户全部聊天记录
                     </button>
                   </div>
@@ -916,30 +954,36 @@ export default function AdminPage() {
               {settings.length === 0 ? (
                 <Empty text="暂无开关数据，请确认 app_settings 表已初始化。" />
               ) : (
-                settings.map((item) => (
-                  <article className="settingCard" key={item.key}>
-                    <div>
-                      <strong>{getSettingLabel(item.key)}</strong>
-                      <span>{item.description || item.key}</span>
-                      <em>Key：{item.key}</em>
-                    </div>
+                settings.map((item) => {
+                  const settingValue = normalizeSettingValue(item.value);
 
-                    <button
-                      className={item.value ? "switchBtn switchOn" : "switchBtn"}
-                      onClick={() => toggleSetting(item.key, item.value)}
-                      disabled={settingsLoading}
-                    >
-                      <i></i>
-                      <span>{item.value ? "已开启" : "已关闭"}</span>
-                    </button>
-                  </article>
-                ))
+                  return (
+                    <article className="settingCard" key={item.key}>
+                      <div>
+                        <strong>{getSettingLabel(item.key)}</strong>
+                        <span>{item.description || item.key}</span>
+                        <em>Key：{item.key}</em>
+                      </div>
+
+                      <button
+                        className={
+                          settingValue ? "switchBtn switchOn" : "switchBtn"
+                        }
+                        onClick={() => toggleSetting(item.key, settingValue)}
+                        disabled={settingsLoading}
+                      >
+                        <i></i>
+                        <span>{settingValue ? "已开启" : "已关闭"}</span>
+                      </button>
+                    </article>
+                  );
+                })
               )}
             </div>
 
             <div className="settingsNotice">
-              当前已经可以修改数据库开关。下一步再让首页读取这些开关，
-              就能真正控制 MBTI、文案工作台、反馈按钮、学术模式、首次弹窗和隐藏彩蛋。
+              当前已经可以修改数据库开关。首页会读取这些开关，用来控制
+              MBTI、文案工作台、反馈按钮、学术模式、首次弹窗和隐藏彩蛋。
             </div>
           </Panel>
         )}
@@ -1102,6 +1146,20 @@ function getFeedbackStatusLabel(status) {
   if (status === "done") return "已处理";
   if (status === "ignored") return "暂不处理";
   return "未处理";
+}
+
+function normalizeSettingValue(value) {
+  if (value === true) return true;
+  if (value === false) return false;
+  if (value === "true") return true;
+  if (value === "false") return false;
+
+  if (value && typeof value === "object") {
+    if (value.value === true || value.value === "true") return true;
+    if (value.value === false || value.value === "false") return false;
+  }
+
+  return Boolean(value);
 }
 
 function getSettingLabel(key) {
