@@ -1,6 +1,7 @@
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
-const VERSION = "admin-settings-simple-v1";
+const VERSION = "admin-settings-v2";
 
 const ALLOW_KEYS = [
   "show_mbti",
@@ -51,9 +52,17 @@ function checkPassword(req, bodyPassword) {
 }
 
 function normalizeValue(value) {
-  if (value === true || value === "true") return true;
-  if (value === false || value === "false") return false;
-  return value;
+  if (value === true) return true;
+  if (value === false) return false;
+  if (value === "true") return true;
+  if (value === "false") return false;
+
+  if (value && typeof value === "object") {
+    if (value.value === true || value.value === "true") return true;
+    if (value.value === false || value.value === "false") return false;
+  }
+
+  return Boolean(value);
 }
 
 async function supabaseRequest(path, options = {}) {
@@ -65,10 +74,12 @@ async function supabaseRequest(path, options = {}) {
 
   const res = await fetch(`${supabaseUrl}/rest/v1/${path}`, {
     ...options,
+    cache: "no-store",
     headers: {
       apikey: supabaseKey,
       Authorization: `Bearer ${supabaseKey}`,
       "Content-Type": "application/json",
+      "Cache-Control": "no-store",
       ...(options.headers || {}),
     },
   });
@@ -116,11 +127,18 @@ export async function GET(req) {
       }
     );
 
-    return Response.json({
-      ok: true,
-      version: VERSION,
-      settings: settings || [],
-    });
+    return Response.json(
+      {
+        ok: true,
+        version: VERSION,
+        settings: settings || [],
+      },
+      {
+        headers: {
+          "Cache-Control": "no-store, no-cache, must-revalidate",
+        },
+      }
+    );
   } catch (error) {
     console.error("ADMIN_SETTINGS_GET_ERROR:", error);
 
@@ -181,7 +199,7 @@ export async function POST(req) {
     await supabaseRequest(`app_settings?key=eq.${encodeURIComponent(key)}`, {
       method: "PATCH",
       headers: {
-        Prefer: "return=minimal",
+        Prefer: "return=representation",
       },
       body: JSON.stringify({
         value,
@@ -196,13 +214,20 @@ export async function POST(req) {
       }
     );
 
-    return Response.json({
-      ok: true,
-      version: VERSION,
-      key,
-      value,
-      settings: settings || [],
-    });
+    return Response.json(
+      {
+        ok: true,
+        version: VERSION,
+        key,
+        value,
+        settings: settings || [],
+      },
+      {
+        headers: {
+          "Cache-Control": "no-store, no-cache, must-revalidate",
+        },
+      }
+    );
   } catch (error) {
     console.error("ADMIN_SETTINGS_POST_ERROR:", error);
 
