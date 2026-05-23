@@ -1,10 +1,9 @@
 import "./globals.css";
 
 export const metadata = {
-  title: "AI 分身舱",
-  description: "KB的 AI 分身个人网站"
+  title: "小KB房间",
+  description: "进来坐会儿，和小KB聊聊天。",
 };
-
 export default function RootLayout({ children }) {
   return (
     <html lang="zh-CN">
