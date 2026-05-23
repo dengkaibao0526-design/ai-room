@@ -1975,3 +1975,131 @@ body {
     display: none;
   }
 }
+/* =========================================================
+   XIAOKB Mobile Final Polish
+   放在 globals.css 最底部
+========================================================= */
+
+/* 让 input 也继承字体，避免反馈联系方式输入框字体突兀 */
+button,
+textarea,
+input {
+  font-family: inherit;
+}
+
+/* iPhone Safari 兼容 messages 渐隐遮罩 */
+.messages {
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent 0,
+    black 18px,
+    black calc(100% - 18px),
+    transparent 100%
+  );
+  overscroll-behavior: contain;
+}
+
+/* 弹窗内部滚动更稳，避免小屏幕卡住 */
+.premiumIntro,
+.feedbackOverlay {
+  overscroll-behavior: contain;
+}
+
+.premiumIntroCard,
+.feedbackCard {
+  overscroll-behavior: contain;
+}
+
+/* 禁用状态下不要还触发 hover 动效 */
+.modeBtn:disabled:hover,
+.starterBtn:disabled:hover,
+.feedbackTypes button:disabled:hover,
+.feedbackSubmit:disabled:hover,
+.inputBar button:disabled:hover {
+  transform: none;
+  box-shadow: none;
+}
+
+.modeBtn:disabled::after {
+  display: none;
+}
+
+/* 反馈弹窗在小屏和键盘弹出时不溢出 */
+.feedbackCard {
+  max-height: min(86vh, 720px);
+  overflow-y: auto;
+}
+
+.feedbackCard::-webkit-scrollbar {
+  width: 0;
+}
+
+/* 手机端最终收口 */
+@media (max-width: 520px) {
+  .hero {
+    max-height: min(400px, 48dvh);
+  }
+
+  .premiumIntroCard {
+    max-height: 84dvh;
+    padding-bottom: calc(18px + env(safe-area-inset-bottom));
+  }
+
+  .introLogo {
+    width: 54px;
+    height: 54px;
+    margin-top: 16px;
+  }
+
+  .introTitle {
+    font-size: 33px;
+    line-height: 1;
+  }
+
+  .introDesc {
+    margin-top: 11px;
+  }
+
+  .introFeatureGrid {
+    margin-top: 14px;
+  }
+
+  .introFeature {
+    min-height: 78px;
+  }
+
+  .premiumIntroButton {
+    margin-top: 15px;
+  }
+
+  .feedbackCard {
+    max-height: 84dvh;
+    padding-bottom: calc(18px + env(safe-area-inset-bottom));
+  }
+}
+
+@media (max-width: 380px) {
+  .premiumIntroCard {
+    padding: 19px 15px 16px;
+  }
+
+  .introTitle {
+    font-size: 30px;
+  }
+
+  .introDesc {
+    font-size: 12.5px;
+  }
+
+  .introFeature {
+    min-height: auto;
+  }
+
+  .premiumIntroButton {
+    height: 56px;
+  }
+
+  .feedbackTop h2 {
+    font-size: 22px;
+  }
+}
