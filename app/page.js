@@ -608,6 +608,10 @@ export default function Home() {
 
           <p className="heroText">{currentMode.heroText}</p>
 
+          <a className="gameEntryBtn" href="/game/mbti">
+            小KB MBTI 小测试
+          </a>
+
           <div className="tags">
             {currentMode.tags.map((tag) => (
               <span key={tag}>{tag}</span>
