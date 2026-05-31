@@ -6,6 +6,8 @@ const PLATFORM_OPTIONS = [
   { value: "moments", label: "朋友圈", desc: "熟人关系，自然一点" },
   { value: "xiaohongshu", label: "小红书", desc: "有标题感和分享感" },
   { value: "qq", label: "QQ空间", desc: "轻松、学生感、随意" },
+  { value: "official", label: "公众号", desc: "有结构，但别太端" },
+  { value: "shortvideo", label: "短视频口播", desc: "适合直接念出来" },
   { value: "comment", label: "评论区", desc: "短句回复，不越界" },
   { value: "caption", label: "图片配文", desc: "适合照片氛围" },
   { value: "blessing", label: "祝福文案", desc: "真诚，不模板" },
@@ -42,6 +44,15 @@ const EMOJI_OPTIONS = [
   { value: "more", label: "多一点 emoji" },
 ];
 
+const GOAL_OPTIONS = [
+  { value: "express", label: "表达近况", desc: "自然说说最近" },
+  { value: "comment", label: "引发评论", desc: "让人想接一句" },
+  { value: "plant", label: "温和种草", desc: "不硬推、不像广告" },
+  { value: "comfort", label: "安慰别人", desc: "轻一点，有分寸" },
+  { value: "formal", label: "正式一点", desc: "适合公众号/公告" },
+  { value: "funny", label: "轻松好笑", desc: "有梗但不尬" },
+];
+
 const EXAMPLE_CONTENTS = [
   "今天和朋友出去吃饭，拍了几张照片，想发朋友圈，不想太刻意。",
   "我买了一束花，想发一条有点高级感但不装的文案。",
@@ -54,6 +65,7 @@ export default function CopywriterPage() {
   const [scene, setScene] = useState("");
   const [avoid, setAvoid] = useState("不要油腻，不要像营销号，不要太 AI");
   const [platform, setPlatform] = useState("moments");
+  const [goal, setGoal] = useState("express");
   const [style, setStyle] = useState("natural");
   const [length, setLength] = useState("medium");
   const [intensity, setIntensity] = useState("normal");
@@ -70,6 +82,8 @@ export default function CopywriterPage() {
     const platformLabel =
       PLATFORM_OPTIONS.find((item) => item.value === platform)?.label ||
       "朋友圈";
+    const goalLabel =
+      GOAL_OPTIONS.find((item) => item.value === goal)?.label || "表达近况";
     const styleLabel =
       STYLE_OPTIONS.find((item) => item.value === style)?.label ||
       "自然朋友圈";
@@ -82,8 +96,8 @@ export default function CopywriterPage() {
       EMOJI_OPTIONS.find((item) => item.value === emojiMode)?.label ||
       "不要 emoji";
 
-    return `${platformLabel} · ${styleLabel} · ${lengthLabel} · ${intensityLabel} · ${emojiLabel}`;
-  }, [platform, style, length, intensity, emojiMode]);
+    return `${platformLabel} · ${goalLabel} · ${styleLabel} · ${lengthLabel} · ${intensityLabel} · ${emojiLabel}`;
+  }, [platform, goal, style, length, intensity, emojiMode]);
 
   async function generateCopy() {
     if (!content.trim() || loading) return;
@@ -104,6 +118,7 @@ export default function CopywriterPage() {
           scene,
           avoid,
           platform,
+          goal,
           style,
           length,
           intensity,
@@ -143,6 +158,7 @@ export default function CopywriterPage() {
     setScene("");
     setAvoid("不要油腻，不要像营销号，不要太 AI");
     setPlatform("moments");
+    setGoal("express");
     setStyle("natural");
     setLength("medium");
     setIntensity("normal");
@@ -165,7 +181,7 @@ export default function CopywriterPage() {
           </h1>
 
           <p>
-            不是那种油油的 AI 文案。这里主要帮你写朋友圈、小红书、评论区、祝福和图片配文。
+            不是那种油油的 AI 文案。这里可以写朋友圈、小红书、公众号、短视频口播、评论区和祝福。
             重点是自然、有分寸、像真人。
           </p>
 
@@ -229,6 +245,17 @@ export default function CopywriterPage() {
               options={PLATFORM_OPTIONS}
               value={platform}
               onChange={setPlatform}
+            />
+
+            <PanelTitle
+              title="这条文案的目标？"
+              desc="想表达近况、引发评论、温和种草，或者只是轻松一点。"
+            />
+
+            <OptionGrid
+              options={GOAL_OPTIONS}
+              value={goal}
+              onChange={setGoal}
             />
 
             <PanelTitle title="想要什么风格？" />

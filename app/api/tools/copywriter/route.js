@@ -2,10 +2,12 @@ import OpenAI from "openai";
 
 export const dynamic = "force-dynamic";
 
-const openai = new OpenAI({
-  apiKey: process.env.DEEPSEEK_API_KEY || process.env.OPENAI_API_KEY,
-  baseURL: "https://api.deepseek.com",
-});
+function createOpenAIClient() {
+  return new OpenAI({
+    apiKey: process.env.DEEPSEEK_API_KEY || process.env.OPENAI_API_KEY,
+    baseURL: "https://api.deepseek.com",
+  });
+}
 
 const MODEL = "deepseek-v4-flash";
 const VERSION = "copywriter-api-pro-v1";
@@ -95,6 +97,10 @@ function getPlatformPrompt(platform) {
     xiaohongshu:
       "平台：小红书。要求有标题感、分享感，但不要营销号，适合公开发布。",
     qq: "平台：QQ空间。可以更轻松、更有学生感、更随意一点。",
+    official:
+      "平台：公众号。要有清楚结构和标题感，但不要端着，不要像机构号套话。",
+    shortvideo:
+      "平台：短视频口播。要适合直接念出来，句子短，有停顿感，开头要能抓住人。",
     comment: "场景：评论区。要求短句、自然、像朋友回复。",
     caption: "场景：图片配文。要求短、氛围感强，适合搭配照片。",
     blessing: "场景：祝福文案。要求真诚、自然、有温度，不模板。",
@@ -112,6 +118,19 @@ function getLengthPrompt(length) {
   };
 
   return map[length] || map.medium;
+}
+
+function getGoalPrompt(goal) {
+  const map = {
+    express: "目标：表达近况。像自然分享，不用过度证明什么。",
+    comment: "目标：引发评论。可以留一点可接话的空间，但不要钓鱼感太重。",
+    plant: "目标：温和种草。可以说明好在哪里，但不能硬广、不能过度夸张。",
+    comfort: "目标：安慰别人。语气轻、真诚、有边界，不要爹味说教。",
+    formal: "目标：正式一点。表达清楚、稳重，但不要官腔。",
+    funny: "目标：轻松好笑。可以有反差和生活废话感，但不要尬梗。",
+  };
+
+  return map[goal] || map.express;
 }
 
 function getIntensityPrompt(intensity) {
@@ -164,6 +183,7 @@ function buildSystemPrompt({
   style,
   platform,
   length,
+  goal,
   intensity,
   emojiMode,
   avoid,
@@ -191,6 +211,8 @@ ${getPlatformPrompt(platform)}
 ${getStylePrompt(style)}
 
 ${getLengthPrompt(length)}
+
+${getGoalPrompt(goal)}
 
 ${getIntensityPrompt(intensity)}
 
@@ -249,6 +271,7 @@ export async function POST(req) {
     const scene = safeText(body.scene, 500);
     const style = safeText(body.style, 40) || "natural";
     const platform = safeText(body.platform, 40) || "moments";
+    const goal = safeText(body.goal, 40) || "express";
     const length = safeText(body.length, 40) || "medium";
     const intensity = safeText(body.intensity, 40) || "normal";
     const emojiMode = safeText(body.emojiMode, 40) || "none";
@@ -279,6 +302,7 @@ export async function POST(req) {
     const systemPrompt = buildSystemPrompt({
       style,
       platform,
+      goal,
       length,
       intensity,
       emojiMode,
@@ -294,9 +318,14 @@ ${content}
 使用场景补充：
 ${scene || "没有额外补充"}
 
+这条文案的目标：
+${goal}
+
 请生成文案。
 注意：不要解释你怎么写的，直接给结果。
 `;
+
+    const openai = createOpenAIClient();
 
     const completion = await openai.chat.completions.create({
       model: MODEL,
@@ -324,6 +353,7 @@ ${scene || "没有额外补充"}
       meta: {
         style,
         platform,
+        goal,
         length,
         intensity,
         emojiMode,

@@ -31,6 +31,21 @@ const STARTER_PROMPTS = {
   ],
 };
 
+const ROOM_FEATURES = [
+  {
+    title: "陪你聊",
+    desc: "累了、烦了、想随便说两句，都可以。",
+  },
+  {
+    title: "理想法",
+    desc: "把卡住的事拆小一点，不急着逼你振作。",
+  },
+  {
+    title: "小工具",
+    desc: "MBTI 小测试和文案工作台，想玩再点。",
+  },
+];
+
 const MODE_DETAIL = {
   daily: {
     status: "日常聊天 · 像朋友一样陪你说话",
@@ -38,7 +53,7 @@ const MODE_DETAIL = {
     titleTop: "累了就进来",
     titleBottom: "和小KB坐一会儿",
     heroText:
-      "不用组织语言，也不用表现得很正常。随便一句话，小KB都会接住你。",
+      "可以陪你聊两句，也可以帮你把乱乱的情绪和想法慢慢理清楚。你不用说得很完整，小KB会先听。",
     placeholder: "随便说点什么，小KB在听...",
     starterTitle: "不知道怎么开口？",
     starterHint: "点一句就行",
@@ -52,7 +67,7 @@ const MODE_DETAIL = {
     titleTop: "把复杂问题",
     titleBottom: "交给小KB拆开",
     heroText:
-      "适合整理资料、分析逻辑、润色表达、搭论文框架，也可以帮你把一团乱的想法理清楚。",
+      "适合整理资料、分析逻辑、润色表达、搭论文框架。更认真一点，但也不冰冷。",
     placeholder: "把问题、材料、作业要求发来...",
     starterTitle: "需要小KB怎么帮你？",
     starterHint: "选一个任务",
@@ -102,6 +117,7 @@ export default function Home() {
 
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [loadingHint, setLoadingHint] = useState("小KB正在听你说...");
   const [loaded, setLoaded] = useState(false);
   const [userId, setUserId] = useState("");
   const [showStarters, setShowStarters] = useState(true);
@@ -176,9 +192,19 @@ export default function Home() {
       const json = await res.json().catch(() => ({}));
 
       if (json?.ok && json?.settings) {
+        const receivedSettings = Array.isArray(json.settings)
+          ? json.settings.reduce((acc, item) => {
+              if (item?.key) {
+                acc[item.key] = item.value;
+              }
+
+              return acc;
+            }, {})
+          : json.settings;
+
         const nextSettings = {
           ...DEFAULT_PUBLIC_SETTINGS,
-          ...json.settings,
+          ...receivedSettings,
         };
 
         setPublicSettings(nextSettings);
@@ -282,6 +308,14 @@ export default function Home() {
   }
 
   function clearMemory() {
+    if (messages.length > 1) {
+      const confirmed = window.confirm(
+        "要把这次聊天清空吗？小KB会重新陪你开始。"
+      );
+
+      if (!confirmed) return;
+    }
+
     if (typingTimerRef.current) {
       clearInterval(typingTimerRef.current);
       typingTimerRef.current = null;
@@ -291,6 +325,7 @@ export default function Home() {
 
     setShowStarters(true);
     setLoading(false);
+    setLoadingHint("小KB正在听你说...");
 
     setMessages([
       {
@@ -425,6 +460,11 @@ export default function Home() {
     setShowStarters(false);
     setMessages(newMessages);
     setInput("");
+    setLoadingHint(
+      finalMode === "research"
+        ? "小KB正在认真拆这个问题..."
+        : "小KB正在想怎么接住你这句话..."
+    );
     setLoading(true);
 
     try {
@@ -458,7 +498,7 @@ export default function Home() {
         ...prev,
         {
           role: "ai",
-          text: "网络好像有点卡，但我还在。你可以再发一次。",
+          text: "刚刚网络没接稳，但我还在。你可以把那句话再发我一次。",
         },
       ]);
     } finally {
@@ -707,6 +747,15 @@ export default function Home() {
 
           <p className="heroText">{currentMode.heroText}</p>
 
+          <div className="roomFeatureGrid" aria-label="小KB可以陪你做的事">
+            {ROOM_FEATURES.map((feature) => (
+              <div className="roomFeature" key={feature.title}>
+                <strong>{feature.title}</strong>
+                <span>{feature.desc}</span>
+              </div>
+            ))}
+          </div>
+
           {(publicSettings.show_mbti || publicSettings.show_copywriter) && (
             <div className="toolEntryRow">
               {publicSettings.show_mbti && (
@@ -800,10 +849,13 @@ export default function Home() {
 
           {loading && (
             <div className="messageRow aiRow">
-              <div className="bubble aiBubble typing">
-                <span></span>
-                <span></span>
-                <span></span>
+              <div className="bubble aiBubble typingBubble">
+                <div className="typing">
+                  <span></span>
+                  <span></span>
+                  <span></span>
+                </div>
+                <p>{loadingHint}</p>
               </div>
             </div>
           )}
@@ -811,21 +863,31 @@ export default function Home() {
           <div ref={bottomRef}></div>
         </div>
 
-        <div className="inputBar">
-          <textarea
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder={currentMode.placeholder}
-            rows={1}
-          />
+        <div className="chatInputWrap">
+          <div className="inputHint">
+            <span>
+              {chatMode === "research"
+                ? "Pro 模式会更认真一点"
+                : "直接说就行，小KB不催你"}
+            </span>
+          </div>
 
-          <button
-            onClick={() => sendMessage()}
-            disabled={loading || !input.trim()}
-          >
-            {loading ? "..." : "发送"}
-          </button>
+          <div className="inputBar">
+            <textarea
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder={currentMode.placeholder}
+              rows={1}
+            />
+
+            <button
+              onClick={() => sendMessage()}
+              disabled={loading || !input.trim()}
+            >
+              {loading ? "..." : "发送"}
+            </button>
+          </div>
         </div>
       </section>
     </main>

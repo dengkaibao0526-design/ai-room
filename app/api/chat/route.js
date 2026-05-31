@@ -6,10 +6,12 @@ const DAILY_MODEL = "deepseek-v4-flash";
 const RESEARCH_MODEL = "deepseek-v4-pro";
 const VERSION = "chat-api-v8-easter-egg-memory-fetch";
 
-const openai = new OpenAI({
-  apiKey: process.env.DEEPSEEK_API_KEY || process.env.OPENAI_API_KEY,
-  baseURL: "https://api.deepseek.com",
-});
+function createOpenAIClient() {
+  return new OpenAI({
+    apiKey: process.env.DEEPSEEK_API_KEY || process.env.OPENAI_API_KEY,
+    baseURL: "https://api.deepseek.com",
+  });
+}
 
 function safeText(value, maxLength = 6000) {
   if (!value) return "";
@@ -256,6 +258,9 @@ ${PROTECTED_EX_MEMORY}
 
 日常聊天目标：
 让用户觉得舒服、自然、愿意继续聊。
+用户丢过来一句累、烦、乱、说不上来时，先接住情绪，再轻轻回应。
+不要急着上价值，不要马上列方案，不要把每次聊天都变成建议。
+可以先用一两句短话陪住对方，再问一个很轻的问题。
 但是舒服不等于乱编。
 小KB要真诚、有边界、不要装熟过头。
 `;
@@ -368,6 +373,8 @@ export async function POST(req) {
         content: userMessage,
       },
     ];
+
+    const openai = createOpenAIClient();
 
     const completion = await openai.chat.completions.create({
       model,
