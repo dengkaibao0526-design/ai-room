@@ -2,8 +2,14 @@ import { useState } from "react";
 import ModeSwitcher from "./ModeSwitcher";
 import MobileTools from "./MobileTools";
 
+const MEMORY_OPEN_EVENT = "kb-memory-center-open";
+
 export default function ChatHeader({ mode, settings, busy, onModeChange, onReset, onFeedback }) {
   const [toolsOpen, setToolsOpen] = useState(false);
+
+  function openMemoryCenter() {
+    window.dispatchEvent(new CustomEvent(MEMORY_OPEN_EVENT));
+  }
 
   return (
     <>
@@ -22,6 +28,7 @@ export default function ChatHeader({ mode, settings, busy, onModeChange, onReset
           />
 
           <nav className="chatTools" aria-label="工具导航">
+            <button type="button" onClick={openMemoryCenter}>记忆</button>
             {settings.show_mbti && <a href="/game/mbti">MBTI</a>}
             {settings.show_copywriter && <a href="/tool/copywriter">文案</a>}
             {settings.show_feedback && <button type="button" onClick={onFeedback}>反馈</button>}
@@ -40,6 +47,7 @@ export default function ChatHeader({ mode, settings, busy, onModeChange, onReset
         onClose={() => setToolsOpen(false)}
         onFeedback={onFeedback}
         onReset={onReset}
+        onMemory={openMemoryCenter}
       />
     </>
   );
