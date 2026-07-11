@@ -1,0 +1,311 @@
+.chatTools .zeroNavEntry {
+  position: relative;
+  isolation: isolate;
+  height: 38px;
+  min-width: 132px;
+  padding: 0 9px 0 8px;
+  gap: 8px;
+  overflow: hidden;
+  border: 1px solid rgba(188, 145, 255, 0.2);
+  border-radius: 11px;
+  color: rgba(247, 242, 255, 0.94);
+  background:
+    radial-gradient(90px 42px at 20% 10%, rgba(174, 111, 255, 0.16), transparent 72%),
+    linear-gradient(180deg, rgba(30, 22, 44, 0.82), rgba(12, 9, 18, 0.88));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.07),
+    0 10px 30px rgba(0, 0, 0, 0.18),
+    0 0 28px rgba(116, 63, 222, 0.06);
+}
+
+.chatTools .zeroNavEntry::before {
+  content: "";
+  position: absolute;
+  inset: -80% -20%;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0.42;
+  background: linear-gradient(112deg, transparent 36%, rgba(210, 180, 255, 0.13) 47%, rgba(126, 75, 234, 0.18) 52%, transparent 64%);
+  transform: translate3d(-34%, 0, 0) skewX(-12deg);
+  transition: transform 420ms cubic-bezier(.2,.8,.2,1), opacity 180ms ease;
+}
+
+.chatTools .zeroNavEntry:hover {
+  color: #fff;
+  border-color: rgba(205, 170, 255, 0.36);
+  background:
+    radial-gradient(110px 50px at 20% 10%, rgba(181, 116, 255, 0.23), transparent 72%),
+    linear-gradient(180deg, rgba(36, 25, 54, 0.9), rgba(14, 10, 22, 0.94));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    0 14px 36px rgba(0, 0, 0, 0.24),
+    0 0 38px rgba(125, 72, 235, 0.13);
+}
+
+.chatTools .zeroNavEntry:hover::before {
+  opacity: 0.78;
+  transform: translate3d(42%, 0, 0) skewX(-12deg);
+}
+
+.zeroNavCore,
+.mobileZeroCore {
+  position: relative;
+  display: grid !important;
+  place-items: center;
+  flex: 0 0 auto;
+  border-radius: 50%;
+}
+
+.zeroNavCore {
+  width: 20px;
+  height: 20px;
+  background:
+    radial-gradient(circle at 40% 32%, rgba(255,255,255,.82) 0 7%, transparent 16%),
+    radial-gradient(circle, #b68aff 0 18%, #8350f2 38%, #42218f 68%, #170d2d 100%);
+  border: 1px solid rgba(227, 205, 255, 0.3);
+  box-shadow: 0 0 14px rgba(145, 83, 255, 0.34), inset 0 0 8px rgba(255,255,255,.12);
+  animation: zeroEntryBreath 3.8s cubic-bezier(.45,0,.25,1) infinite;
+}
+
+.zeroNavCore::before,
+.zeroNavCore::after,
+.mobileZeroCore::before,
+.mobileZeroCore::after {
+  content: "";
+  position: absolute;
+  border-radius: 50%;
+  border: 1px solid rgba(205, 175, 255, 0.24);
+}
+
+.zeroNavCore::before { inset: -4px 1px; transform: rotate(58deg); }
+.zeroNavCore::after { inset: 2px -4px; transform: rotate(-26deg); border-color: rgba(161, 112, 255, 0.18); }
+.zeroNavCore i,
+.mobileZeroCore i {
+  position: absolute;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: #e5d7ff;
+  box-shadow: 0 0 8px rgba(207, 178, 255, 0.9);
+}
+.zeroNavCore i:nth-child(1) { top: -1px; right: 4px; }
+.zeroNavCore i:nth-child(2) { left: 0; bottom: 3px; width: 2px; height: 2px; opacity: .72; }
+.zeroNavCore i:nth-child(3) { right: -2px; bottom: 5px; width: 2px; height: 2px; opacity: .48; }
+
+.zeroNavCopy {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 1px;
+}
+
+.zeroNavCopy strong {
+  font-size: 10px;
+  line-height: 1.05;
+  letter-spacing: .08em;
+  font-weight: 760;
+  white-space: nowrap;
+}
+
+.zeroNavCopy small {
+  color: rgba(202, 174, 244, 0.48);
+  font-size: 7px;
+  line-height: 1;
+  letter-spacing: .12em;
+  white-space: nowrap;
+}
+
+.zeroNavLab {
+  position: relative;
+  z-index: 1;
+  margin-left: auto;
+  padding: 3px 4px;
+  border: 1px solid rgba(210, 180, 255, 0.14);
+  border-radius: 5px;
+  color: rgba(219, 197, 255, 0.56);
+  background: rgba(139, 82, 246, 0.08);
+  font-size: 6px;
+  font-weight: 760;
+  letter-spacing: .08em;
+}
+
+.mobileToolTrigger.hasZeroDiscovery {
+  position: relative;
+}
+
+.mobileToolTrigger.hasZeroDiscovery::after {
+  content: "";
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  width: 7px;
+  height: 7px;
+  border: 1px solid rgba(8, 6, 12, .9);
+  border-radius: 50%;
+  background: #b778ff;
+  box-shadow: 0 0 12px rgba(183, 120, 255, .9);
+  animation: zeroDiscoveryPulse 2.1s ease-in-out infinite;
+}
+
+@media (max-width: 720px), (pointer: coarse) {
+  .mobileToolGrid .mobileToolZero {
+    position: relative;
+    isolation: isolate;
+    grid-column: 1 / -1;
+    min-height: 88px;
+    padding: 14px 15px;
+    justify-content: flex-start;
+    gap: 13px;
+    overflow: hidden;
+    border-color: rgba(192, 145, 255, 0.22);
+    border-radius: 17px;
+    background:
+      radial-gradient(180px 100px at 8% 20%, rgba(162, 96, 255, 0.19), transparent 72%),
+      linear-gradient(115deg, rgba(37, 25, 56, 0.92), rgba(15, 11, 23, 0.96) 62%, rgba(24, 15, 38, 0.92));
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,.075),
+      0 18px 42px rgba(0,0,0,.24),
+      0 0 42px rgba(113, 62, 220, .08);
+  }
+
+  .mobileToolGrid .mobileToolZero::before {
+    content: "";
+    position: absolute;
+    width: 190px;
+    height: 180px;
+    right: -72px;
+    top: -78px;
+    z-index: -1;
+    border-radius: 50%;
+    background: conic-gradient(from 210deg, transparent, rgba(161, 103, 255, .16), transparent 36%, rgba(219, 189, 255, .07), transparent 72%);
+    filter: blur(2px);
+    animation: zeroEntryOrbit 9s linear infinite;
+  }
+
+  .mobileToolGrid .mobileToolZero::after {
+    content: "";
+    position: absolute;
+    inset: -60% -12%;
+    z-index: -1;
+    pointer-events: none;
+    opacity: .48;
+    background: linear-gradient(112deg, transparent 37%, rgba(218, 191, 255, .12) 47%, rgba(117, 68, 225, .19) 52%, transparent 63%);
+    transform: translateX(-38%) skewX(-13deg);
+    animation: zeroMobileRefraction 5.6s cubic-bezier(.55,0,.2,1) infinite;
+  }
+
+  .mobileToolGrid .mobileToolZero:active {
+    transform: scale(.986);
+    border-color: rgba(207, 168, 255, .34);
+  }
+
+  .mobileZeroCore {
+    width: 48px;
+    height: 48px;
+    background:
+      radial-gradient(circle at 39% 31%, rgba(255,255,255,.88) 0 5%, transparent 14%),
+      radial-gradient(circle, #d0b0ff 0 8%, #9f68ff 24%, #6637d2 48%, #2a145f 72%, #0c0714 100%);
+    border: 1px solid rgba(228, 207, 255, .28);
+    box-shadow:
+      0 0 28px rgba(151, 88, 255, .32),
+      0 12px 30px rgba(26, 10, 62, .28),
+      inset 0 0 14px rgba(255,255,255,.1);
+    animation: zeroEntryBreath 3.8s cubic-bezier(.45,0,.25,1) infinite;
+  }
+
+  .mobileZeroCore::before { inset: -7px 3px; transform: rotate(60deg); }
+  .mobileZeroCore::after { inset: 5px -8px; transform: rotate(-25deg); border-color: rgba(161, 112, 255, 0.2); }
+  .mobileZeroCore i:nth-child(1) { top: -3px; right: 9px; }
+  .mobileZeroCore i:nth-child(2) { left: -2px; bottom: 10px; width: 2px; height: 2px; opacity: .7; }
+  .mobileZeroCore i:nth-child(3) { right: -5px; bottom: 14px; width: 2px; height: 2px; opacity: .46; }
+
+  .mobileToolGrid .mobileToolZero > .mobileZeroCopy {
+    flex: 1 1 auto;
+    gap: 6px;
+  }
+
+  .mobileZeroCopy b {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: inherit;
+  }
+
+  .mobileZeroCopy b strong {
+    color: rgba(250, 247, 255, .97);
+    font-size: 17px;
+    line-height: 1;
+    font-weight: 680;
+    letter-spacing: -.02em;
+  }
+
+  .mobileToolGrid .mobileToolZero > .mobileZeroCopy > small {
+    color: rgba(211, 190, 241, .52) !important;
+    font-size: 10px !important;
+    letter-spacing: .055em !important;
+  }
+
+  .mobileZeroNew {
+    display: inline-flex !important;
+    align-items: center;
+    min-height: 17px;
+    padding: 0 6px !important;
+    border: 1px solid rgba(213, 180, 255, .22);
+    border-radius: 999px;
+    color: rgba(234, 218, 255, .86) !important;
+    background: rgba(143, 78, 240, .16);
+    box-shadow: 0 0 18px rgba(140, 77, 238, .12);
+    font-size: 7px !important;
+    font-weight: 760 !important;
+    line-height: 1 !important;
+    letter-spacing: .12em !important;
+  }
+
+  .mobileToolGrid .mobileToolZero > em {
+    min-width: 43px;
+    height: 28px;
+    display: inline-grid;
+    place-items: center;
+    border: 1px solid rgba(213, 184, 255, .16);
+    border-radius: 9px;
+    color: rgba(227, 207, 255, .7);
+    background: rgba(130, 72, 226, .1);
+    font-size: 9px;
+    letter-spacing: .08em;
+  }
+}
+
+@keyframes zeroEntryBreath {
+  0%, 100% { transform: scale(.96); filter: brightness(.94); box-shadow: 0 0 14px rgba(145, 83, 255, .24), inset 0 0 8px rgba(255,255,255,.1); }
+  42% { transform: scale(1.045); filter: brightness(1.1); box-shadow: 0 0 24px rgba(154, 91, 255, .44), inset 0 0 11px rgba(255,255,255,.14); }
+  56% { transform: scale(1.025); filter: brightness(1.04); }
+}
+
+@keyframes zeroDiscoveryPulse {
+  0%, 100% { transform: scale(.88); opacity: .62; }
+  48% { transform: scale(1.12); opacity: 1; }
+}
+
+@keyframes zeroEntryOrbit {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes zeroMobileRefraction {
+  0%, 18% { transform: translateX(-42%) skewX(-13deg); opacity: .24; }
+  48% { opacity: .62; }
+  76%, 100% { transform: translateX(48%) skewX(-13deg); opacity: .2; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .zeroNavCore,
+  .mobileZeroCore,
+  .mobileToolTrigger.hasZeroDiscovery::after,
+  .mobileToolGrid .mobileToolZero::before,
+  .mobileToolGrid .mobileToolZero::after {
+    animation: none !important;
+  }
+}

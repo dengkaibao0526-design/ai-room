@@ -2,12 +2,15 @@ import { useEffect, useState } from "react";
 
 const SENSOR_EVENT = "kb-spatial-sensor-change";
 const SENSOR_STORAGE_KEY = "xiaokb_spatial_sensor";
+const ZERO_DISCOVERY_KEY = "xiaokb_zero_discovered_v1";
+const ZERO_DISCOVERED_EVENT = "kb-zero-discovered";
 
 export default function MobileTools({ open, settings, onClose, onFeedback, onReset, onMemory }) {
   const [sensorEnabled, setSensorEnabled] = useState(false);
   const [sensorInfoOpen, setSensorInfoOpen] = useState(false);
   const [sensorMessage, setSensorMessage] = useState("");
   const [nativeMotion, setNativeMotion] = useState(false);
+  const [zeroNew, setZeroNew] = useState(false);
 
   useEffect(() => {
     if (!open) return undefined;
@@ -15,10 +18,26 @@ export default function MobileTools({ open, settings, onClose, onFeedback, onRes
     const isNative = isAndroidApp || window.__XIAOKB_NATIVE_APP__ === true || window.__XIAOKB_IOS_APP__ === true;
     setNativeMotion(isNative);
     setSensorEnabled(isNative || localStorage.getItem(SENSOR_STORAGE_KEY) === "true");
+    try {
+      setZeroNew(localStorage.getItem(ZERO_DISCOVERY_KEY) !== "true");
+    } catch {
+      setZeroNew(true);
+    }
     const onKeyDown = (event) => event.key === "Escape" && onClose();
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [open, onClose]);
+
+  function discoverZero() {
+    try {
+      localStorage.setItem(ZERO_DISCOVERY_KEY, "true");
+    } catch {
+      // Discovery state is cosmetic; continue into the game even if storage is unavailable.
+    }
+    setZeroNew(false);
+    window.dispatchEvent(new CustomEvent(ZERO_DISCOVERED_EVENT));
+    onClose();
+  }
 
   async function toggleSpatialSensor() {
     setSensorMessage("");
@@ -67,8 +86,15 @@ export default function MobileTools({ open, settings, onClose, onFeedback, onRes
           <button type="button" onClick={onClose} aria-label="关闭工具">×</button>
         </div>
         <div className="mobileToolGrid">
+          <a className={`mobileToolZero${zeroNew ? " isNew" : ""}`} href="/game/zero" onClick={discoverZero}>
+            <span className="mobileZeroCore" aria-hidden="true"><i /><i /><i /></span>
+            <span className="mobileZeroCopy">
+              <b><strong>KB ZERO</strong>{zeroNew && <small className="mobileZeroNew">NEW</small>}</b>
+              <small>120Hz FPS · Core Combat</small>
+            </span>
+            <em>进入</em>
+          </a>
           <button type="button" onClick={() => { onClose(); onMemory(); }}><span>记忆中心<small>小KB记得的事</small></span><em>◌</em></button>
-          <a href="/game/zero"><span>KB ZERO<small>实验性高刷 FPS</small></span><em>⌖</em></a>
           <a href="/install"><span>下载小KB<small>iPhone / Android</small></span><em>↓</em></a>
           {settings.show_copywriter && <a href="/tool/copywriter"><span>文案工作台</span><em>↗</em></a>}
           {settings.show_mbti && <a href="/game/mbti"><span>MBTI</span><em>↗</em></a>}
