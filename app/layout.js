@@ -1,4 +1,5 @@
 import "./globals.css";
+import "./premium.css";
 import DesktopCursorEffect from "../components/DesktopCursorEffect";
 
 export const metadata = {
