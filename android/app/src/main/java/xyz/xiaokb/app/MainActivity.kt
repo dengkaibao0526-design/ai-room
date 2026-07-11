@@ -27,7 +27,9 @@ import android.widget.Button
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import org.json.JSONObject
 import kotlin.math.max
@@ -44,6 +46,8 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     private var lastMotionDispatchAt = 0L
     private var sharedText: String? = null
     private var mainPageLoaded = false
+    private var lastSafeTop = 0
+    private var lastSafeBottom = 0
 
     private val filePicker = registerForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris ->
         fileCallback?.onReceiveValue(uris.toTypedArray())
@@ -60,6 +64,8 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         splashView = findViewById(R.id.coreSplash)
         errorPanel = findViewById(R.id.errorPanel)
         findViewById<Button>(R.id.retryButton).setOnClickListener { retryConnection() }
+
+        installAndroid16Insets()
 
         sensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
         gravitySensor = sensorManager.getDefaultSensor(Sensor.TYPE_GRAVITY)
@@ -89,12 +95,35 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         }
     }
 
+    private fun installAndroid16Insets() {
+        val root = findViewById<View>(R.id.root)
+        ViewCompat.setOnApplyWindowInsetsListener(root) { _, insets ->
+            val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            val cutout = insets.getInsets(WindowInsetsCompat.Type.displayCutout())
+            val imeVisible = insets.isVisible(WindowInsetsCompat.Type.ime())
+
+            val safeLeft = max(bars.left, cutout.left)
+            val safeTop = max(bars.top, cutout.top)
+            val safeRight = max(bars.right, cutout.right)
+            val safeBottom = if (imeVisible) 0 else max(bars.bottom, cutout.bottom)
+
+            webView.setPadding(safeLeft, safeTop, safeRight, safeBottom)
+            errorPanel.setPadding(safeLeft, safeTop, safeRight, safeBottom)
+            lastSafeTop = safeTop
+            lastSafeBottom = safeBottom
+            dispatchNativeInsetsIfReady()
+            insets
+        }
+        ViewCompat.requestApplyInsets(root)
+    }
+
     @SuppressLint("SetJavaScriptEnabled")
     private fun configureWebView() {
         webView.setBackgroundColor(0xFF050409.toInt())
         webView.overScrollMode = View.OVER_SCROLL_NEVER
         webView.isVerticalScrollBarEnabled = false
         webView.isHorizontalScrollBarEnabled = false
+        webView.clipToPadding = false
         webView.setRendererPriorityPolicy(WebView.RENDERER_PRIORITY_IMPORTANT, false)
         webView.settings.apply {
             javaScriptEnabled = true
@@ -108,7 +137,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             setSupportZoom(false)
             builtInZoomControls = false
             displayZoomControls = false
-            userAgentString = "$userAgentString XiaoKBAndroid/0.2"
+            userAgentString = "$userAgentString XiaoKBAndroid/0.3 Android16"
         }
         webView.addJavascriptInterface(NativeBridge(this), "XiaoKBNative")
         webView.webChromeClient = object : WebChromeClient() {
@@ -149,6 +178,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             override fun onPageFinished(view: WebView, url: String) {
                 mainPageLoaded = true
                 injectNativeBootstrap()
+                dispatchNativeInsetsIfReady()
                 dispatchSharedTextIfNeeded()
                 if (firstPageReadyAt == 0L) firstPageReadyAt = SystemClock.elapsedRealtime()
                 val hold = max(0L, 1050L - (SystemClock.elapsedRealtime() - firstPageReadyAt))
@@ -198,6 +228,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         super.onResume()
         webView.onResume()
         gravitySensor?.let { sensorManager.registerListener(this, it, SensorManager.SENSOR_DELAY_GAME) }
+        ViewCompat.requestApplyInsets(findViewById(R.id.root))
     }
 
     override fun onPause() {
@@ -234,6 +265,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             (() => {
               window.__XIAOKB_ANDROID_APP__ = true;
               window.__XIAOKB_NATIVE_APP__ = true;
+              window.__XIAOKB_ANDROID_16_SHELL__ = true;
               window.xiaokbNative = window.xiaokbNative || {};
               window.xiaokbNative.haptic = (style = 'light') => {
                 try { window.XiaoKBNative?.haptic(String(style)); } catch (_) {}
@@ -252,6 +284,19 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             })();
         """.trimIndent()
         webView.evaluateJavascript(script, null)
+    }
+
+    private fun dispatchNativeInsetsIfReady() {
+        if (!mainPageLoaded) return
+        val density = resources.displayMetrics.density.coerceAtLeast(1f)
+        val topDp = lastSafeTop / density
+        val bottomDp = lastSafeBottom / density
+        webView.evaluateJavascript(
+            "document.documentElement.style.setProperty('--kb-native-safe-top','${topDp}px');" +
+                "document.documentElement.style.setProperty('--kb-native-safe-bottom','${bottomDp}px');" +
+                "window.dispatchEvent(new CustomEvent('kb-native-insets',{detail:{top:$topDp,bottom:$bottomDp}}));",
+            null,
+        )
     }
 
     private fun dispatchSharedTextIfNeeded() {
