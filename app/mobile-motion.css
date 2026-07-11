@@ -1,0 +1,295 @@
+@media (max-width: 720px), (pointer: coarse) {
+  :root {
+    --kb-mobile-motion-fast: 120ms;
+    --kb-mobile-motion-base: 180ms;
+    --kb-mobile-motion-slow: 220ms;
+    --kb-mobile-ease: cubic-bezier(.2,.8,.2,1);
+    --kb-mobile-ease-in: cubic-bezier(.3,0,.6,1);
+  }
+
+  /* Mobile page arrival: layered system reveal, not a generic fade. */
+  .chatHeaderInner {
+    animation: kbMobileHeaderIn var(--kb-mobile-motion-slow) var(--kb-mobile-ease) both;
+  }
+
+  .chatEmptyState .emptyCore {
+    animation: kbMobileCoreWake 420ms cubic-bezier(.18,.9,.28,1) 70ms both;
+  }
+
+  .chatEmptyState .emptyEyebrow,
+  .chatEmptyState h1,
+  .chatEmptyState .emptyDescription {
+    animation: kbMobileTextResolve var(--kb-mobile-motion-slow) var(--kb-mobile-ease) both;
+  }
+
+  .chatEmptyState .emptyEyebrow { animation-delay: 100ms; }
+  .chatEmptyState h1 { animation-delay: 125ms; }
+  .chatEmptyState .emptyDescription { animation-delay: 150ms; }
+
+  .emptyPrompts button {
+    animation: kbMobilePromptResolve var(--kb-mobile-motion-slow) var(--kb-mobile-ease) both;
+  }
+
+  .emptyPrompts button:nth-child(1) { animation-delay: 165ms; }
+  .emptyPrompts button:nth-child(2) { animation-delay: 185ms; }
+  .emptyPrompts button:nth-child(3) { animation-delay: 205ms; }
+  .emptyPrompts button:nth-child(4) { animation-delay: 220ms; }
+
+  /* Core wake: a short energy compression and release. */
+  .emptyCore::after {
+    content: "";
+    position: absolute;
+    inset: 7px;
+    border-radius: 50%;
+    pointer-events: none;
+    border: 1px solid rgba(198,171,255,.2);
+    opacity: 0;
+    transform: scale(.58);
+    animation: kbMobileCorePulse 520ms var(--kb-mobile-ease) 90ms both;
+  }
+
+  /* Mode switch feels like a compact instrument selector. */
+  .chatModeSwitch button {
+    transition:
+      color var(--kb-mobile-motion-fast) var(--kb-mobile-ease),
+      background var(--kb-mobile-motion-base) var(--kb-mobile-ease),
+      box-shadow var(--kb-mobile-motion-base) var(--kb-mobile-ease),
+      transform var(--kb-mobile-motion-fast) var(--kb-mobile-ease) !important;
+  }
+
+  .chatModeSwitch button:active {
+    transform: scale(.965) !important;
+  }
+
+  .chatModeSwitch button.isActive,
+  .chatModeSwitch button[aria-pressed="true"] {
+    animation: kbMobileModeLock var(--kb-mobile-motion-base) var(--kb-mobile-ease) both;
+  }
+
+  /* Prompt cards react from the touch point visually without bounce. */
+  .emptyPrompts button:active,
+  .mobileToolGrid a:active,
+  .mobileToolGrid button:active,
+  .messageActions button:active {
+    transform: scale(.982) !important;
+    filter: brightness(1.06);
+    transition-duration: var(--kb-mobile-motion-fast) !important;
+  }
+
+  /* Composer focus: energy contracts toward the control surface. */
+  .chatComposer {
+    position: relative;
+    isolation: isolate;
+    transition:
+      border-color var(--kb-mobile-motion-base) var(--kb-mobile-ease),
+      box-shadow var(--kb-mobile-motion-base) var(--kb-mobile-ease),
+      transform var(--kb-mobile-motion-base) var(--kb-mobile-ease) !important;
+  }
+
+  .chatComposer::before {
+    content: "";
+    position: absolute;
+    inset: -1px;
+    z-index: -1;
+    border-radius: inherit;
+    pointer-events: none;
+    opacity: 0;
+    transform: scaleX(.72);
+    background: linear-gradient(90deg, transparent, rgba(147,95,255,.18) 35%, rgba(207,180,255,.12) 50%, rgba(147,95,255,.18) 65%, transparent);
+    filter: blur(9px);
+    transition:
+      opacity var(--kb-mobile-motion-base) var(--kb-mobile-ease),
+      transform var(--kb-mobile-motion-slow) var(--kb-mobile-ease);
+  }
+
+  .chatComposer:focus-within {
+    transform: translateY(-1px);
+  }
+
+  .chatComposer:focus-within::before {
+    opacity: 1;
+    transform: scaleX(1);
+  }
+
+  .sendButton,
+  .stopButton {
+    transition:
+      transform var(--kb-mobile-motion-fast) var(--kb-mobile-ease),
+      filter var(--kb-mobile-motion-fast) var(--kb-mobile-ease),
+      box-shadow var(--kb-mobile-motion-base) var(--kb-mobile-ease) !important;
+  }
+
+  .sendButton:active:not(:disabled),
+  .stopButton:active {
+    transform: scale(.94) !important;
+  }
+
+  /* New messages arrive in layers rather than flying upward. */
+  .chatMessage {
+    transform-origin: 50% 100%;
+    animation: kbMobileMessageResolve var(--kb-mobile-motion-slow) var(--kb-mobile-ease) both;
+  }
+
+  .chatMessage .messageAvatar {
+    animation: kbMobileAvatarResolve var(--kb-mobile-motion-base) var(--kb-mobile-ease) 35ms both;
+  }
+
+  .chatMessage .messageContent {
+    animation: kbMobileContentResolve var(--kb-mobile-motion-slow) var(--kb-mobile-ease) 20ms both;
+  }
+
+  /* Bottom sheet opens as a depth transition: backdrop first, surface second, controls third. */
+  .mobileToolBackdrop {
+    animation: kbMobileBackdropIn var(--kb-mobile-motion-base) var(--kb-mobile-ease-in) both;
+  }
+
+  .mobileToolSheet {
+    transform-origin: 50% 100%;
+    animation: kbMobileSheetIn var(--kb-mobile-motion-slow) var(--kb-mobile-ease) both;
+  }
+
+  .mobileToolSheetHeader {
+    animation: kbMobileSheetContentIn var(--kb-mobile-motion-base) var(--kb-mobile-ease) 55ms both;
+  }
+
+  .mobileToolGrid > * {
+    animation: kbMobileSheetItemIn var(--kb-mobile-motion-base) var(--kb-mobile-ease) both;
+  }
+
+  .mobileToolGrid > *:nth-child(1) { animation-delay: 65ms; }
+  .mobileToolGrid > *:nth-child(2) { animation-delay: 82ms; }
+  .mobileToolGrid > *:nth-child(3) { animation-delay: 99ms; }
+  .mobileToolGrid > *:nth-child(4) { animation-delay: 116ms; }
+
+  .chatModalBackdrop {
+    animation: kbMobileBackdropIn var(--kb-mobile-motion-base) var(--kb-mobile-ease-in) both;
+  }
+
+  .chatModal {
+    transform-origin: 50% 100%;
+    animation: kbMobileSheetIn var(--kb-mobile-motion-slow) var(--kb-mobile-ease) both;
+  }
+
+  /* Tool pages resolve their major surfaces in a controlled sequence. */
+  .copyHero,
+  .mbtiHero {
+    animation: kbMobilePanelResolve var(--kb-mobile-motion-slow) var(--kb-mobile-ease) both;
+  }
+
+  .controlPanel,
+  .questionCard {
+    animation: kbMobilePanelResolve var(--kb-mobile-motion-slow) var(--kb-mobile-ease) 55ms both;
+  }
+
+  .resultPanel,
+  .resultCard {
+    animation: kbMobilePanelResolve var(--kb-mobile-motion-slow) var(--kb-mobile-ease) 90ms both;
+  }
+
+  .optionBtn:active,
+  .primaryBtn:active,
+  .ghostBtn:active,
+  .copyBtn:active {
+    transform: scale(.975) !important;
+    transition-duration: var(--kb-mobile-motion-fast) !important;
+  }
+
+  @keyframes kbMobileHeaderIn {
+    from { opacity: 0; transform: translateY(-7px); filter: blur(5px); }
+    to { opacity: 1; transform: translateY(0); filter: blur(0); }
+  }
+
+  @keyframes kbMobileCoreWake {
+    0% { opacity: 0; transform: scale(.72); filter: blur(7px) brightness(.72); }
+    55% { opacity: 1; transform: scale(1.045); filter: blur(0) brightness(1.14); }
+    100% { opacity: 1; transform: scale(1); filter: blur(0) brightness(1); }
+  }
+
+  @keyframes kbMobileCorePulse {
+    0% { opacity: 0; transform: scale(.58); }
+    42% { opacity: .72; }
+    100% { opacity: 0; transform: scale(1.55); }
+  }
+
+  @keyframes kbMobileTextResolve {
+    from { opacity: 0; transform: translateY(8px); filter: blur(4px); }
+    to { opacity: 1; transform: translateY(0); filter: blur(0); }
+  }
+
+  @keyframes kbMobilePromptResolve {
+    from { opacity: 0; transform: translateY(9px) scale(.985); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  @keyframes kbMobileModeLock {
+    from { box-shadow: inset 0 0 0 rgba(255,255,255,0); }
+    to { box-shadow: inset 0 1px 0 rgba(255,255,255,.07), 0 6px 18px rgba(70,38,145,.12); }
+  }
+
+  @keyframes kbMobileMessageResolve {
+    from { opacity: 0; transform: translateY(7px) scale(.992); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  @keyframes kbMobileAvatarResolve {
+    from { opacity: 0; transform: scale(.78); filter: blur(3px); }
+    to { opacity: 1; transform: scale(1); filter: blur(0); }
+  }
+
+  @keyframes kbMobileContentResolve {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes kbMobileBackdropIn {
+    from { opacity: 0; backdrop-filter: blur(0) saturate(100%); }
+    to { opacity: 1; }
+  }
+
+  @keyframes kbMobileSheetIn {
+    from { opacity: 0; transform: translateY(22px) scale(.975); filter: blur(7px); }
+    to { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+  }
+
+  @keyframes kbMobileSheetContentIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes kbMobileSheetItemIn {
+    from { opacity: 0; transform: translateY(7px) scale(.985); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  @keyframes kbMobilePanelResolve {
+    from { opacity: 0; transform: translateY(10px); filter: blur(5px); }
+    to { opacity: 1; transform: translateY(0); filter: blur(0); }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chatHeaderInner,
+  .chatEmptyState .emptyCore,
+  .chatEmptyState .emptyEyebrow,
+  .chatEmptyState h1,
+  .chatEmptyState .emptyDescription,
+  .emptyPrompts button,
+  .emptyCore::after,
+  .chatMessage,
+  .chatMessage .messageAvatar,
+  .chatMessage .messageContent,
+  .mobileToolBackdrop,
+  .mobileToolSheet,
+  .mobileToolSheetHeader,
+  .mobileToolGrid > *,
+  .chatModalBackdrop,
+  .chatModal,
+  .copyHero,
+  .mbtiHero,
+  .controlPanel,
+  .questionCard,
+  .resultPanel,
+  .resultCard {
+    animation: none !important;
+  }
+}
