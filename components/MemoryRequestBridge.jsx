@@ -57,7 +57,7 @@ export default function MemoryRequestBridge() {
         const history = Array.isArray(body.history) ? body.history : [];
         const nextBody = {
           ...body,
-          history: [...buildMemoryHistory(memories), ...history],
+          history: [...history, ...buildMemoryHistory(memories)],
         };
 
         return originalFetch(input, { ...init, body: JSON.stringify(nextBody) });
