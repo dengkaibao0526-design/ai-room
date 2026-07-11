@@ -1,11 +1,14 @@
 import OpenAI from "openai";
+import { checkRateLimit, rateLimitResponse } from "../../../lib/rate-limit";
 
 export const dynamic = "force-dynamic";
 
-const openai = new OpenAI({
-  apiKey: process.env.DEEPSEEK_API_KEY || process.env.OPENAI_API_KEY,
-  baseURL: "https://api.deepseek.com",
-});
+function createOpenAIClient() {
+  return new OpenAI({
+    apiKey: process.env.DEEPSEEK_API_KEY || process.env.OPENAI_API_KEY,
+    baseURL: "https://api.deepseek.com",
+  });
+}
 
 const MODEL = "deepseek-v4-flash";
 const VERSION = "copywriter-api-pro-v1";
@@ -242,6 +245,14 @@ ${getAvoidPrompt(avoid)}
 }
 
 export async function POST(req) {
+  const rateLimit = checkRateLimit(req, {
+    name: "copywriter",
+    limit: 10,
+    windowMs: 60 * 1000,
+  });
+
+  if (!rateLimit.allowed) return rateLimitResponse(rateLimit);
+
   try {
     const body = await req.json().catch(() => ({}));
 
@@ -298,6 +309,7 @@ ${scene || "没有额外补充"}
 注意：不要解释你怎么写的，直接给结果。
 `;
 
+    const openai = createOpenAIClient();
     const completion = await openai.chat.completions.create({
       model: MODEL,
       temperature: 0.86,
