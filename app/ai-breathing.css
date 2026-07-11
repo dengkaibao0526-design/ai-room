@@ -1,0 +1,152 @@
+:root {
+  --kb-breath-core: 0;
+  --kb-breath-space: 0;
+  --kb-breath-refraction: 0;
+  --kb-breath-top: 0;
+  --kb-breath-composer: 0;
+  --kb-breath-presence: 0;
+}
+
+.chatAppShell {
+  isolation: isolate;
+}
+
+.chatAppShell .kbBreathSpace,
+.chatAppShell .kbBreathRefraction,
+.chatAppShell .kbBreathTopLight {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: var(--kb-breath-presence);
+  will-change: opacity, transform, filter;
+}
+
+.chatAppShell .kbBreathSpace {
+  inset: -10vh -8vw;
+  background:
+    radial-gradient(58rem 34rem at 50% 16%, rgba(139, 91, 255, .115), transparent 72%),
+    radial-gradient(36rem 50rem at -8% 52%, rgba(100, 61, 211, .055), transparent 74%),
+    radial-gradient(36rem 50rem at 108% 48%, rgba(121, 75, 230, .05), transparent 74%);
+  opacity: calc(var(--kb-breath-presence) * (.18 + var(--kb-breath-space) * .26));
+  transform: scale(calc(1 + var(--kb-breath-space) * .008));
+  filter: saturate(calc(1 + var(--kb-breath-space) * .04));
+}
+
+.chatAppShell .kbBreathRefraction {
+  inset: -16vh -18vw;
+  background:
+    linear-gradient(112deg, transparent 18%, rgba(199, 174, 255, .026) 39%, rgba(119, 69, 234, .042) 47%, transparent 59%),
+    linear-gradient(71deg, transparent 26%, rgba(118, 73, 226, .03) 47%, rgba(208, 188, 255, .018) 53%, transparent 70%);
+  opacity: calc(var(--kb-breath-presence) * (.08 + var(--kb-breath-refraction) * .21));
+  transform:
+    translate3d(0, calc((var(--kb-breath-refraction) - .5) * 1.8px), 0)
+    scale(calc(1 + var(--kb-breath-refraction) * .006));
+  filter: blur(.2px) saturate(calc(1 + var(--kb-breath-refraction) * .08));
+}
+
+.chatAppShell .kbBreathTopLight {
+  inset: -18vh -10vw auto;
+  height: 62vh;
+  background: radial-gradient(ellipse at 50% 0%, rgba(172, 126, 255, .16), rgba(111, 67, 220, .055) 38%, transparent 72%);
+  opacity: calc(var(--kb-breath-presence) * (.13 + var(--kb-breath-top) * .24));
+  transform: translate3d(0, calc(var(--kb-breath-top) * 1.1px), 0) scaleX(calc(1 + var(--kb-breath-top) * .009));
+  filter: blur(calc(2px + var(--kb-breath-top) * 1px));
+}
+
+.chatAppShell > .ambientGrid {
+  opacity: calc(.07 + var(--kb-breath-space) * .008) !important;
+  filter: brightness(calc(1 + var(--kb-breath-space) * .025));
+}
+
+.kbStateCore[data-core-state="idle"] .kbStateCoreMark,
+.kbStateCore[data-core-state="research"] .kbStateCoreMark {
+  transform: scale(calc(1 + var(--kb-breath-core) * .008));
+  filter: brightness(calc(1 + var(--kb-breath-core) * .045));
+}
+
+.kbStateCore[data-core-state="idle"] .kbCoreAura,
+.kbStateCore[data-core-state="research"] .kbCoreAura {
+  opacity: calc(.34 + var(--kb-breath-core) * .15);
+  transform: scale(calc(1 + var(--kb-breath-core) * .018));
+  filter: blur(calc(9px + var(--kb-breath-core) * 1.5px));
+}
+
+.kbStateCore[data-core-state="idle"] .kbCoreOrbitA,
+.kbStateCore[data-core-state="research"] .kbCoreOrbitA {
+  scale: calc(1 + var(--kb-breath-core) * .006);
+}
+
+.kbStateCore[data-core-state="idle"] .kbCoreOrbitB,
+.kbStateCore[data-core-state="research"] .kbCoreOrbitB {
+  scale: calc(1 - var(--kb-breath-core) * .004);
+}
+
+.chatAppShell[data-core-state="idle"] .chatComposer,
+.chatAppShell[data-core-state="research"] .chatComposer {
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.06),
+    0 calc(18px + var(--kb-breath-composer) * 1px) calc(60px + var(--kb-breath-composer) * 3px) rgba(0,0,0,.42),
+    0 0 calc(1px + var(--kb-breath-composer) * 13px) rgba(128,80,235, calc(.025 + var(--kb-breath-composer) * .018)) !important;
+}
+
+.chatAppShell[data-core-state="idle"] .isAi .messageContent::before,
+.chatAppShell[data-core-state="research"] .isAi .messageContent::before {
+  opacity: calc(.86 + var(--kb-breath-refraction) * .08);
+  filter: brightness(calc(1 + var(--kb-breath-refraction) * .035));
+}
+
+html[data-kb-spatial-sensor="on"] .kbBreathSpace {
+  transform:
+    translate3d(var(--kb-sensor-grid-xp, 0px), var(--kb-sensor-grid-yp, 0px), 0)
+    scale(calc(1 + var(--kb-breath-space) * .008));
+}
+
+html[data-kb-spatial-sensor="on"] .kbBreathRefraction {
+  transform:
+    translate3d(var(--kb-sensor-shadow-xp, 0px), var(--kb-sensor-shadow-yp, 0px), 0)
+    rotate(var(--kb-sensor-angle, 0deg))
+    scale(calc(1 + var(--kb-breath-refraction) * .006));
+}
+
+html[data-kb-spatial-sensor="on"] .kbBreathTopLight {
+  transform:
+    translate3d(var(--kb-sensor-logo-xp, 0px), calc(var(--kb-sensor-logo-yp, 0px) + var(--kb-breath-top) * 1px), 0)
+    scaleX(calc(1 + var(--kb-breath-top) * .009));
+}
+
+@media (max-width: 720px), (pointer: coarse) {
+  .chatAppShell .kbBreathSpace {
+    inset: -8vh -26vw;
+    background:
+      radial-gradient(31rem 24rem at 50% 19%, rgba(143, 94, 255, .14), transparent 70%),
+      radial-gradient(22rem 38rem at -16% 50%, rgba(102, 61, 214, .06), transparent 75%),
+      radial-gradient(22rem 38rem at 116% 45%, rgba(124, 79, 235, .055), transparent 75%);
+  }
+
+  .chatAppShell .kbBreathRefraction {
+    inset: -12vh -34vw;
+    opacity: calc(var(--kb-breath-presence) * (.07 + var(--kb-breath-refraction) * .19));
+  }
+
+  .chatAppShell .kbBreathTopLight {
+    height: 56vh;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chatAppShell .kbBreathSpace,
+  .chatAppShell .kbBreathRefraction,
+  .chatAppShell .kbBreathTopLight {
+    display: none !important;
+  }
+
+  .kbStateCore .kbStateCoreMark,
+  .kbStateCore .kbCoreAura,
+  .kbStateCore .kbCoreOrbitA,
+  .kbStateCore .kbCoreOrbitB {
+    transform: none !important;
+    scale: 1 !important;
+    filter: none !important;
+  }
+}
