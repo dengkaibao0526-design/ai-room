@@ -5,12 +5,15 @@ const SENSOR_STORAGE_KEY = "xiaokb_spatial_sensor";
 
 export default function MobileTools({ open, settings, onClose, onFeedback, onReset, onMemory }) {
   const [sensorEnabled, setSensorEnabled] = useState(false);
+  const [nativeSpatial, setNativeSpatial] = useState(false);
   const [sensorInfoOpen, setSensorInfoOpen] = useState(false);
   const [sensorMessage, setSensorMessage] = useState("");
 
   useEffect(() => {
     if (!open) return undefined;
-    setSensorEnabled(localStorage.getItem(SENSOR_STORAGE_KEY) === "true");
+    const isNativeApp = window.__XIAOKB_IOS_APP__ === true;
+    setNativeSpatial(isNativeApp);
+    setSensorEnabled(isNativeApp || localStorage.getItem(SENSOR_STORAGE_KEY) === "true");
     const onKeyDown = (event) => event.key === "Escape" && onClose();
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
@@ -18,6 +21,7 @@ export default function MobileTools({ open, settings, onClose, onFeedback, onRes
 
   async function toggleSpatialSensor() {
     setSensorMessage("");
+    if (nativeSpatial) return;
 
     if (sensorEnabled) {
       localStorage.setItem(SENSOR_STORAGE_KEY, "false");
@@ -64,8 +68,8 @@ export default function MobileTools({ open, settings, onClose, onFeedback, onRes
           {settings.show_mbti && <a href="/game/mbti"><span>MBTI</span><em>↗</em></a>}
           {settings.show_feedback && <button type="button" onClick={() => { onClose(); onFeedback(); }}><span>反馈</span><em>＋</em></button>}
           <div className={`mobileSensorTool${sensorEnabled ? " isEnabled" : ""}`}>
-            <button className="mobileSensorToggle" type="button" onClick={toggleSpatialSensor} aria-pressed={sensorEnabled}>
-              <span>空间感应<small>{sensorEnabled ? "已开启" : "点击开启"}</small></span>
+            <button className="mobileSensorToggle" type="button" onClick={toggleSpatialSensor} aria-pressed={sensorEnabled} disabled={nativeSpatial}>
+              <span>空间感应<small>{nativeSpatial ? "原生感应已接管" : sensorEnabled ? "已开启" : "点击开启"}</small></span>
               <em aria-hidden="true"><i /></em>
             </button>
             <button className="mobileSensorInfoButton" type="button" onClick={() => setSensorInfoOpen(true)} aria-label="查看空间感应说明">!</button>
@@ -79,8 +83,8 @@ export default function MobileTools({ open, settings, onClose, onFeedback, onRes
             <section className="mobileSensorInfo" role="dialog" aria-modal="true" aria-label="空间感应说明">
               <div><strong>空间感应</strong><button type="button" onClick={() => setSensorInfoOpen(false)} aria-label="关闭说明">×</button></div>
               <p>开启后，小KB会读取手机的陀螺仪与设备方向数据，让紫色折射场、KB Core 高光和输入区空间效果跟随手机轻微倾斜。</p>
-              <p>它不会读取你的位置、相机或麦克风。方向数据只用于当前页面的视觉响应，不会作为聊天内容发送。</p>
-              <small>iPhone 首次开启时，Safari 可能弹出“运动与方向访问”系统权限提示。</small>
+              <p>它不会读取你的位置、相机或麦克风。方向数据只用于当前设备的视觉响应，不会作为聊天内容发送。</p>
+              <small>{nativeSpatial ? "小KB iPhone App 使用 iOS Core Motion 原生驱动空间感应。" : "iPhone 首次开启时，Safari 可能弹出“运动与方向访问”系统权限提示。"}</small>
             </section>
           </div>
         )}
