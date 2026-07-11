@@ -4,6 +4,7 @@ import "./visual-polish.css";
 import "./mobile-polish.css";
 import "./mobile-back-button.css";
 import "./mobile-motion.css";
+import "./typing-energy.css";
 import DesktopCursorEffect from "../components/DesktopCursorEffect";
 import ProductEntrance from "../components/ProductEntrance";
 
