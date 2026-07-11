@@ -1,6 +1,8 @@
 import "./globals.css";
 import "./premium.css";
+import "./visual-polish.css";
 import DesktopCursorEffect from "../components/DesktopCursorEffect";
+import ProductEntrance from "../components/ProductEntrance";
 
 export const metadata = {
   title: "万能的KB",
@@ -12,6 +14,7 @@ export default function RootLayout({ children }) {
     <html lang="zh-CN">
       <body>
         {children}
+        <ProductEntrance />
         <DesktopCursorEffect />
       </body>
     </html>
