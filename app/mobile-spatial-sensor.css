@@ -5,17 +5,17 @@
         from var(--kb-sensor-angle, 0deg)
         at calc(50% + var(--kb-sensor-xp, 0px)) calc(36% + var(--kb-sensor-yp, 0px)),
         transparent 0deg,
-        rgba(218, 198, 255, calc(.03 + .07 * var(--kb-sensor-energy, 0))) 48deg,
+        rgba(218, 198, 255, .09) 48deg,
         transparent 92deg,
-        rgba(112, 61, 232, calc(.05 + .09 * var(--kb-sensor-energy, 0))) 176deg,
+        rgba(112, 61, 232, .12) 176deg,
         transparent 238deg,
-        rgba(181, 139, 255, calc(.025 + .06 * var(--kb-sensor-energy, 0))) 314deg,
+        rgba(181, 139, 255, .07) 314deg,
         transparent 360deg
       ),
       radial-gradient(
         19rem 14rem at calc(50% + var(--kb-sensor-xp, 0px)) calc(32% + var(--kb-sensor-yp, 0px)),
-        rgba(151, 100, 255, calc(.08 + .12 * var(--kb-sensor-energy, 0))),
-        rgba(80, 42, 168, calc(.025 + .05 * var(--kb-sensor-energy, 0))) 46%,
+        rgba(151, 100, 255, .16),
+        rgba(80, 42, 168, .055) 46%,
         transparent 72%
       ),
       radial-gradient(circle at 50% -18%, rgba(159, 107, 255, .11), transparent 38%),
@@ -23,16 +23,16 @@
   }
 
   html[data-kb-spatial-sensor="on"] .ambientGrid {
-    transform: translate3d(calc(var(--kb-sensor-xp, 0px) * -.09), calc(var(--kb-sensor-yp, 0px) * -.08), 0);
-    opacity: calc(.15 + .05 * var(--kb-sensor-energy, 0));
+    transform: translate3d(var(--kb-sensor-grid-xp, 0px), var(--kb-sensor-grid-yp, 0px), 0);
+    opacity: .19;
     transition: opacity 160ms ease-out;
   }
 
   html[data-kb-spatial-sensor="on"] [data-logo-core] {
-    --kb-logo-x: calc(var(--kb-sensor-xp, 0px) * .05);
-    --kb-logo-y: calc(var(--kb-sensor-yp, 0px) * .05);
+    --kb-logo-x: var(--kb-sensor-logo-xp, 0px);
+    --kb-logo-y: var(--kb-sensor-logo-yp, 0px);
     filter:
-      drop-shadow(calc(var(--kb-sensor-xp, 0px) * .04) calc(var(--kb-sensor-yp, 0px) * .03) 18px rgba(180, 137, 255, .24))
+      drop-shadow(var(--kb-sensor-shadow-xp, 0px) var(--kb-sensor-shadow-yp, 0px) 18px rgba(180, 137, 255, .24))
       drop-shadow(0 22px 52px rgba(73,39,157,.2));
   }
 
@@ -40,7 +40,7 @@
     box-shadow:
       inset 0 1px 0 rgba(255,255,255,.08),
       0 20px 62px rgba(0,0,0,.5),
-      calc(var(--kb-sensor-xp, 0px) * .05) calc(var(--kb-sensor-yp, 0px) * .04) 36px rgba(121, 70, 239, calc(.08 + .08 * var(--kb-sensor-energy, 0))) !important;
+      var(--kb-sensor-shadow-xp, 0px) var(--kb-sensor-shadow-yp, 0px) 36px rgba(121, 70, 239, .15) !important;
   }
 
   .mobileSensorTool {
