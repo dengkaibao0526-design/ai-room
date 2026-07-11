@@ -1,0 +1,85 @@
+@media (pointer: fine) {
+  .chatAppShell {
+    background:
+      radial-gradient(7.4rem 7.4rem at var(--kb-mx) var(--kb-my), rgba(2,2,5,.985) 0 18%, rgba(7,5,13,.96) 27%, rgba(34,18,68,.7) 39%, transparent 58%),
+      radial-gradient(13rem 10rem at var(--kb-mx) var(--kb-my), transparent 28%, rgba(207,182,255,.085) 35%, rgba(151,101,255,.22) 42%, rgba(91,47,190,.075) 54%, transparent 72%),
+      conic-gradient(from var(--kb-field-angle) at var(--kb-fx) var(--kb-fy), transparent 0deg, rgba(188,153,255,.055) 42deg, transparent 88deg, rgba(99,54,214,.075) 174deg, transparent 232deg, rgba(223,209,255,.035) 318deg, transparent 360deg),
+      radial-gradient(calc(23rem + 5rem * var(--kb-field-energy)) calc(17rem + 4rem * var(--kb-field-energy)) at var(--kb-fx) var(--kb-fy), rgba(133,82,255,calc(.075 + .055 * var(--kb-field-energy))), transparent 68%),
+      radial-gradient(40rem 20rem at 50% -5%, rgba(145,91,255,.16), transparent 68%),
+      radial-gradient(25rem 40rem at -8% 52%, rgba(112,72,214,.05), transparent 72%),
+      radial-gradient(25rem 40rem at 108% 48%, rgba(121,77,235,.045), transparent 72%),
+      linear-gradient(180deg, #08070b 0%, #050507 45%, #06050a 100%) !important;
+  }
+
+  .chatAppShell::before {
+    opacity: calc(.23 + .05 * var(--kb-field-energy, 0)) !important;
+    mask-image: radial-gradient(32rem 24rem at var(--kb-fx) var(--kb-fy), #000 0 25%, rgba(0,0,0,.72) 55%, transparent 88%);
+    -webkit-mask-image: radial-gradient(32rem 24rem at var(--kb-fx) var(--kb-fy), #000 0 25%, rgba(0,0,0,.72) 55%, transparent 88%);
+  }
+
+  .chatAppShell::after {
+    opacity: calc(.12 + .08 * var(--kb-field-energy, 0)) !important;
+    background:
+      radial-gradient(11rem 6rem at var(--kb-mx) var(--kb-my), rgba(226,211,255,.055), transparent 68%),
+      radial-gradient(26rem 18rem at var(--kb-fx) var(--kb-fy), rgba(112,65,231,.055), transparent 74%) !important;
+    mix-blend-mode: screen;
+  }
+
+  [data-logo-core],
+  [data-spotlight-card],
+  .chatComposer {
+    --kb-local-field: 0;
+  }
+
+  [data-logo-core]:hover,
+  [data-spotlight-card]:hover,
+  .chatComposer:hover,
+  .chatComposer:focus-within {
+    --kb-local-field: 1;
+  }
+
+  [data-logo-core] {
+    filter:
+      drop-shadow(0 22px 52px rgba(73,39,157,.2))
+      drop-shadow(calc(2px * var(--kb-field-energy, 0)) 0 13px rgba(178,133,255,.14));
+  }
+
+  [data-spotlight-card] {
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,.035),
+      0 12px 28px rgba(0,0,0,.13),
+      0 0 calc(24px * var(--kb-local-field)) rgba(121,74,236,.06) !important;
+  }
+
+  .chatComposer {
+    isolation: isolate;
+  }
+
+  /* Keep the local refraction response above the opaque composer surface,
+     but below typing energy, text, caret and action buttons. */
+  .chatComposer::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    background:
+      radial-gradient(9rem 4.6rem at var(--composer-x, 50%) 50%, rgba(212,190,255,.13), rgba(136,82,255,.065) 34%, transparent 70%),
+      conic-gradient(from var(--kb-field-angle), transparent 0 24%, rgba(203,175,255,.14) 32%, transparent 41% 67%, rgba(123,75,238,.11) 76%, transparent 86% 100%);
+    mix-blend-mode: screen;
+    filter: blur(7px);
+    opacity: calc(.11 + .3 * var(--kb-field-energy, 0));
+    transform: scale(1.015);
+    transition: opacity 180ms cubic-bezier(.2,.8,.2,1);
+  }
+
+  .chatComposer:hover::after,
+  .chatComposer:focus-within::after {
+    opacity: calc(.3 + .26 * var(--kb-field-energy, 0));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chatComposer::after { display: none !important; }
+}

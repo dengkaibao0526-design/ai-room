@@ -4,11 +4,15 @@ import { useEffect, useRef } from "react";
 
 const MAGNET_SELECTOR = "button, .chatTools a, .chatBrand";
 const CARD_SELECTOR = "[data-spotlight-card]";
+const FIELD_TARGET_SELECTOR = "[data-logo-core], [data-spotlight-card], .chatComposer";
 
 export default function DesktopCursorEffect() {
   const frameRef = useRef(null);
   const pointerRef = useRef({ x: 0, y: 0 });
-  const currentRef = useRef({ x: 0, y: 0 });
+  const coreRef = useRef({ x: 0, y: 0 });
+  const fieldRef = useRef({ x: 0, y: 0 });
+  const energyRef = useRef(0);
+  const energyTargetRef = useRef(0);
 
   useEffect(() => {
     const finePointer = window.matchMedia("(pointer: fine)");
@@ -18,24 +22,45 @@ export default function DesktopCursorEffect() {
     const root = document.documentElement;
     const initial = { x: window.innerWidth * 0.5, y: window.innerHeight * 0.28 };
     pointerRef.current = initial;
-    currentRef.current = initial;
-    root.style.setProperty("--kb-mx", `${initial.x}px`);
-    root.style.setProperty("--kb-my", `${initial.y}px`);
+    coreRef.current = initial;
+    fieldRef.current = initial;
+
+    const writePosition = (nameX, nameY, point) => {
+      root.style.setProperty(nameX, `${point.x}px`);
+      root.style.setProperty(nameY, `${point.y}px`);
+    };
+
+    writePosition("--kb-mx", "--kb-my", initial);
+    writePosition("--kb-fx", "--kb-fy", initial);
+    root.style.setProperty("--kb-field-energy", "0");
+    root.style.setProperty("--kb-field-angle", "0deg");
 
     const move = (event) => {
       pointerRef.current = { x: event.clientX, y: event.clientY };
 
-      const card = event.target instanceof Element ? event.target.closest(CARD_SELECTOR) : null;
+      const element = event.target instanceof Element ? event.target : null;
+      const card = element?.closest(CARD_SELECTOR);
       if (card) {
         const rect = card.getBoundingClientRect();
         card.style.setProperty("--card-x", `${event.clientX - rect.left}px`);
         card.style.setProperty("--card-y", `${event.clientY - rect.top}px`);
       }
 
-      const composer = event.target instanceof Element ? event.target.closest(".chatComposer") : null;
+      const composer = element?.closest(".chatComposer");
       if (composer) {
         const rect = composer.getBoundingClientRect();
         composer.style.setProperty("--composer-x", `${event.clientX - rect.left}px`);
+      }
+
+      const fieldTarget = element?.closest(FIELD_TARGET_SELECTOR);
+      energyTargetRef.current = fieldTarget ? 1 : 0;
+
+      if (fieldTarget) {
+        const rect = fieldTarget.getBoundingClientRect();
+        const cx = rect.left + rect.width / 2;
+        const cy = rect.top + rect.height / 2;
+        const angle = Math.atan2(event.clientY - cy, event.clientX - cx) * (180 / Math.PI);
+        root.style.setProperty("--kb-field-angle", `${angle}deg`);
       }
 
       const logo = document.querySelector("[data-logo-core]");
@@ -59,15 +84,28 @@ export default function DesktopCursorEffect() {
     const magneticLeave = (event) => {
       const target = event.target instanceof Element ? event.target.closest(MAGNET_SELECTOR) : null;
       if (target) target.style.transform = "";
+
+      const relatedTarget = event.relatedTarget instanceof Element ? event.relatedTarget : null;
+      if (!relatedTarget?.closest(FIELD_TARGET_SELECTOR)) {
+        energyTargetRef.current = 0;
+      }
     };
 
     const animate = () => {
       const target = pointerRef.current;
-      const current = currentRef.current;
-      current.x += (target.x - current.x) * 0.11;
-      current.y += (target.y - current.y) * 0.11;
-      root.style.setProperty("--kb-mx", `${current.x}px`);
-      root.style.setProperty("--kb-my", `${current.y}px`);
+      const core = coreRef.current;
+      const field = fieldRef.current;
+
+      core.x += (target.x - core.x) * 0.22;
+      core.y += (target.y - core.y) * 0.22;
+      field.x += (target.x - field.x) * 0.075;
+      field.y += (target.y - field.y) * 0.075;
+      energyRef.current += (energyTargetRef.current - energyRef.current) * 0.12;
+
+      writePosition("--kb-mx", "--kb-my", core);
+      writePosition("--kb-fx", "--kb-fy", field);
+      root.style.setProperty("--kb-field-energy", energyRef.current.toFixed(3));
+
       frameRef.current = window.requestAnimationFrame(animate);
     };
 
@@ -81,8 +119,7 @@ export default function DesktopCursorEffect() {
       document.removeEventListener("pointermove", magneticMove);
       document.removeEventListener("pointerout", magneticLeave);
       if (frameRef.current) window.cancelAnimationFrame(frameRef.current);
-      root.style.removeProperty("--kb-mx");
-      root.style.removeProperty("--kb-my");
+      ["--kb-mx", "--kb-my", "--kb-fx", "--kb-fy", "--kb-field-energy", "--kb-field-angle"].forEach((name) => root.style.removeProperty(name));
     };
   }, []);
 
