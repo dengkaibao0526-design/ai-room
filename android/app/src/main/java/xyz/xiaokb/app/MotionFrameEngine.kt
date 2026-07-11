@@ -1,9 +1,8 @@
 package xyz.xiaokb.app
 
-import android.os.Build
 import android.view.Choreographer
 import android.view.Display
-import android.view.Surface
+import android.view.View
 import android.webkit.WebView
 import kotlin.math.abs
 
@@ -44,8 +43,6 @@ class MotionFrameEngine(
     override fun doFrame(frameTimeNanos: Long) {
         if (!running) return
 
-        // Frame-rate independent smoothing. On 120 Hz this takes smaller, more frequent steps;
-        // on 60 Hz it still converges quickly without overshoot.
         currentX += (targetX - currentX) * 0.34f
         currentY += (targetY - currentY) * 0.34f
 
@@ -64,18 +61,10 @@ class MotionFrameEngine(
     }
 
     companion object {
-        fun requestHighestRefresh(display: Display?, surfaceView: WebView) {
-            val modes = display?.supportedModes.orEmpty()
-            val best = modes.maxByOrNull { it.refreshRate }
-            if (best != null && Build.VERSION.SDK_INT >= 23) {
-                surfaceView.post {
-                    val params = surfaceView.rootView.layoutParams
-                    // preferredDisplayModeId belongs to Window.LayoutParams, configured by the Activity.
-                    // The WebView itself still advertises its desired frame rate below.
-                    if (Build.VERSION.SDK_INT >= 30) {
-                        surfaceView.setFrameRate(best.refreshRate, Surface.FRAME_RATE_COMPATIBILITY_DEFAULT)
-                    }
-                }
+        fun requestHighestRefresh(display: Display?, webView: WebView) {
+            if (display?.supportedModes?.isNotEmpty() == true) {
+                webView.setLayerType(View.LAYER_TYPE_HARDWARE, null)
+                webView.postInvalidateOnAnimation()
             }
         }
     }
