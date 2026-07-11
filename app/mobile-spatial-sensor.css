@@ -1,0 +1,214 @@
+@media (max-width: 720px), (pointer: coarse) {
+  html[data-kb-spatial-sensor="on"] .chatAppShell {
+    background:
+      conic-gradient(
+        from var(--kb-sensor-angle, 0deg)
+        at calc(50% + var(--kb-sensor-xp, 0px)) calc(36% + var(--kb-sensor-yp, 0px)),
+        transparent 0deg,
+        rgba(218, 198, 255, .09) 48deg,
+        transparent 92deg,
+        rgba(112, 61, 232, .12) 176deg,
+        transparent 238deg,
+        rgba(181, 139, 255, .07) 314deg,
+        transparent 360deg
+      ),
+      radial-gradient(
+        19rem 14rem at calc(50% + var(--kb-sensor-xp, 0px)) calc(32% + var(--kb-sensor-yp, 0px)),
+        rgba(151, 100, 255, .16),
+        rgba(80, 42, 168, .055) 46%,
+        transparent 72%
+      ),
+      radial-gradient(circle at 50% -18%, rgba(159, 107, 255, .11), transparent 38%),
+      linear-gradient(180deg, #09090c 0%, #070709 100%) !important;
+  }
+
+  html[data-kb-spatial-sensor="on"] .ambientGrid {
+    transform: translate3d(var(--kb-sensor-grid-xp, 0px), var(--kb-sensor-grid-yp, 0px), 0);
+    opacity: .19;
+    transition: opacity 160ms ease-out;
+  }
+
+  html[data-kb-spatial-sensor="on"] [data-logo-core] {
+    --kb-logo-x: var(--kb-sensor-logo-xp, 0px);
+    --kb-logo-y: var(--kb-sensor-logo-yp, 0px);
+    filter:
+      drop-shadow(var(--kb-sensor-shadow-xp, 0px) var(--kb-sensor-shadow-yp, 0px) 18px rgba(180, 137, 255, .24))
+      drop-shadow(0 22px 52px rgba(73,39,157,.2));
+  }
+
+  html[data-kb-spatial-sensor="on"] .chatComposer {
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,.08),
+      0 20px 62px rgba(0,0,0,.5),
+      var(--kb-sensor-shadow-xp, 0px) var(--kb-sensor-shadow-yp, 0px) 36px rgba(121, 70, 239, .15) !important;
+  }
+
+  .mobileSensorTool {
+    position: relative;
+    min-width: 0;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 34px;
+    gap: 7px;
+  }
+
+  .mobileSensorToggle,
+  .mobileSensorInfoButton {
+    border: 1px solid rgba(255,255,255,.075) !important;
+    background: rgba(255,255,255,.025) !important;
+  }
+
+  .mobileSensorToggle {
+    min-width: 0;
+    display: flex !important;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .mobileSensorToggle span {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 3px;
+  }
+
+  .mobileSensorToggle small {
+    color: rgba(181, 174, 196, .58);
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: .02em;
+  }
+
+  .mobileSensorToggle em {
+    width: 32px;
+    height: 19px;
+    padding: 2px;
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    border-radius: 999px;
+    background: rgba(255,255,255,.08);
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,.04);
+    transition: background 180ms cubic-bezier(.2,.8,.2,1), box-shadow 180ms cubic-bezier(.2,.8,.2,1);
+  }
+
+  .mobileSensorToggle em i {
+    width: 15px;
+    height: 15px;
+    border-radius: 50%;
+    background: rgba(231, 226, 240, .7);
+    transform: translateX(0);
+    transition: transform 180ms cubic-bezier(.2,.8,.2,1), background 180ms cubic-bezier(.2,.8,.2,1), box-shadow 180ms cubic-bezier(.2,.8,.2,1);
+  }
+
+  .mobileSensorTool.isEnabled .mobileSensorToggle {
+    border-color: rgba(177, 132, 255, .28) !important;
+    background: linear-gradient(135deg, rgba(122, 70, 232, .13), rgba(255,255,255,.025)) !important;
+  }
+
+  .mobileSensorTool.isEnabled .mobileSensorToggle em {
+    background: rgba(132, 78, 245, .48);
+    box-shadow: inset 0 0 0 1px rgba(211,188,255,.15), 0 0 18px rgba(124,73,240,.16);
+  }
+
+  .mobileSensorTool.isEnabled .mobileSensorToggle em i {
+    transform: translateX(13px);
+    background: #eee6ff;
+    box-shadow: 0 0 10px rgba(213,190,255,.42);
+  }
+
+  .mobileSensorInfoButton {
+    width: 34px;
+    min-width: 34px;
+    padding: 0 !important;
+    display: grid !important;
+    place-items: center;
+    border-radius: 12px !important;
+    color: rgba(209, 194, 236, .76) !important;
+    font-size: 12px !important;
+    font-weight: 800 !important;
+  }
+
+  .mobileSensorMessage {
+    margin: 10px 4px 0;
+    color: rgba(224, 200, 255, .72);
+    font-size: 11px;
+    line-height: 1.5;
+  }
+
+  .mobileSensorInfoBackdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 4;
+    display: grid;
+    place-items: end center;
+    padding: 18px;
+    background: rgba(2,2,5,.62);
+    backdrop-filter: blur(8px);
+    animation: kbSensorInfoBackdrop 180ms ease-out both;
+  }
+
+  .mobileSensorInfo {
+    width: min(100%, 430px);
+    padding: 18px;
+    border: 1px solid rgba(190, 150, 255, .16);
+    border-radius: 22px;
+    color: #f2eff8;
+    background: linear-gradient(180deg, rgba(18,15,26,.98), rgba(9,8,13,.99));
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.06), 0 26px 80px rgba(0,0,0,.6), 0 0 42px rgba(104,58,215,.1);
+    animation: kbSensorInfoResolve 220ms cubic-bezier(.2,.8,.2,1) both;
+  }
+
+  .mobileSensorInfo > div {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+  }
+
+  .mobileSensorInfo strong { font-size: 15px; }
+
+  .mobileSensorInfo button {
+    width: 34px;
+    height: 34px;
+    border: 1px solid rgba(255,255,255,.08);
+    border-radius: 11px;
+    color: rgba(255,255,255,.68);
+    background: rgba(255,255,255,.035);
+  }
+
+  .mobileSensorInfo p {
+    margin: 0 0 10px;
+    color: rgba(221, 216, 229, .78);
+    font-size: 12px;
+    line-height: 1.72;
+  }
+
+  .mobileSensorInfo small {
+    display: block;
+    padding-top: 4px;
+    color: rgba(166, 151, 185, .62);
+    font-size: 10px;
+    line-height: 1.6;
+  }
+}
+
+@keyframes kbSensorInfoBackdrop {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes kbSensorInfoResolve {
+  from { opacity: 0; transform: translateY(14px) scale(.985); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-kb-spatial-sensor="on"] .chatAppShell,
+  html[data-kb-spatial-sensor="on"] .ambientGrid,
+  html[data-kb-spatial-sensor="on"] [data-logo-core],
+  html[data-kb-spatial-sensor="on"] .chatComposer {
+    transform: none !important;
+    transition: none !important;
+  }
+}
