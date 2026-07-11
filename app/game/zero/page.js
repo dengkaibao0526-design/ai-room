@@ -1,6 +1,7 @@
 import KBZeroGame from "./KBZeroGame";
 import ZeroMultiplayer from "./ZeroMultiplayer";
 import "./zero.css";
+import "./zero-multiplayer.css";
 
 export const metadata = {
   title: "KB ZERO · 小KB",
