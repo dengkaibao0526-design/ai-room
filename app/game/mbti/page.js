@@ -202,6 +202,7 @@ function getPercent(a, b) {
 export default function MbtiGamePage() {
   const [answers, setAnswers] = useState({});
   const [copied, setCopied] = useState(false);
+  const [currentIndex, setCurrentIndex] = useState(0);
 
   const answeredCount = Object.keys(answers).length;
   const finished = answeredCount === QUESTIONS.length;
@@ -250,11 +251,15 @@ xiaokb.xyz/game/mbti`
       [questionId]: value,
     }));
     setCopied(false);
+    if (currentIndex < QUESTIONS.length - 1) {
+      window.setTimeout(() => setCurrentIndex((index) => Math.min(index + 1, QUESTIONS.length - 1)), 140);
+    }
   }
 
   function reset() {
     setAnswers({});
     setCopied(false);
+    setCurrentIndex(0);
     window.scrollTo({
       top: 0,
       behavior: "smooth",
@@ -302,8 +307,8 @@ xiaokb.xyz/game/mbti`
 
         {!finished && (
           <section className="questionList">
-            {QUESTIONS.map((question) => (
-              <article className="questionCard" key={question.id}>
+            {[QUESTIONS[currentIndex]].map((question) => (
+              <article className="questionCard singleQuestionCard" key={question.id}>
                 <div className="questionTop">
                   <span>Q{question.id}</span>
                   <h2>{question.text}</h2>
@@ -323,6 +328,11 @@ xiaokb.xyz/game/mbti`
                       {option.text}
                     </button>
                   ))}
+                </div>
+                <div className="questionNavigation">
+                  <button type="button" onClick={() => setCurrentIndex((index) => Math.max(0, index - 1))} disabled={currentIndex === 0}>← 上一题</button>
+                  <span>{currentIndex + 1} / {QUESTIONS.length}</span>
+                  <button type="button" onClick={() => setCurrentIndex((index) => Math.min(QUESTIONS.length - 1, index + 1))} disabled={!answers[question.id] || currentIndex === QUESTIONS.length - 1}>下一题 →</button>
                 </div>
               </article>
             ))}
@@ -806,6 +816,32 @@ xiaokb.xyz/game/mbti`
             width: 100%;
           }
         }
+      `}</style>
+      <style jsx global>{`
+        .mbtiPage { min-height: 100dvh !important; background: radial-gradient(circle at 50% -15%, rgba(159,107,255,.11), transparent 34%), #08080b !important; }
+        .mbtiShell { width: min(960px, 100%) !important; padding: 24px !important; }
+        .mbtiHero, .questionCard, .resultCard { border-radius: 14px !important; background: #101015 !important; border-color: rgba(255,255,255,.085) !important; box-shadow: none !important; }
+        .mbtiHero { padding: 24px !important; }
+        .mbtiHero::after, .resultGlow { background: rgba(159,107,255,.1) !important; filter: blur(42px) !important; }
+        .mbtiHero h1 { font-size: clamp(34px, 5vw, 54px) !important; letter-spacing: -.06em !important; }
+        .mbtiHero p { color: #8d8d9a !important; }
+        .mbtiBadge, .resultBadge { color: #b99aff !important; background: rgba(159,107,255,.1) !important; border-color: rgba(159,107,255,.22) !important; }
+        .progressBox { padding: 12px !important; border-radius: 9px !important; background: #0a0a0e !important; }
+        .progressBar { height: 6px !important; }
+        .progressBar i { background: #9f6bff !important; }
+        .questionList { min-height: 390px; display: grid !important; place-items: center; }
+        .singleQuestionCard { width: 100%; padding: 30px !important; }
+        .questionTop span { color: #b99aff !important; background: rgba(159,107,255,.1) !important; border-color: rgba(159,107,255,.2) !important; }
+        .optionBtn { min-height: 74px !important; border-radius: 10px !important; background: rgba(255,255,255,.025) !important; }
+        .optionBtn:hover, .activeOption { background: rgba(159,107,255,.12) !important; border-color: rgba(159,107,255,.35) !important; box-shadow: none !important; }
+        .questionNavigation { margin-top: 22px; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 12px; }
+        .questionNavigation span { color: #777783; font-size: 12px; }
+        .questionNavigation button { width: fit-content; min-height: 36px; padding: 0 12px; border: 1px solid rgba(255,255,255,.085); border-radius: 8px; color: #aaaab4; background: rgba(255,255,255,.03); cursor: pointer; }
+        .questionNavigation button:last-child { justify-self: end; }
+        .questionNavigation button:disabled { opacity: .3; cursor: default; }
+        .resultCard h2 { color: #b99aff !important; background: none !important; }
+        .actionRow button { border-radius: 9px !important; background: #9f6bff !important; box-shadow: none !important; }
+        @media (max-width: 720px) { .mbtiShell { padding: 12px !important; } .mbtiHero, .singleQuestionCard, .resultCard { padding: 20px !important; border-radius: 12px !important; } .optionGrid { grid-template-columns: 1fr !important; } .questionList { min-height: 360px; } }
       `}</style>
     </main>
   );
