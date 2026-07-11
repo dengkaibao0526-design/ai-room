@@ -40,15 +40,12 @@ jobs:
 
       - name: Assemble debug APK
         id: assemble
+        continue-on-error: true
         working-directory: android
         shell: bash
         run: |
-          set +e
           set -o pipefail
           gradle --no-daemon :app:assembleDebug 2>&1 | tee "$RUNNER_TEMP/android-build.log"
-          status=${PIPESTATUS[0]}
-          echo "status=$status" >> "$GITHUB_OUTPUT"
-          exit 0
 
       - name: Upload Gradle build log
         if: always()
@@ -58,14 +55,14 @@ jobs:
           path: ${{ runner.temp }}/android-build.log
           if-no-files-found: error
 
-      - name: Fail when Android compile fails
-        if: steps.assemble.outputs.status != '0'
-        run: exit 1
-
       - name: Upload debug APK
-        if: steps.assemble.outputs.status == '0'
+        if: steps.assemble.outcome == 'success'
         uses: actions/upload-artifact@v4
         with:
           name: xiaokb-android-debug
           path: android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
+
+      - name: Fail when Android compile fails
+        if: steps.assemble.outcome == 'failure'
+        run: exit 1
