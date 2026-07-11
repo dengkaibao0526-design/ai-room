@@ -1,7 +1,17 @@
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-const VERSION = "admin-settings-v3-fixed-boolean";
+const VERSION = "public-settings-v1";
+
+const DEFAULT_SETTINGS = {
+  show_mbti: true,
+  show_copywriter: true,
+  show_feedback: true,
+  enable_research_mode: true,
+  show_intro_modal: true,
+  enable_easter_egg: true,
+  enable_chat_logging: true,
+};
 
 const ALLOW_KEYS = [
   "show_mbti",
@@ -144,33 +154,28 @@ async function ensureSettingExists(key, value) {
   });
 }
 
-export async function GET(req) {
+export async function GET() {
   try {
-    const auth = checkPassword(req);
-
-    if (!auth.ok) {
-      return Response.json(
-        {
-          ok: false,
-          version: VERSION,
-          error: auth.error,
-        },
-        { status: auth.status }
-      );
-    }
-
-    const settings = await supabaseRequest(
-      "app_settings?select=key,value,description,updated_at&order=key.asc",
+    const rows = await supabaseRequest(
+      "app_settings?select=key,value,updated_at&order=key.asc",
       {
         method: "GET",
       }
     );
 
+    const settings = { ...DEFAULT_SETTINGS };
+
+    for (const row of Array.isArray(rows) ? rows : []) {
+      if (ALLOW_KEYS.includes(row?.key)) {
+        settings[row.key] = normalizeBoolean(row.value);
+      }
+    }
+
     return Response.json(
       {
         ok: true,
         version: VERSION,
-        settings: Array.isArray(settings) ? settings : [],
+        settings,
         generated_at: new Date().toISOString(),
       },
       {
@@ -182,16 +187,21 @@ export async function GET(req) {
       }
     );
   } catch (error) {
-    console.error("ADMIN_SETTINGS_GET_ERROR:", error);
+    console.error("PUBLIC_SETTINGS_GET_ERROR:", error);
 
     return Response.json(
       {
-        ok: false,
+        ok: true,
         version: VERSION,
-        error: "读取后台开关失败",
-        detail: String(error?.message || error),
+        settings: DEFAULT_SETTINGS,
+        fallback: true,
+        generated_at: new Date().toISOString(),
       },
-      { status: 500 }
+      {
+        headers: {
+          "Cache-Control": "no-store, no-cache, must-revalidate",
+        },
+      }
     );
   }
 }
