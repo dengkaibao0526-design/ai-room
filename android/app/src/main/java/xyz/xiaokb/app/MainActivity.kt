@@ -13,7 +13,6 @@ import android.os.SystemClock
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
-import android.provider.Settings
 import android.view.View
 import android.webkit.JavascriptInterface
 import android.webkit.ValueCallback
@@ -173,7 +172,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                 document.addEventListener('click', (event) => {
                   const button = event.target?.closest?.('button');
                   if (!button) return;
-                  const name = `${button.className || ''} ${button.getAttribute('aria-label') || ''}`.toLowerCase();
+                  const name = (String(button.className || '') + ' ' + String(button.getAttribute('aria-label') || '')).toLowerCase();
                   if (name.includes('send') || name.includes('发送')) window.xiaokbNative.haptic('medium');
                   else if (name.includes('stop') || name.includes('停止')) window.xiaokbNative.haptic('rigid');
                   else window.xiaokbNative.haptic('light');
