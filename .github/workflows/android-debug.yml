@@ -7,9 +7,14 @@ on:
       - "components/MobileSpatialSensor.jsx"
       - "components/NativeShareBridge.jsx"
       - "app/components/chat/MobileTools.js"
+      - "app/install/**"
+      - "app/install-webclip.css"
       - "app/layout.js"
       - ".github/workflows/android-debug.yml"
   workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   build:
@@ -62,6 +67,22 @@ jobs:
           name: xiaokb-android16-vivo-xiaomi-debug
           path: android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
+
+      - name: Publish APK to website downloads
+        if: steps.assemble.outcome == 'success' && github.event_name == 'pull_request' && github.event.pull_request.head.ref == 'agent/unified-download-center'
+        shell: bash
+        run: |
+          mkdir -p public/downloads
+          cp android/app/build/outputs/apk/debug/app-debug.apk public/downloads/XiaoKB-Android16-Motion120.apk
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/downloads/XiaoKB-Android16-Motion120.apk
+          if git diff --cached --quiet; then
+            echo "Website APK is already current."
+          else
+            git commit -m "build: publish Android 16 Motion120 APK"
+            git push origin HEAD:${{ github.event.pull_request.head.ref }}
+          fi
 
       - name: Fail when Android compile fails
         if: steps.assemble.outcome == 'failure'
