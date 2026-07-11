@@ -150,6 +150,56 @@
 .webclipInstallSteps strong { font-size: 15px; }
 .webclipInstallSteps p { font-size: 14px; margin-top: 6px; }
 
+.downloadCenterHero { width: min(100%, 920px); }
+.downloadPlatformGrid {
+  position: relative;
+  z-index: 1;
+  width: min(100%, 1080px);
+  margin: 46px auto 0;
+  display: grid;
+  gap: 18px;
+}
+.downloadPlatformCard {
+  min-width: 0;
+  padding: 24px;
+  border: 1px solid rgba(207, 181, 255, .12);
+  border-radius: 26px;
+  background: linear-gradient(180deg, rgba(24, 18, 36, .84), rgba(11, 8, 18, .92));
+  box-shadow: 0 30px 90px rgba(0,0,0,.36), inset 0 1px 0 rgba(255,255,255,.045);
+  backdrop-filter: blur(22px);
+}
+.downloadPlatformCard.is-android {
+  background:
+    radial-gradient(26rem 18rem at 100% 0, rgba(118, 75, 224, .14), transparent 68%),
+    linear-gradient(180deg, rgba(21, 17, 33, .86), rgba(10, 8, 17, .93));
+}
+.downloadPlatformTop { display: flex; flex-direction: column; align-items: flex-start; }
+.downloadPlatformBadge {
+  display: inline-flex;
+  min-height: 30px;
+  align-items: center;
+  padding: 0 11px;
+  border-radius: 999px;
+  border: 1px solid rgba(190, 157, 255, .16);
+  color: rgba(218, 198, 255, .82);
+  background: rgba(132, 78, 236, .08);
+  font-size: 12px;
+  letter-spacing: .035em;
+}
+.downloadPlatformTop h2 {
+  margin: 18px 0 0;
+  font-size: clamp(24px, 4vw, 34px);
+  letter-spacing: -.035em;
+}
+.downloadPlatformTop p {
+  margin: 12px 0 0;
+  color: rgba(231, 221, 245, .67);
+  line-height: 1.72;
+  font-size: 14px;
+}
+.downloadPlatformCard .webclipInstallDownload { display: inline-flex; justify-content: center; text-align: center; }
+.downloadPlatformCard .webclipInstallSafety { margin-top: 24px; }
+
 .appleInstallPromptBackdrop {
   position: fixed;
   inset: 0;
@@ -201,6 +251,12 @@
 @media (min-width: 760px) {
   .appleInstallPromptBackdrop { align-items: center; }
   .webclipInstallPage { padding-top: 44px; }
+  .downloadPlatformGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 759px) {
+  .downloadPlatformCard { padding: 20px 18px; border-radius: 22px; }
+  .downloadPlatformCard .webclipInstallDownload { width: 100%; min-width: 0; }
 }
 
 @media (prefers-reduced-motion: reduce) {
