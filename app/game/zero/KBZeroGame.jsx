@@ -123,11 +123,14 @@ export default function KBZeroGame() {
   const canvasRef = useRef(null);
   const engineRef = useRef(null);
   const audioRef = useRef(null);
+  const gyroEnabledRef = useRef(false);
+  const gyroLastRef = useRef(null);
   const [started, setStarted] = useState(false);
   const [mobile, setMobile] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [gyroActive, setGyroActive] = useState(false);
   const [sens, setSens] = useState(DEFAULT_SENS);
-  const [hud, setHud] = useState({ ammo: 30, reserve: 120, hp: 100, score: 0, combo: 0, fps: 0, reloading: false, weapon: 0, ads: false });
+  const [hud, setHud] = useState({ ammo: 30, reserve: 120, hp: 100, score: 0, combo: 0, fps: 0, reloading: false, weapon: 0, ads: false, kills: 0, deaths: 0 });
   const [feed, setFeed] = useState([]);
   const [banner, setBanner] = useState(null);
 
@@ -141,6 +144,7 @@ export default function KBZeroGame() {
     canvas.tabIndex = 0;
     const ctx = canvas.getContext("2d", { alpha: false, desynchronized: true });
     if (!ctx) return undefined;
+    document.body.style.overflow = "hidden";
 
     const keys = new Set();
     const audio = makeAudio();
@@ -150,7 +154,7 @@ export default function KBZeroGame() {
       running: true, started: false, px: SPAWN.x, py: SPAWN.y, angle: 0, pitch: 0,
       vx: 0, vy: 0, recoil: 0, recoilVel: 0, weaponKick: 0, weaponSide: 0, bob: 0,
       muzzle: 0, hitFlash: 0, damageFlash: 0, hp: 100, score: 0, combo: 0, comboTimer: 0,
-      fireHeld: false, ads: false, reloadTimer: 0, nextShot: 0, now: 0, accumulator: 0,
+      kills: 0, deaths: 0, fireHeld: false, ads: false, reloadTimer: 0, nextShot: 0, now: 0, accumulator: 0,
       last: performance.now(), fpsFrames: 0, fpsClock: performance.now(), fps: 0, weapon: 0,
       ammo: [30, 12], reserve: [120, 48], particles: [], hippos: [], sens: saved,
       mobileMove: { x: 0, y: 0 },
@@ -187,7 +191,10 @@ export default function KBZeroGame() {
       state.hippos.push({ x: innerWidth * 0.5, y: innerHeight * 0.47, vx: (Math.random() - 0.5) * 180, vy: -180 - Math.random() * 120, spin: (Math.random() - 0.5) * 8, rot: 0, life: head ? 1.05 : 0.82, max: head ? 1.05 : 0.82, scale: head ? 1.55 : 1 });
       burst(innerWidth * 0.5, innerHeight * 0.47, head ? 44 : 30, head ? 1.35 : 1);
     };
-    const resetPlayer = () => { state.hp = 100; state.px = SPAWN.x; state.py = SPAWN.y; state.vx = 0; state.vy = 0; state.combo = 0; };
+    const resetPlayer = (countDeath = false) => {
+      if (countDeath) state.deaths += 1;
+      state.hp = 100; state.px = SPAWN.x; state.py = SPAWN.y; state.vx = 0; state.vy = 0; state.combo = 0;
+    };
 
     function resize() {
       const dpr = Math.min(devicePixelRatio || 1, isMobile ? 1.35 : 1.75);
@@ -240,7 +247,7 @@ export default function KBZeroGame() {
       burst(innerWidth * 0.5, innerHeight * 0.5, head ? 18 : 10, head ? 0.8 : 0.5);
       audio.hit(head);
       if (best.enemy.hp <= 0) {
-        best.enemy.alive = false; state.score += head ? 240 : 110; state.combo += 1; state.comboTimer = 2.9;
+        best.enemy.alive = false; state.score += head ? 240 : 110; state.kills += 1; state.combo += 1; state.comboTimer = 2.9;
         state.respawns.push({ enemy: best.enemy, time: state.now + 2.4 + Math.random() * 1.5 });
         spawnHippo(head); pushFeed(best.enemy, head); announce(head); audio.kill(state.combo); haptic(30);
       } else state.score += head ? 45 : 15;
@@ -252,7 +259,7 @@ export default function KBZeroGame() {
       const forward = clamp(keyForward - state.mobileMove.y, -1, 1);
       const strafe = clamp(keyStrafe + state.mobileMove.x, -1, 1);
       const sprint = (keys.has("ShiftLeft") || keys.has("ShiftRight")) && forward > 0 && !state.ads;
-      const speed = sprint ? 5.7 : state.ads ? 2.2 : 3.8;
+      const speed = (sprint ? 5.7 : state.ads ? 2.2 : 3.8) * 0.9;
       const len = Math.hypot(forward, strafe) || 1;
       const tvx = (Math.cos(state.angle) * forward + Math.cos(state.angle + Math.PI / 2) * strafe) / len * speed;
       const tvy = (Math.sin(state.angle) * forward + Math.sin(state.angle + Math.PI / 2) * strafe) / len * speed;
@@ -300,7 +307,7 @@ export default function KBZeroGame() {
         if (dist < 5.8 && Math.sin(enemy.phase * 2.5) > 0.997) {
           state.hp = Math.max(0, state.hp - 8);
           state.damageFlash = 1; haptic(20);
-          if (state.hp <= 0) resetPlayer();
+          if (state.hp <= 0) resetPlayer(true);
         }
       }
       for (let i = state.respawns.length - 1; i >= 0; i -= 1) if (state.now >= state.respawns[i].time) { state.respawns[i].enemy.hp = 100; state.respawns[i].enemy.alive = true; state.respawns.splice(i, 1); }
@@ -366,7 +373,21 @@ export default function KBZeroGame() {
       if (state.damageFlash > 0.03) { ctx.fillStyle = `rgba(160,55,255,${state.damageFlash * 0.12})`; ctx.fillRect(0, 0, w, h); }
       state.fpsFrames += 1;
       if (performance.now() - state.fpsClock > 500) { state.fps = Math.round(state.fpsFrames * 1000 / (performance.now() - state.fpsClock)); state.fpsFrames = 0; state.fpsClock = performance.now(); }
-      if (state.now - state.lastHud > 0.08) { state.lastHud = state.now; setHud({ ammo: state.ammo[state.weapon], reserve: state.reserve[state.weapon], hp: state.hp, score: state.score, combo: state.combo, fps: state.fps, reloading: state.reloadTimer > 0, weapon: state.weapon, ads: state.ads }); }
+      if (state.now - state.lastHud > 0.08) { state.lastHud = state.now; setHud({ ammo: state.ammo[state.weapon], reserve: state.reserve[state.weapon], hp: state.hp, score: state.score, combo: state.combo, fps: state.fps, reloading: state.reloadTimer > 0, weapon: state.weapon, ads: state.ads, kills: state.kills, deaths: state.deaths }); }
+    }
+    function onDeviceOrientation(e) {
+      if (!gyroEnabledRef.current || !state.started) return;
+      const beta = Number.isFinite(e.beta) ? e.beta : null;
+      const gamma = Number.isFinite(e.gamma) ? e.gamma : null;
+      if (beta == null || gamma == null) return;
+      const last = gyroLastRef.current;
+      gyroLastRef.current = { beta, gamma };
+      if (!last) return;
+      const dBeta = clamp(beta - last.beta, -4, 4);
+      const dGamma = clamp(gamma - last.gamma, -4, 4);
+      const base = state.sens.touch * (state.ads ? state.sens.ads : 1);
+      state.angle += dGamma * 0.0046 * base;
+      state.pitch = clamp(state.pitch - dBeta * 0.0032 * base, -0.19, 0.19);
     }
     function onKeyDown(e) {
       if (CONTROL_CODES.has(e.code)) e.preventDefault();
@@ -397,10 +418,11 @@ export default function KBZeroGame() {
     function onContextMenu(e) { e.preventDefault(); }
     document.addEventListener("keydown", onKeyDown, { capture: true });
     document.addEventListener("keyup", onKeyUp, { capture: true });
+    addEventListener("deviceorientation", onDeviceOrientation, true);
     addEventListener("resize", resize); addEventListener("mousemove", onMouseMove, { passive: true }); addEventListener("mousedown", onMouseDown); addEventListener("mouseup", onMouseUp); addEventListener("blur", onBlur); canvas.addEventListener("contextmenu", onContextMenu); resize();
     function frame(ts) { if (!state.running) return; const dt = Math.min(0.05, (ts - state.last) / 1000); state.last = ts; state.now = ts / 1000; state.accumulator = Math.min(0.15, state.accumulator + dt); while (state.accumulator >= FIXED_DT) { fixedUpdate(FIXED_DT); state.accumulator -= FIXED_DT; } draw(); requestAnimationFrame(frame); }
     requestAnimationFrame(frame);
-    return () => { state.running = false; document.removeEventListener("keydown", onKeyDown, { capture: true }); document.removeEventListener("keyup", onKeyUp, { capture: true }); removeEventListener("resize", resize); removeEventListener("mousemove", onMouseMove); removeEventListener("mousedown", onMouseDown); removeEventListener("mouseup", onMouseUp); removeEventListener("blur", onBlur); canvas.removeEventListener("contextmenu", onContextMenu); engineRef.current = null; };
+    return () => { state.running = false; document.body.style.overflow = ""; document.removeEventListener("keydown", onKeyDown, { capture: true }); document.removeEventListener("keyup", onKeyUp, { capture: true }); removeEventListener("deviceorientation", onDeviceOrientation, true); removeEventListener("resize", resize); removeEventListener("mousemove", onMouseMove); removeEventListener("mousedown", onMouseDown); removeEventListener("mouseup", onMouseUp); removeEventListener("blur", onBlur); canvas.removeEventListener("contextmenu", onContextMenu); engineRef.current = null; };
   }, []);
 
   function updateSens(key, value) {
@@ -408,7 +430,31 @@ export default function KBZeroGame() {
     setSens(next); saveSens(next);
     if (engineRef.current) engineRef.current.sens = next;
   }
-  function enterGame() {
+  async function enterFullscreen() {
+    const target = canvasRef.current?.parentElement || document.documentElement;
+    try { if (!document.fullscreenElement) await target.requestFullscreen?.({ navigationUI: "hide" }); } catch {}
+    try { await screen.orientation?.lock?.("landscape"); } catch {}
+  }
+  async function enableGyro() {
+    audioRef.current?.unlock();
+    try {
+      if (typeof DeviceOrientationEvent !== "undefined" && typeof DeviceOrientationEvent.requestPermission === "function") {
+        const permission = await DeviceOrientationEvent.requestPermission();
+        if (permission !== "granted") return;
+      }
+      gyroLastRef.current = null;
+      gyroEnabledRef.current = true;
+      setGyroActive(true);
+      await enterFullscreen();
+      haptic(12);
+    } catch {}
+  }
+  function disableGyro() {
+    gyroEnabledRef.current = false;
+    gyroLastRef.current = null;
+    setGyroActive(false);
+  }
+  async function enterGame() {
     const state = engineRef.current;
     if (!state) return;
     audioRef.current?.unlock();
@@ -416,6 +462,7 @@ export default function KBZeroGame() {
     state.px = SPAWN.x; state.py = SPAWN.y; state.vx = 0; state.vy = 0;
     setStarted(true);
     canvasRef.current?.focus({ preventScroll: true });
+    await enterFullscreen();
     if (!mobile) canvasRef.current?.requestPointerLock?.();
   }
   function mobileLook(dx, dy) {
@@ -426,28 +473,30 @@ export default function KBZeroGame() {
     state.pitch = clamp(state.pitch - dy * base * 0.72, -0.19, 0.19);
   }
   function setMobileMove(x, y) { const state = engineRef.current; if (state) state.mobileMove = { x, y }; }
-  function fireMobile(active) { const state = engineRef.current; if (!state) return; state.fireHeld = active; if (active) { audioRef.current?.unlock(); state.started = true; shootNow(); } }
-  function shootNow() { /* shooting is handled by the fixed update loop when fireHeld is true */ }
+  function fireMobile(active) { const state = engineRef.current; if (!state) return; state.fireHeld = active; if (active) audioRef.current?.unlock(); }
   function adsMobile(active) { const state = engineRef.current; if (state) state.ads = active; }
   function reloadMobile() { const state = engineRef.current; if (!state || state.reloadTimer > 0) return; const w = WEAPONS[state.weapon]; if (state.ammo[state.weapon] === w.mag || state.reserve[state.weapon] <= 0) return; state.reloadTimer = state.weapon === 0 ? 1.42 : 1.16; audioRef.current?.reload(); }
   function swapMobile() { const state = engineRef.current; if (!state) return; state.weapon = (state.weapon + 1) % WEAPONS.length; state.fireHeld = false; audioRef.current?.swap(); }
 
   const currentWeapon = WEAPONS[hud.weapon];
+  const glassButton = { color: "rgba(235,225,255,.72)", fontSize: 12, letterSpacing: ".06em", backdropFilter: "blur(16px)", background: "rgba(8,6,14,.48)", border: "1px solid rgba(255,255,255,.08)", borderRadius: 999, padding: "9px 13px", cursor: "pointer" };
   return (
-    <main className="zeroShell">
+    <main className={`zeroShell${started ? " isPlaying" : ""}`}>
       <canvas ref={canvasRef} className="zeroCanvas" onClick={() => started && !mobile && canvasRef.current?.requestPointerLock?.()} />
-      <a className="zeroBack" href="/">← 小KB</a>
+      {!started && <a className="zeroBack" href="/">← 小KB</a>}
       <button className="zeroSettingsToggle" type="button" onClick={() => setSettingsOpen((v) => !v)}>SENS</button>
+      {mobile && started && <button type="button" onClick={gyroActive ? disableGyro : enableGyro} style={{ ...glassButton, position: "absolute", right: 92, top: 22, zIndex: 10 }}>{gyroActive ? "GYRO ON" : "GYRO"}</button>}
       {settingsOpen && <SensitivityPanel sens={sens} onChange={updateSens} />}
       <div className="zeroLandscapeHint">横屏体验更接近四指键位<br />请旋转手机进入 KB ZERO</div>
       <div className="zeroTopHud"><span>KB // ZERO</span><em>{hud.fps || "—"} FPS</em></div>
+      <div style={{ position: "absolute", left: "50%", top: 58, transform: "translateX(-50%)", zIndex: 7, padding: "7px 12px", border: "1px solid rgba(214,189,255,.12)", borderRadius: 999, background: "rgba(8,6,14,.48)", backdropFilter: "blur(16px)", fontSize: 11, letterSpacing: ".14em", color: "rgba(244,237,255,.86)" }}>KB {hud.kills} : {hud.deaths} CORE</div>
       <div className="zeroHealth"><i style={{ width: `${hud.hp}%` }} /><span>{hud.hp}</span></div>
       <div className="zeroScore"><small>SCORE</small><strong>{String(hud.score).padStart(6, "0")}</strong>{hud.combo > 1 && <em>SYNC ×{hud.combo}</em>}</div>
       <div className="zeroKillFeed">{feed.map((item) => <span key={item.id}>{item.text}</span>)}</div>
       {banner && <div key={banner.key} className="zeroBanner">{banner.text}</div>}
       <div className={`zeroAmmo${hud.reloading ? " isReloading" : ""}`}><strong>{hud.ammo}</strong><span>/ {hud.reserve}</span><small>{hud.reloading ? "RECALIBRATING" : `${currentWeapon.id} // ${currentWeapon.mode}`}</small></div>
       <div className="zeroWeaponSlots"><span className={hud.weapon === 0 ? "active" : ""}>1&nbsp; VX-01</span><span className={hud.weapon === 1 ? "active" : ""}>2&nbsp; K-9</span></div>
-      {!started && <section className="zeroIntro"><span>KB LAB EXPERIMENT 01</span><h1>KB // ZERO</h1><p>进入失控 Core 训练区。已重建移动出生点、桌面 WASD 与上下视角方向。</p><button type="button" onClick={enterGame}>进入训练场</button><small>{mobile ? "横屏 · 左下移动 · 左上/右下双开火 · 右侧视角 · ADS 开镜 · SENS 调灵敏度" : "WASD 移动 · 鼠标视角 · 左键开火 · 右键开镜 · R 换弹 · 1/2 或 Q 换枪"}</small></section>}
+      {!started && <section className="zeroIntro"><span>KB LAB EXPERIMENT 01</span><h1>KB // ZERO</h1><p>进入后会尝试自动全屏并隐藏浏览器遮挡；移动速度降低 10%，移动端可开启陀螺仪辅助瞄准。</p><button type="button" onClick={enterGame}>进入训练场</button><small>{mobile ? "横屏 · 左下移动 · 左上/右下双开火 · 右侧视角 · GYRO 陀螺仪 · ADS 开镜" : "WASD 移动 · 鼠标视角 · 左键开火 · 右键开镜 · R 换弹 · 1/2 或 Q 换枪"}</small></section>}
       {started && mobile && <MobileControls onMove={setMobileMove} onLook={mobileLook} onFire={fireMobile} onAds={adsMobile} onReload={reloadMobile} onSwap={swapMobile} />}
     </main>
   );
