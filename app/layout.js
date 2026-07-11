@@ -13,6 +13,7 @@ import "./ai-breathing.css";
 import "./memory-center.css";
 import "./install-webclip.css";
 import "./mobile-tool-typography.css";
+import "./kb-zero.css";
 import DesktopCursorEffect from "../components/DesktopCursorEffect";
 import ProductEntrance from "../components/ProductEntrance";
 import MobileSpatialSensor from "../components/MobileSpatialSensor";
