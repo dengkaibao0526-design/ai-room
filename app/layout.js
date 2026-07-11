@@ -6,8 +6,10 @@ import "./mobile-back-button.css";
 import "./mobile-motion.css";
 import "./typing-energy.css";
 import "./desktop-spatial-field.css";
+import "./mobile-spatial-sensor.css";
 import DesktopCursorEffect from "../components/DesktopCursorEffect";
 import ProductEntrance from "../components/ProductEntrance";
+import MobileSpatialSensor from "../components/MobileSpatialSensor";
 
 export const metadata = {
   title: "万能的KB",
@@ -21,6 +23,7 @@ export default function RootLayout({ children }) {
         {children}
         <ProductEntrance />
         <DesktopCursorEffect />
+        <MobileSpatialSensor />
       </body>
     </html>
   );
