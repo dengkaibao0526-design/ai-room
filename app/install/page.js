@@ -9,9 +9,9 @@ const platforms = [
     badge: " iPhone",
     title: "放到 iPhone 主屏幕",
     lead: "下载小KB描述文件，安装后桌面会出现小KB。打开的仍然是 xiaokb.xyz，网站更新后也会同步更新。",
-    href: "/install/profile",
+    href: "/install/profile?v=2",
     action: "下载 iPhone 描述文件",
-    hint: "建议使用 Safari 打开并下载",
+    hint: "建议使用 Safari 打开并下载。如果旧文件提示 Icon 字段无效，请重新点这里下载新版。",
     steps: [
       ["01", "下载描述文件", "点下载按钮，Safari 会下载“小KB”描述文件。"],
       ["02", "打开系统设置", "进入“设置 → 通用 → VPN 与设备管理”，找到“小KB”。"],
