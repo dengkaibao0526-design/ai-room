@@ -2,7 +2,9 @@ import { useEffect, useRef, useState } from "react";
 
 export default function ChatComposer({ value, placeholder, busy, typing, onChange, onSend, onStop }) {
   const textareaRef = useRef(null);
+  const typingPulseTimerRef = useRef(null);
   const [composing, setComposing] = useState(false);
+  const [typingActive, setTypingActive] = useState(false);
 
   useEffect(() => {
     const node = textareaRef.current;
@@ -11,23 +13,47 @@ export default function ChatComposer({ value, placeholder, busy, typing, onChang
     node.style.height = `${Math.min(node.scrollHeight, 200)}px`;
   }, [value]);
 
+  useEffect(() => {
+    return () => window.clearTimeout(typingPulseTimerRef.current);
+  }, []);
+
+  function triggerTypingEnergy(nextValue) {
+    onChange(nextValue);
+    window.clearTimeout(typingPulseTimerRef.current);
+
+    if (!nextValue) {
+      setTypingActive(false);
+      return;
+    }
+
+    setTypingActive(true);
+    typingPulseTimerRef.current = window.setTimeout(() => {
+      setTypingActive(false);
+    }, 420);
+  }
+
   function handleKeyDown(event) {
     if (event.key === "Enter" && !event.shiftKey && !composing && !event.nativeEvent.isComposing) {
       event.preventDefault();
+      setTypingActive(false);
       onSend();
     }
   }
 
+  const composerClassName = typingActive ? "chatComposer isTypingActive" : "chatComposer";
+
   return (
     <footer className="chatComposerDock">
-      <div className="chatComposer">
+      <div className={composerClassName}>
+        <span className="typingEnergyRail" aria-hidden="true" />
+        <span className="typingEnergyCore" aria-hidden="true" />
         <textarea
           ref={textareaRef}
           value={value}
           rows={1}
           maxLength={6000}
           placeholder={placeholder}
-          onChange={(event) => onChange(event.target.value)}
+          onChange={(event) => triggerTypingEnergy(event.target.value)}
           onKeyDown={handleKeyDown}
           onCompositionStart={() => setComposing(true)}
           onCompositionEnd={() => setComposing(false)}
