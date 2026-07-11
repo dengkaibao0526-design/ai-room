@@ -23,7 +23,9 @@ export default function MobileSpatialSensor() {
     if (!coarsePointer.matches || reducedMotion.matches) return undefined;
 
     const root = document.documentElement;
-    nativeAppRef.current = window.__XIAOKB_NATIVE_APP__ === true
+    const nativeUserAgent = /XiaoKBAndroid\//i.test(navigator.userAgent || "");
+    nativeAppRef.current = nativeUserAgent
+      || window.__XIAOKB_NATIVE_APP__ === true
       || window.__XIAOKB_IOS_APP__ === true
       || window.__XIAOKB_ANDROID_APP__ === true;
 
