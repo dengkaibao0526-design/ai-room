@@ -3,8 +3,9 @@ import { useEffect, useRef, useState } from "react";
 export default function ChatComposer({ value, placeholder, busy, typing, onChange, onSend, onStop }) {
   const textareaRef = useRef(null);
   const typingPulseTimerRef = useRef(null);
+  const typingSettleTimerRef = useRef(null);
   const [composing, setComposing] = useState(false);
-  const [typingActive, setTypingActive] = useState(false);
+  const [typingPhase, setTypingPhase] = useState("idle");
 
   useEffect(() => {
     const node = textareaRef.current;
@@ -14,33 +15,50 @@ export default function ChatComposer({ value, placeholder, busy, typing, onChang
   }, [value]);
 
   useEffect(() => {
-    return () => window.clearTimeout(typingPulseTimerRef.current);
+    return () => {
+      window.clearTimeout(typingPulseTimerRef.current);
+      window.clearTimeout(typingSettleTimerRef.current);
+    };
   }, []);
+
+  function stopTypingEnergy() {
+    window.clearTimeout(typingPulseTimerRef.current);
+    window.clearTimeout(typingSettleTimerRef.current);
+    setTypingPhase("idle");
+  }
 
   function triggerTypingEnergy(nextValue) {
     onChange(nextValue);
     window.clearTimeout(typingPulseTimerRef.current);
+    window.clearTimeout(typingSettleTimerRef.current);
 
     if (!nextValue) {
-      setTypingActive(false);
+      setTypingPhase("idle");
       return;
     }
 
-    setTypingActive(true);
+    setTypingPhase("active");
     typingPulseTimerRef.current = window.setTimeout(() => {
-      setTypingActive(false);
-    }, 420);
+      setTypingPhase("settling");
+      typingSettleTimerRef.current = window.setTimeout(() => {
+        setTypingPhase("idle");
+      }, 760);
+    }, 460);
   }
 
   function handleKeyDown(event) {
     if (event.key === "Enter" && !event.shiftKey && !composing && !event.nativeEvent.isComposing) {
       event.preventDefault();
-      setTypingActive(false);
+      stopTypingEnergy();
       onSend();
     }
   }
 
-  const composerClassName = typingActive ? "chatComposer isTypingActive" : "chatComposer";
+  const composerClassName = typingPhase === "active"
+    ? "chatComposer isTypingActive"
+    : typingPhase === "settling"
+      ? "chatComposer isTypingSettling"
+      : "chatComposer";
 
   return (
     <footer className="chatComposerDock">
