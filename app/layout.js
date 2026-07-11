@@ -2,6 +2,7 @@ import "./globals.css";
 import "./premium.css";
 import "./visual-polish.css";
 import "./mobile-polish.css";
+import "./mobile-back-button.css";
 import DesktopCursorEffect from "../components/DesktopCursorEffect";
 import ProductEntrance from "../components/ProductEntrance";
 
