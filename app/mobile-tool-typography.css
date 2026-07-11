@@ -1,0 +1,46 @@
+@media (max-width: 720px), (pointer: coarse) {
+  .mobileToolGrid > a,
+  .mobileToolGrid > button,
+  .mobileSensorToggle {
+    font-family: inherit !important;
+    font-size: 14px !important;
+    font-weight: 500 !important;
+    line-height: 1.2 !important;
+  }
+
+  .mobileToolGrid > a > span,
+  .mobileToolGrid > button > span,
+  .mobileSensorToggle > span {
+    display: flex !important;
+    min-width: 0;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 4px;
+    font-family: inherit !important;
+    font-size: 14px !important;
+    font-weight: 600 !important;
+    line-height: 1.2 !important;
+    letter-spacing: 0 !important;
+  }
+
+  .mobileToolGrid > a > span > small,
+  .mobileToolGrid > button > span > small,
+  .mobileSensorToggle > span > small {
+    display: block;
+    margin: 0 !important;
+    font-family: inherit !important;
+    font-size: 11px !important;
+    font-weight: 400 !important;
+    line-height: 1.3 !important;
+    letter-spacing: 0 !important;
+  }
+
+  .mobileToolGrid > a > em,
+  .mobileToolGrid > button > em,
+  .mobileSensorToggle > em {
+    flex: 0 0 auto;
+    font-family: inherit !important;
+    line-height: 1 !important;
+  }
+}
