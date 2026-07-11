@@ -16,6 +16,11 @@ export default function DesktopCursorEffect() {
     if (!finePointer.matches || reducedMotion.matches) return undefined;
 
     const root = document.documentElement;
+    const initial = { x: window.innerWidth * 0.5, y: window.innerHeight * 0.28 };
+    pointerRef.current = initial;
+    currentRef.current = initial;
+    root.style.setProperty("--kb-mx", `${initial.x}px`);
+    root.style.setProperty("--kb-my", `${initial.y}px`);
 
     const move = (event) => {
       pointerRef.current = { x: event.clientX, y: event.clientY };
@@ -48,7 +53,7 @@ export default function DesktopCursorEffect() {
       const rect = target.getBoundingClientRect();
       const dx = event.clientX - (rect.left + rect.width / 2);
       const dy = event.clientY - (rect.top + rect.height / 2);
-      target.style.transform = `translate3d(${dx * 0.045}px, ${dy * 0.045}px, 0)`;
+      target.style.transform = `translate3d(${dx * 0.04}px, ${dy * 0.04}px, 0)`;
     };
 
     const magneticLeave = (event) => {
@@ -59,8 +64,8 @@ export default function DesktopCursorEffect() {
     const animate = () => {
       const target = pointerRef.current;
       const current = currentRef.current;
-      current.x += (target.x - current.x) * 0.075;
-      current.y += (target.y - current.y) * 0.075;
+      current.x += (target.x - current.x) * 0.11;
+      current.y += (target.y - current.y) * 0.11;
       root.style.setProperty("--kb-mx", `${current.x}px`);
       root.style.setProperty("--kb-my", `${current.y}px`);
       frameRef.current = window.requestAnimationFrame(animate);
