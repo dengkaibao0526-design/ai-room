@@ -58,17 +58,30 @@
   filter: brightness(calc(1 + var(--kb-breath-space) * .025));
 }
 
-.kbStateCore[data-core-state="idle"] .kbStateCoreMark,
-.kbStateCore[data-core-state="research"] .kbStateCoreMark {
+.kbStateCore[data-core-state="idle"] .kbStateCoreMark {
+  animation: none !important;
   transform: scale(calc(1 + var(--kb-breath-core) * .008));
   filter: brightness(calc(1 + var(--kb-breath-core) * .045));
 }
 
-.kbStateCore[data-core-state="idle"] .kbCoreAura,
+.kbStateCore[data-core-state="idle"] .kbCoreAura {
+  opacity: calc(.74 + var(--kb-breath-core) * .12);
+  transform: scale(calc(.92 + var(--kb-breath-core) * .018));
+  filter: blur(calc(10px + var(--kb-breath-core) * 1px));
+}
+
+.kbStateCore[data-core-state="research"] .kbStateCoreMark {
+  animation: none !important;
+  transform: scale(calc(.99 + var(--kb-breath-core) * .022));
+  filter:
+    brightness(calc(.98 + var(--kb-breath-core) * .04))
+    saturate(calc(.88 + var(--kb-breath-core) * .06));
+}
+
 .kbStateCore[data-core-state="research"] .kbCoreAura {
-  opacity: calc(.34 + var(--kb-breath-core) * .15);
-  transform: scale(calc(1 + var(--kb-breath-core) * .018));
-  filter: blur(calc(9px + var(--kb-breath-core) * 1.5px));
+  opacity: calc(.66 + var(--kb-breath-core) * .08);
+  transform: scale(calc(.9 + var(--kb-breath-core) * .012));
+  filter: blur(calc(8px + var(--kb-breath-core) * .6px));
 }
 
 .kbStateCore[data-core-state="idle"] .kbCoreOrbitA,
