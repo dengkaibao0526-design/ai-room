@@ -1,0 +1,212 @@
+.webclipInstallPage {
+  min-height: 100dvh;
+  padding: 34px 18px 60px;
+  color: #f7f2ff;
+  background:
+    radial-gradient(52rem 30rem at 50% -8%, rgba(151, 88, 255, .24), transparent 68%),
+    radial-gradient(28rem 34rem at 100% 46%, rgba(101, 52, 214, .12), transparent 72%),
+    linear-gradient(180deg, #09070f 0%, #07060c 55%, #050409 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+.webclipInstallAmbient {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(rgba(255,255,255,.018) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.014) 1px, transparent 1px);
+  background-size: 34px 34px;
+  mask-image: linear-gradient(to bottom, rgba(0,0,0,.55), transparent 76%);
+}
+
+.webclipInstallHero,
+.webclipInstallPanel {
+  position: relative;
+  z-index: 1;
+  width: min(100%, 720px);
+  margin: 0 auto;
+}
+
+.webclipInstallHero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.webclipInstallBack {
+  align-self: flex-start;
+  color: rgba(238, 226, 255, .66);
+  text-decoration: none;
+  font-size: 14px;
+  transition: color 160ms ease, transform 160ms ease;
+}
+
+.webclipInstallBack:hover { color: #fff; transform: translateX(-2px); }
+
+.webclipInstallBadge {
+  margin-top: 42px;
+  padding: 7px 11px;
+  border: 1px solid rgba(194, 160, 255, .18);
+  border-radius: 999px;
+  color: rgba(224, 205, 255, .78);
+  background: rgba(119, 69, 220, .08);
+  font-size: 12px;
+  letter-spacing: .04em;
+}
+
+.webclipInstallIcon {
+  width: 118px;
+  height: 118px;
+  margin-top: 24px;
+  border-radius: 28px;
+  object-fit: cover;
+  box-shadow: 0 28px 72px rgba(66, 31, 134, .42), 0 0 52px rgba(143, 87, 255, .16);
+}
+
+.webclipInstallHero h1 {
+  margin: 26px 0 0;
+  font-size: clamp(32px, 7vw, 54px);
+  line-height: 1.05;
+  letter-spacing: -.04em;
+}
+
+.webclipInstallLead {
+  max-width: 610px;
+  margin: 18px auto 0;
+  color: rgba(232, 224, 245, .68);
+  font-size: 16px;
+  line-height: 1.75;
+}
+
+.webclipInstallDownload {
+  margin-top: 26px;
+  min-width: 238px;
+  padding: 15px 22px;
+  border: 1px solid rgba(220, 199, 255, .26);
+  border-radius: 16px;
+  color: #fff;
+  text-decoration: none;
+  font-weight: 650;
+  background: linear-gradient(135deg, rgba(155, 101, 255, .94), rgba(103, 57, 215, .96));
+  box-shadow: 0 18px 48px rgba(94, 49, 190, .34), inset 0 1px 0 rgba(255,255,255,.24);
+  transition: transform 160ms ease, box-shadow 180ms ease, filter 180ms ease;
+}
+
+.webclipInstallDownload:hover { transform: translateY(-1px); filter: brightness(1.06); box-shadow: 0 22px 56px rgba(94, 49, 190, .42), inset 0 1px 0 rgba(255,255,255,.26); }
+.webclipInstallDownload:active { transform: translateY(1px) scale(.99); }
+
+.webclipInstallHint {
+  margin-top: 10px;
+  color: rgba(222, 211, 238, .4);
+  font-size: 12px;
+}
+
+.webclipInstallPanel {
+  margin-top: 44px;
+  padding: 24px;
+  border: 1px solid rgba(207, 181, 255, .12);
+  border-radius: 24px;
+  background: linear-gradient(180deg, rgba(24, 18, 36, .82), rgba(12, 9, 19, .88));
+  box-shadow: 0 28px 90px rgba(0,0,0,.36), inset 0 1px 0 rgba(255,255,255,.04);
+  backdrop-filter: blur(22px);
+}
+
+.webclipInstallSafety {
+  padding: 18px;
+  border-radius: 18px;
+  background: rgba(126, 75, 229, .07);
+  border: 1px solid rgba(188, 153, 255, .11);
+}
+
+.webclipInstallSafety span {
+  display: block;
+  color: rgba(213, 189, 255, .86);
+  font-size: 12px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.webclipInstallSafety p,
+.webclipInstallSteps p {
+  margin: 9px 0 0;
+  color: rgba(229, 220, 243, .66);
+  line-height: 1.72;
+}
+
+.webclipInstallSteps { display: grid; gap: 12px; margin-top: 18px; }
+.webclipInstallSteps article {
+  display: grid;
+  grid-template-columns: 42px 1fr;
+  gap: 14px;
+  align-items: start;
+  padding: 16px 4px;
+  border-bottom: 1px solid rgba(255,255,255,.05);
+}
+.webclipInstallSteps article:last-child { border-bottom: 0; }
+.webclipInstallSteps em { color: rgba(177, 137, 255, .6); font-size: 12px; font-style: normal; padding-top: 3px; }
+.webclipInstallSteps strong { font-size: 15px; }
+.webclipInstallSteps p { font-size: 14px; margin-top: 6px; }
+
+.appleInstallPromptBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 18px;
+  background: rgba(3, 2, 7, .52);
+  backdrop-filter: blur(10px);
+  animation: appleInstallFade 180ms ease both;
+}
+
+.appleInstallPrompt {
+  position: relative;
+  width: min(100%, 460px);
+  overflow: hidden;
+  padding: 22px;
+  border: 1px solid rgba(213, 185, 255, .16);
+  border-radius: 24px;
+  background: linear-gradient(180deg, rgba(24, 17, 37, .98), rgba(10, 8, 16, .99));
+  box-shadow: 0 32px 96px rgba(0,0,0,.62), inset 0 1px 0 rgba(255,255,255,.06);
+  animation: appleInstallSheet 220ms cubic-bezier(.2,.8,.2,1) both;
+}
+
+.appleInstallPromptGlow {
+  position: absolute;
+  width: 260px;
+  height: 180px;
+  top: -120px;
+  right: -80px;
+  border-radius: 50%;
+  background: rgba(135, 77, 255, .24);
+  filter: blur(46px);
+}
+
+.appleInstallPromptEyebrow { position: relative; color: rgba(196, 162, 255, .72); font-size: 12px; letter-spacing: .06em; }
+.appleInstallPrompt strong { position: relative; display: block; margin-top: 10px; font-size: 23px; letter-spacing: -.025em; }
+.appleInstallPrompt p { position: relative; margin: 10px 0 0; color: rgba(231, 222, 243, .68); font-size: 14px; line-height: 1.7; }
+.appleInstallPromptActions { position: relative; display: grid; grid-template-columns: 1fr auto; gap: 10px; margin-top: 20px; }
+.appleInstallPromptActions button { min-height: 46px; border-radius: 14px; border: 0; font: inherit; transition: transform 150ms ease, filter 160ms ease; }
+.appleInstallPromptActions button:active { transform: scale(.985); }
+.appleInstallPrimary { color: #fff; font-weight: 650; background: linear-gradient(135deg, #9b6cff, #6d3ddb); box-shadow: 0 14px 34px rgba(102, 58, 204, .26); }
+.appleInstallSecondary { padding: 0 16px; color: rgba(227, 216, 244, .66); background: rgba(255,255,255,.045); }
+
+@keyframes appleInstallFade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes appleInstallSheet { from { opacity: 0; transform: translateY(18px) scale(.985); } to { opacity: 1; transform: translateY(0) scale(1); } }
+
+@media (min-width: 760px) {
+  .appleInstallPromptBackdrop { align-items: center; }
+  .webclipInstallPage { padding-top: 44px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .appleInstallPromptBackdrop,
+  .appleInstallPrompt { animation: none !important; }
+  .webclipInstallDownload,
+  .webclipInstallBack,
+  .appleInstallPromptActions button { transition: none !important; }
+}

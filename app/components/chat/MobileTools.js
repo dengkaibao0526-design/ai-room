@@ -60,6 +60,7 @@ export default function MobileTools({ open, settings, onClose, onFeedback, onRes
         </div>
         <div className="mobileToolGrid">
           <button type="button" onClick={() => { onClose(); onMemory(); }}><span>记忆中心<small>小KB记得的事</small></span><em>◌</em></button>
+          <a href="/install"><span>安装到 iPhone<small>放到主屏幕</small></span><em></em></a>
           {settings.show_copywriter && <a href="/tool/copywriter"><span>文案工作台</span><em>↗</em></a>}
           {settings.show_mbti && <a href="/game/mbti"><span>MBTI</span><em>↗</em></a>}
           {settings.show_feedback && <button type="button" onClick={() => { onClose(); onFeedback(); }}><span>反馈</span><em>＋</em></button>}

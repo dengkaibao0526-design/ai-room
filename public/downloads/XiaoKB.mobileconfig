@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>PayloadContent</key>
+	<array>
+		<dict>
+			<key>FullScreen</key>
+			<true/>
+			<key>IsRemovable</key>
+			<true/>
+			<key>Label</key>
+			<string>小KB</string>
+			<key>Icon</key>
+			<data>
+iVBORw0KGgoAAAANSUhEUgAAALQAAAC0CAIAAACyr5FlAAB8YWlDQ1BJQ0MgUHJvZmlsZQAASImVVwdYU8kWnltSISEk1EJJgPReehFQbUjvTYogCNJBREBRQkBBsSCioi5YUFmxcG0XwK6Koq4rSxYEBcQFQSxUURaUEJD7v/c4FZM3nu/e865c+69M0A6VTKqjgUA8BoRXg8AqIoGQgAAf2HAjYPDIigAzE5+4HhEbMNMQAF6ZEFQJPQHIFjmd0QBEExsJw1AlDAGAIykEMBhG8D8CG9MnltSISEk1EJJgPReehFQbUjvTYogCNJBREBRQkBBsSCioi5YUFmxcG0XwK6Koq4rSxYEBcQFQSxUURaUEJD7v/c4FZM3nu/e865c+69M0A6VTKqjgUA8BoRXg8AqIoGQgAAf2HAjYPDIigAzE5+4HhEbMNMQAF6ZEFQJPQHIFjmd0QBEExsJw1AlDAGAIykEMBhG8D8CG9MnltSISEk1EJJgPReehFQbUjvTYogCNJBREBRQkBBsSCioi5YUFmxcG0XwK6Koq4rSxYEBcQFQSxUURaUEJD7v/c4FZM3nu/e865c+69M0A6VTKqjgUA8BoRXg8AqIoGQgAAf2HAjYPDIigAzE5+4HhEbMNMQAF6ZEFQJPQHIFjmd0QBEExsJw1AlDAGAIykEMBhG8D8CG9MnltSISEk1EJJgPReehFQbUjvTYogCNJBREBRQkBBsSCioi5YUFmxcG0XwK6Koq4rSxYEBcQFQSxUURaUEJD7v/c4FZM3nu/e865c+69M0A6VTKqjgUA8BoRXg8AqIoGQgAAf2HAjYPDIigAzE5+4HhEbMNMQAF6ZEFQJPQHIFjmd0QBEExsJw1AlDAGAIykEMBhG8D8CG9MnltSISEk1EJJgPReehFQbUjvTYogCNJBREBRQkBBsSCioi5YUFmxcG0XwK6Koq4rSxYEBcQFQSxUURaUEJD7v/c4FZM3nu/e865c+69M0A6VTKqjgUA8BoRXg8AqIoGQgAAf2HAjYPDIigAzE5+4HhEbMNMQAF6ZEFQJPQHIFjmd0QBEExsJw1AlDAGAIykEMBhG8D8CG9MnltSISEk1EJJgPReehFQbUjvTYogCNJBREBRQkBBsSCioi5YUFmxcG0XwK6Koq4rSxYEBcQFQSxUURaUEJD7v/c4FZM3nu/e865c+69M0A6VTKqjgUA8BoRXg8AqIoGQgAAf2HAjYPDIigAzE5+4HhEbMNMQAF6ZEFQJPQHIFjmd0QBEExsJw1AlDAGAIykEMBhG8D8CG9M=
+			</data>
+			<key>PayloadDescription</key>
+			<string>不会安装任何 VPN、证书或设备管理，也不会获得任何额外的系统控制权限。安装后打开的仍然是 xiaokb.xyz，只是把它放到了主屏幕，体验更像一个 App。不想用了随时可以删除，在设置里移除描述文件就可以了。</string>
+			<key>PayloadDisplayName</key>
+			<string>小KB Web Clip</string>
+			<key>PayloadIdentifier</key>
+			<string>xyz.xiaokb.webclip</string>
+			<key>PayloadOrganization</key>
+			<string>小KB</string>
+			<key>PayloadType</key>
+			<string>com.apple.webClip.managed</string>
+			<key>PayloadUUID</key>
+			<string>645E115A-11E7-4B75-AB8D-297F812FD61D</string>
+			<key>PayloadVersion</key>
+			<integer>1</integer>
+			<key>Precomposed</key>
+			<true/>
+			<key>URL</key>
+			<string>https://xiaokb.xyz/</string>
+		</dict>
+	</array>
+	<key>PayloadDescription</key>
+	<string>不会安装任何 VPN、证书或设备管理，也不会获得任何额外的系统控制权限。安装后打开的仍然是 xiaokb.xyz，只是把它放到了主屏幕，体验更像一个 App。不想用了随时可以删除，在设置里移除描述文件就可以了。</string>
+	<key>PayloadDisplayName</key>
+	<string>小KB</string>
+	<key>PayloadIdentifier</key>
+	<string>xyz.xiaokb.profile.webclip</string>
+	<key>PayloadOrganization</key>
+	<string>小KB</string>
+	<key>PayloadRemovalDisallowed</key>
+	<false/>
+	<key>PayloadType</key>
+	<string>Configuration</string>
+	<key>PayloadUUID</key>
+	<string>E83D202F-56EE-420F-9738-0F56B6F726B7</string>
+	<key>PayloadVersion</key>
+	<integer>1</integer>
+</dict>
+</plist>
