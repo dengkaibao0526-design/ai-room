@@ -5,17 +5,17 @@ import { useEffect, useRef, useState } from "react";
 const MAP = [
   "1111111111111111",
   "1000000000000001",
-  "1011000110011001",
-  "1000000000000001",
-  "1000110001100001",
-  "1000000000000001",
-  "1010001000010101",
-  "1000000000000001",
+  "1000000100000001",
   "1001100000110001",
   "1000000000000001",
-  "1010011001001001",
+  "1000011001100001",
   "1000000000000001",
-  "1000110001100001",
+  "1001000000010001",
+  "1001000000010001",
+  "1000000000000001",
+  "1000011001100001",
+  "1000000000000001",
+  "1000000100000001",
   "1000000000000001",
   "1000000000000001",
   "1111111111111111",
@@ -24,31 +24,34 @@ const MAP = [
 const FIXED_DT = 1 / 120;
 const PLAYER_RADIUS = 0.22;
 const TWO_PI = Math.PI * 2;
-const SENS_KEY = "xiaokb_zero_sensitivity_v2";
+const SENS_KEY = "xiaokb_zero_sensitivity_v3";
+const SPAWN = { x: 1.5, y: 1.5 };
 const DEFAULT_SENS = { mouse: 1, touch: 1, ads: 0.68 };
+const CONTROL_CODES = new Set([
+  "KeyW", "KeyA", "KeyS", "KeyD", "ShiftLeft", "ShiftRight", "KeyR", "KeyQ",
+  "Digit1", "Digit2", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight",
+]);
 const WEAPONS = [
   { id: "VX-01", mode: "AUTO", mag: 30, interval: 0.092, damage: 34, spread: 0.010, adsSpread: 0.0025, recoil: 0.31, pitch: 128 },
   { id: "K-9", mode: "PRECISION", mag: 12, interval: 0.265, damage: 72, spread: 0.0045, adsSpread: 0.0008, recoil: 0.52, pitch: 82 },
 ];
-const CONTROL_CODES = new Set(["KeyW", "KeyA", "KeyS", "KeyD", "ShiftLeft", "ShiftRight", "KeyR", "KeyQ", "Digit1", "Digit2", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"]);
 
 const clamp = (v, min, max) => Math.min(max, Math.max(min, v));
 const angleDelta = (a, b) => Math.atan2(Math.sin(a - b), Math.cos(a - b));
-const wallAt = (x, y) => {
+const isWall = (x, y) => {
   const ix = Math.floor(x);
   const iy = Math.floor(y);
   return iy < 0 || ix < 0 || iy >= MAP.length || ix >= MAP[0].length || MAP[iy][ix] === "1";
 };
-const canStand = (x, y) => !wallAt(x - PLAYER_RADIUS, y - PLAYER_RADIUS)
-  && !wallAt(x + PLAYER_RADIUS, y - PLAYER_RADIUS)
-  && !wallAt(x - PLAYER_RADIUS, y + PLAYER_RADIUS)
-  && !wallAt(x + PLAYER_RADIUS, y + PLAYER_RADIUS);
+const canStand = (x, y) => !isWall(x - PLAYER_RADIUS, y - PLAYER_RADIUS)
+  && !isWall(x + PLAYER_RADIUS, y - PLAYER_RADIUS)
+  && !isWall(x - PLAYER_RADIUS, y + PLAYER_RADIUS)
+  && !isWall(x + PLAYER_RADIUS, y + PLAYER_RADIUS);
 
 function loadSens() {
   try { return { ...DEFAULT_SENS, ...JSON.parse(localStorage.getItem(SENS_KEY) || "{}") }; }
   catch { return DEFAULT_SENS; }
 }
-
 function saveSens(sens) {
   try { localStorage.setItem(SENS_KEY, JSON.stringify(sens)); } catch {}
 }
@@ -107,10 +110,10 @@ function makeAudio() {
     osc.stop(t + duration);
   };
   return {
-    unlock() { tone(220, 0.03, 0.001); },
-    shot(weapon) { tone(weapon.pitch, 0.065, 0.12, "sawtooth", -70); tone(weapon.pitch * 2.4, 0.035, 0.045, "square", -120); },
+    unlock() { tone(260, 0.04, 0.001); },
+    shot(weapon) { tone(weapon.pitch, 0.065, 0.12, "sawtooth", -70); tone(weapon.pitch * 2.35, 0.035, 0.045, "square", -120); },
     hit(head) { tone(head ? 920 : 560, 0.045, 0.05, "sine", head ? 280 : 80); },
-    kill(combo) { tone(280 + combo * 18, 0.12, 0.055, "triangle", 420); setTimeout(() => tone(620 + combo * 12, 0.10, 0.035, "sine", 260), 45); },
+    kill(combo) { tone(280 + combo * 18, 0.12, 0.055, "triangle", 420); setTimeout(() => tone(620 + combo * 12, 0.1, 0.035, "sine", 260), 45); },
     reload() { tone(140, 0.08, 0.035, "triangle", 60); },
     swap() { tone(310, 0.06, 0.035, "sine", 150); },
   };
@@ -138,20 +141,19 @@ export default function KBZeroGame() {
     canvas.tabIndex = 0;
     const ctx = canvas.getContext("2d", { alpha: false, desynchronized: true });
     if (!ctx) return undefined;
+
     const keys = new Set();
     const audio = makeAudio();
     audioRef.current = audio;
     let feedId = 0;
-
     const state = {
-      running: true, started: false, px: 2.5, py: 2.5, angle: 0, pitch: 0,
-      vx: 0, vy: 0, recoil: 0, recoilVel: 0, weaponKick: 0, weaponSide: 0,
-      bob: 0, muzzle: 0, hitFlash: 0, damageFlash: 0, hp: 100, score: 0,
-      combo: 0, comboTimer: 0, fireHeld: false, ads: false, reloadTimer: 0,
-      nextShot: 0, now: 0, accumulator: 0, last: performance.now(),
-      fpsFrames: 0, fpsClock: performance.now(), fps: 0, weapon: 0,
-      ammo: [30, 12], reserve: [120, 48], particles: [], hippos: [],
-      sens: saved, mobileMove: { x: 0, y: 0 },
+      running: true, started: false, px: SPAWN.x, py: SPAWN.y, angle: 0, pitch: 0,
+      vx: 0, vy: 0, recoil: 0, recoilVel: 0, weaponKick: 0, weaponSide: 0, bob: 0,
+      muzzle: 0, hitFlash: 0, damageFlash: 0, hp: 100, score: 0, combo: 0, comboTimer: 0,
+      fireHeld: false, ads: false, reloadTimer: 0, nextShot: 0, now: 0, accumulator: 0,
+      last: performance.now(), fpsFrames: 0, fpsClock: performance.now(), fps: 0, weapon: 0,
+      ammo: [30, 12], reserve: [120, 48], particles: [], hippos: [], sens: saved,
+      mobileMove: { x: 0, y: 0 },
       enemies: [
         { x: 8.5, y: 2.8, hp: 100, alive: true, phase: 0.2, id: "CORE-01" },
         { x: 12.4, y: 5.6, hp: 100, alive: true, phase: 1.4, id: "CORE-02" },
@@ -185,6 +187,7 @@ export default function KBZeroGame() {
       state.hippos.push({ x: innerWidth * 0.5, y: innerHeight * 0.47, vx: (Math.random() - 0.5) * 180, vy: -180 - Math.random() * 120, spin: (Math.random() - 0.5) * 8, rot: 0, life: head ? 1.05 : 0.82, max: head ? 1.05 : 0.82, scale: head ? 1.55 : 1 });
       burst(innerWidth * 0.5, innerHeight * 0.47, head ? 44 : 30, head ? 1.35 : 1);
     };
+    const resetPlayer = () => { state.hp = 100; state.px = SPAWN.x; state.py = SPAWN.y; state.vx = 0; state.vy = 0; state.combo = 0; };
 
     function resize() {
       const dpr = Math.min(devicePixelRatio || 1, isMobile ? 1.35 : 1.75);
@@ -291,13 +294,13 @@ export default function KBZeroGame() {
           const step = 0.54 * dt;
           const ex = enemy.x + dx / dist * step;
           const ey = enemy.y + dy / dist * step;
-          if (!wallAt(ex, enemy.y)) enemy.x = ex;
-          if (!wallAt(enemy.x, ey)) enemy.y = ey;
+          if (!isWall(ex, enemy.y)) enemy.x = ex;
+          if (!isWall(enemy.x, ey)) enemy.y = ey;
         }
         if (dist < 5.8 && Math.sin(enemy.phase * 2.5) > 0.997) {
           state.hp = Math.max(0, state.hp - 8);
           state.damageFlash = 1; haptic(20);
-          if (state.hp <= 0) { state.hp = 100; state.px = 2.5; state.py = 2.5; state.vx = 0; state.vy = 0; state.combo = 0; }
+          if (state.hp <= 0) resetPlayer();
         }
       }
       for (let i = state.respawns.length - 1; i >= 0; i -= 1) if (state.now >= state.respawns[i].time) { state.respawns[i].enemy.hp = 100; state.respawns[i].enemy.alive = true; state.respawns.splice(i, 1); }
@@ -410,6 +413,7 @@ export default function KBZeroGame() {
     if (!state) return;
     audioRef.current?.unlock();
     state.started = true; state.sens = sens;
+    state.px = SPAWN.x; state.py = SPAWN.y; state.vx = 0; state.vy = 0;
     setStarted(true);
     canvasRef.current?.focus({ preventScroll: true });
     if (!mobile) canvasRef.current?.requestPointerLock?.();
@@ -419,10 +423,11 @@ export default function KBZeroGame() {
     if (!state) return;
     const base = 0.0042 * state.sens.touch * (state.ads ? state.sens.ads : 1);
     state.angle += dx * base;
-    state.pitch = clamp(state.pitch + dy * base * 0.72, -0.19, 0.19);
+    state.pitch = clamp(state.pitch - dy * base * 0.72, -0.19, 0.19);
   }
   function setMobileMove(x, y) { const state = engineRef.current; if (state) state.mobileMove = { x, y }; }
-  function fireMobile(active) { const state = engineRef.current; if (!state) return; state.fireHeld = active; if (active) audioRef.current?.unlock(); }
+  function fireMobile(active) { const state = engineRef.current; if (!state) return; state.fireHeld = active; if (active) { audioRef.current?.unlock(); state.started = true; shootNow(); } }
+  function shootNow() { /* shooting is handled by the fixed update loop when fireHeld is true */ }
   function adsMobile(active) { const state = engineRef.current; if (state) state.ads = active; }
   function reloadMobile() { const state = engineRef.current; if (!state || state.reloadTimer > 0) return; const w = WEAPONS[state.weapon]; if (state.ammo[state.weapon] === w.mag || state.reserve[state.weapon] <= 0) return; state.reloadTimer = state.weapon === 0 ? 1.42 : 1.16; audioRef.current?.reload(); }
   function swapMobile() { const state = engineRef.current; if (!state) return; state.weapon = (state.weapon + 1) % WEAPONS.length; state.fireHeld = false; audioRef.current?.swap(); }
@@ -442,7 +447,7 @@ export default function KBZeroGame() {
       {banner && <div key={banner.key} className="zeroBanner">{banner.text}</div>}
       <div className={`zeroAmmo${hud.reloading ? " isReloading" : ""}`}><strong>{hud.ammo}</strong><span>/ {hud.reserve}</span><small>{hud.reloading ? "RECALIBRATING" : `${currentWeapon.id} // ${currentWeapon.mode}`}</small></div>
       <div className="zeroWeaponSlots"><span className={hud.weapon === 0 ? "active" : ""}>1&nbsp; VX-01</span><span className={hud.weapon === 1 ? "active" : ""}>2&nbsp; K-9</span></div>
-      {!started && <section className="zeroIntro"><span>KB LAB EXPERIMENT 01</span><h1>KB // ZERO</h1><p>进入失控 Core 训练区。桌面端已修复 WASD 与音频解锁；移动端按横屏四指布局设计。</p><button type="button" onClick={enterGame}>进入训练场</button><small>{mobile ? "横屏 · 左下移动 · 左上/右下双开火 · 右侧视角 · ADS 开镜 · SENS 调灵敏度" : "WASD 移动 · 鼠标视角 · 左键开火 · 右键开镜 · R 换弹 · 1/2 或 Q 换枪"}</small></section>}
+      {!started && <section className="zeroIntro"><span>KB LAB EXPERIMENT 01</span><h1>KB // ZERO</h1><p>进入失控 Core 训练区。已重建移动出生点、桌面 WASD 与上下视角方向。</p><button type="button" onClick={enterGame}>进入训练场</button><small>{mobile ? "横屏 · 左下移动 · 左上/右下双开火 · 右侧视角 · ADS 开镜 · SENS 调灵敏度" : "WASD 移动 · 鼠标视角 · 左键开火 · 右键开镜 · R 换弹 · 1/2 或 Q 换枪"}</small></section>}
       {started && mobile && <MobileControls onMove={setMobileMove} onLook={mobileLook} onFire={fireMobile} onAds={adsMobile} onReload={reloadMobile} onSwap={swapMobile} />}
     </main>
   );
