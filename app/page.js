@@ -415,7 +415,8 @@ export default function Home() {
       },
     ];
 
-    const recentHistory = newMessages.slice(-40);
+    // 本轮消息通过 message 单独发送，history 只包含之前的对话。
+    const recentHistory = messages.slice(-40);
 
     const finalMode =
       chatMode === "research" && publicSettings.enable_research_mode
