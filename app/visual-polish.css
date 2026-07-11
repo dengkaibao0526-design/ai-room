@@ -205,6 +205,20 @@
   .kbEntranceField {
     width: 118vw;
   }
+
+  /* iOS Safari zooms focused form controls below 16px. Keep mobile inputs at 16px. */
+  .chatComposer textarea,
+  .chatModal textarea,
+  .chatModal input,
+  .copyPage textarea,
+  .copyPage input,
+  .mbtiPage textarea,
+  .mbtiPage input,
+  input,
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
