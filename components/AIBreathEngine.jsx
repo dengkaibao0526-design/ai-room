@@ -50,10 +50,20 @@ export default function AIBreathEngine() {
   const [shell, setShell] = useState(null);
 
   useEffect(() => {
-    setShell(document.querySelector(".chatAppShell"));
+    const syncShell = () => {
+      const nextShell = document.querySelector(".chatAppShell");
+      setShell((currentShell) => currentShell === nextShell ? currentShell : nextShell);
+    };
+
+    syncShell();
+    const observer = new MutationObserver(syncShell);
+    observer.observe(document.body, { childList: true, subtree: true });
+    return () => observer.disconnect();
   }, []);
 
   useEffect(() => {
+    if (!shell) return undefined;
+
     const root = document.documentElement;
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
     const mountedAt = performance.now();
@@ -137,7 +147,7 @@ export default function AIBreathEngine() {
       if (frameRef.current) window.cancelAnimationFrame(frameRef.current);
       reset();
     };
-  }, []);
+  }, [shell]);
 
   if (!shell) return null;
 
