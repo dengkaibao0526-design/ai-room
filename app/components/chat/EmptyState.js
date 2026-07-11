@@ -2,7 +2,11 @@ export default function EmptyState({ mode, prompts, disabled, onPrompt }) {
   const research = mode === "research";
   return (
     <section className="chatEmptyState">
-      <div className="emptyMark">KB</div>
+      <div className="emptyCore" data-logo-core>
+        <span className="emptyCoreDot one" aria-hidden="true" />
+        <span className="emptyCoreDot two" aria-hidden="true" />
+        <div className="emptyMark">KB</div>
+      </div>
       <p className="emptyEyebrow">{research ? "RESEARCH MODE" : "XIAOKB AI"}</p>
       <h1>{research ? "把复杂问题，交给小KB拆开" : "今天想聊点什么？"}</h1>
       <p className="emptyDescription">
@@ -12,7 +16,7 @@ export default function EmptyState({ mode, prompts, disabled, onPrompt }) {
       </p>
       <div className="emptyPrompts">
         {prompts.map((prompt) => (
-          <button type="button" key={prompt} onClick={() => onPrompt(prompt)} disabled={disabled}>
+          <button type="button" key={prompt} onClick={() => onPrompt(prompt)} disabled={disabled} data-spotlight-card>
             <span>{prompt}</span><em>↗</em>
           </button>
         ))}
