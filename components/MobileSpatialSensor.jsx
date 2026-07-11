@@ -23,12 +23,12 @@ export default function MobileSpatialSensor() {
     const root = document.documentElement;
 
     const resetVariables = () => {
-      root.style.setProperty("--kb-sensor-x", "0");
-      root.style.setProperty("--kb-sensor-y", "0");
-      root.style.setProperty("--kb-sensor-xp", "0px");
-      root.style.setProperty("--kb-sensor-yp", "0px");
-      root.style.setProperty("--kb-sensor-energy", "0");
-      root.style.setProperty("--kb-sensor-angle", "0deg");
+      [
+        "--kb-sensor-x", "--kb-sensor-y", "--kb-sensor-xp", "--kb-sensor-yp",
+        "--kb-sensor-grid-xp", "--kb-sensor-grid-yp", "--kb-sensor-logo-xp",
+        "--kb-sensor-logo-yp", "--kb-sensor-shadow-xp", "--kb-sensor-shadow-yp",
+        "--kb-sensor-energy", "--kb-sensor-angle",
+      ].forEach((name) => root.style.removeProperty(name));
       delete root.dataset.kbSpatialSensor;
       targetRef.current = { x: 0, y: 0 };
       currentRef.current = { x: 0, y: 0 };
@@ -69,6 +69,12 @@ export default function MobileSpatialSensor() {
         root.style.setProperty("--kb-sensor-y", current.y.toFixed(4));
         root.style.setProperty("--kb-sensor-xp", `${(current.x * 54).toFixed(2)}px`);
         root.style.setProperty("--kb-sensor-yp", `${(current.y * 38).toFixed(2)}px`);
+        root.style.setProperty("--kb-sensor-grid-xp", `${(current.x * -4.8).toFixed(2)}px`);
+        root.style.setProperty("--kb-sensor-grid-yp", `${(current.y * -3).toFixed(2)}px`);
+        root.style.setProperty("--kb-sensor-logo-xp", `${(current.x * 3.1).toFixed(2)}px`);
+        root.style.setProperty("--kb-sensor-logo-yp", `${(current.y * 2.2).toFixed(2)}px`);
+        root.style.setProperty("--kb-sensor-shadow-xp", `${(current.x * 2.7).toFixed(2)}px`);
+        root.style.setProperty("--kb-sensor-shadow-yp", `${(current.y * 1.8).toFixed(2)}px`);
         root.style.setProperty("--kb-sensor-energy", energy.toFixed(4));
         root.style.setProperty("--kb-sensor-angle", `${(current.x * 28 - current.y * 18).toFixed(2)}deg`);
       }
