@@ -1,7 +1,17 @@
+import { checkRateLimit, rateLimitResponse } from "../../lib/rate-limit";
+
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 export async function POST(req) {
+  const rateLimit = checkRateLimit(req, {
+    name: "online",
+    limit: 4,
+    windowMs: 60 * 1000,
+  });
+
+  if (!rateLimit.allowed) return rateLimitResponse(rateLimit);
+
   try {
     if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
       return Response.json(
