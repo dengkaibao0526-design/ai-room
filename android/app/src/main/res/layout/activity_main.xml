@@ -9,7 +9,48 @@
         android:id="@+id/webView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="#050409" />
+        android:background="#050409"
+        android:fadeScrollbars="true"
+        android:scrollbarStyle="outsideOverlay" />
+
+    <LinearLayout
+        android:id="@+id/errorPanel"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:padding="32dp"
+        android:visibility="gone"
+        android:background="#050409">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="KB Core 暂时没接上"
+            android:textColor="#F6EEFF"
+            android:textSize="21sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:gravity="center"
+            android:text="可能是网络抖了一下。重新连接就好。"
+            android:textColor="#AFA4C2"
+            android:textSize="14sp" />
+
+        <Button
+            android:id="@+id/retryButton"
+            android:layout_width="wrap_content"
+            android:layout_height="48dp"
+            android:layout_marginTop="22dp"
+            android:minWidth="150dp"
+            android:text="重新连接"
+            android:textAllCaps="false"
+            android:textColor="#FFFFFF"
+            android:backgroundTint="#7C4DE5" />
+    </LinearLayout>
 
     <xyz.xiaokb.app.CoreSplashView
         android:id="@+id/coreSplash"
