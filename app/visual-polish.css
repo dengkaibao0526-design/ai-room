@@ -1,0 +1,213 @@
+:root {
+  --kb-motion-fast: 120ms;
+  --kb-motion-base: 180ms;
+  --kb-motion-slow: 220ms;
+  --kb-ease-product: cubic-bezier(.2,.8,.2,1);
+}
+
+/* Product entrance */
+.kbProductEntrance {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483647;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  pointer-events: none;
+  background: #050507;
+  animation: kbEntranceCurtain 1180ms var(--kb-ease-product) forwards;
+}
+
+.kbEntranceField {
+  position: absolute;
+  width: min(72vw, 820px);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle, rgba(5,5,7,.98) 0 13%, rgba(40,23,75,.92) 22%, rgba(127,73,255,.24) 35%, rgba(89,45,190,.08) 52%, transparent 72%);
+  filter: blur(2px);
+  transform: scale(.28);
+  opacity: 0;
+  animation: kbEntranceField 900ms var(--kb-ease-product) 80ms both;
+}
+
+.kbEntranceCore {
+  position: relative;
+  width: 76px;
+  height: 76px;
+  display: grid;
+  place-items: center;
+  border-radius: 22px;
+  color: #fff;
+  background: linear-gradient(145deg, #b99aff, #8353f3 56%, #6036d2);
+  border: 1px solid rgba(255,255,255,.18);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.26), 0 0 42px rgba(127,76,250,.34), 0 24px 70px rgba(40,20,90,.42);
+  transform: scale(.72);
+  opacity: 0;
+  animation: kbEntranceCore 620ms var(--kb-ease-product) 90ms both;
+}
+
+.kbEntranceCore strong {
+  font-size: 20px;
+  font-weight: 850;
+  letter-spacing: -.05em;
+}
+
+.kbEntranceOrbit {
+  position: absolute;
+  inset: -17px;
+  border: 1px solid rgba(193,166,255,.3);
+  border-radius: 50%;
+}
+
+.kbEntranceOrbit.two {
+  inset: -8px -24px;
+  transform: rotate(56deg);
+  border-color: rgba(221,207,255,.16);
+}
+
+.kbEntranceLabel {
+  position: absolute;
+  top: calc(50% + 76px);
+  color: rgba(220,209,239,.58);
+  font-size: 10px;
+  font-weight: 750;
+  letter-spacing: .22em;
+  opacity: 0;
+  animation: kbEntranceLabel 420ms ease-out 330ms both;
+}
+
+@keyframes kbEntranceCurtain {
+  0%, 62% { opacity: 1; visibility: visible; }
+  100% { opacity: 0; visibility: hidden; }
+}
+
+@keyframes kbEntranceField {
+  0% { opacity: 0; transform: scale(.28); }
+  35% { opacity: .95; }
+  100% { opacity: .18; transform: scale(1.18); }
+}
+
+@keyframes kbEntranceCore {
+  from { opacity: 0; transform: scale(.72); filter: blur(5px); }
+  to { opacity: 1; transform: scale(1); filter: blur(0); }
+}
+
+@keyframes kbEntranceLabel {
+  from { opacity: 0; transform: translateY(5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Stronger, deeper desktop spatial field — no trail, no particles. */
+@media (pointer: fine) {
+  .chatAppShell {
+    background:
+      radial-gradient(9rem 9rem at var(--kb-mx) var(--kb-my), rgba(5,5,8,.94) 0 16%, rgba(26,15,49,.82) 25%, transparent 43%),
+      radial-gradient(17rem 17rem at var(--kb-mx) var(--kb-my), transparent 17%, rgba(126,76,255,.18) 30%, rgba(105,58,224,.09) 42%, transparent 68%),
+      radial-gradient(33rem 24rem at var(--kb-mx) var(--kb-my), rgba(123,73,255,.12), transparent 72%),
+      radial-gradient(40rem 20rem at 50% -5%, rgba(145,91,255,.16), transparent 68%),
+      radial-gradient(25rem 40rem at -8% 52%, rgba(112,72,214,.05), transparent 72%),
+      radial-gradient(25rem 40rem at 108% 48%, rgba(121,77,235,.045), transparent 72%),
+      linear-gradient(180deg, #08070b 0%, #050507 45%, #06050a 100%) !important;
+  }
+
+  .chatAppShell::before {
+    opacity: .26;
+  }
+
+  .chatAppShell::after {
+    opacity: .16;
+  }
+}
+
+/* Final visual refinement */
+.desktopChatHeader {
+  box-shadow: inset 0 -1px 0 rgba(255,255,255,.018), 0 18px 46px rgba(0,0,0,.22) !important;
+}
+
+.chatEmptyState h1 {
+  text-wrap: balance;
+  text-shadow: 0 1px 0 rgba(255,255,255,.03), 0 18px 60px rgba(83,47,168,.08);
+}
+
+.emptyDescription {
+  color: #92909e !important;
+}
+
+.emptyCore {
+  filter: drop-shadow(0 24px 52px rgba(73,39,157,.2));
+}
+
+.emptyCore .emptyMark {
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.3), inset 0 -10px 22px rgba(66,31,142,.18), 0 0 34px rgba(137,84,255,.34), 0 22px 62px rgba(54,27,123,.3) !important;
+}
+
+.emptyPrompts button,
+.chatComposer,
+.copyHero,
+.controlPanel,
+.resultPanel,
+.mbtiHero,
+.questionCard,
+.resultCard {
+  transition-duration: var(--kb-motion-base) !important;
+  transition-timing-function: var(--kb-ease-product) !important;
+}
+
+.emptyPrompts button::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  background: linear-gradient(110deg, transparent 10%, rgba(255,255,255,.045) 42%, transparent 68%);
+  transform: translateX(-120%);
+  transition: transform var(--kb-motion-slow) var(--kb-ease-product);
+}
+
+.emptyPrompts button:hover::after {
+  transform: translateX(120%);
+}
+
+.chatComposer {
+  border-color: rgba(255,255,255,.135) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.075), inset 0 -1px 0 rgba(0,0,0,.38), 0 22px 72px rgba(0,0,0,.48), 0 0 0 1px rgba(121,77,255,.03) !important;
+}
+
+.chatComposer:focus-within {
+  border-color: rgba(178,137,255,.62) !important;
+  box-shadow: 0 0 0 3px rgba(139,86,255,.08), inset 0 1px 0 rgba(255,255,255,.09), 0 24px 78px rgba(0,0,0,.5), 0 0 48px rgba(111,66,219,.13) !important;
+}
+
+.sendButton {
+  background: linear-gradient(135deg, #b184ff 0%, #8b5af7 50%, #7243e2 100%) !important;
+}
+
+.sendButton:hover:not(:disabled) {
+  filter: brightness(1.06);
+}
+
+.isAi .messageContent::before {
+  width: 2px !important;
+  background: linear-gradient(180deg, rgba(188,148,255,.78), rgba(133,79,242,.3) 42%, rgba(128,78,235,.06)) !important;
+  box-shadow: 0 0 13px rgba(147,93,255,.24) !important;
+}
+
+.copyHero,
+.mbtiHero {
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.06), 0 30px 90px rgba(0,0,0,.4), 0 0 58px rgba(109,66,214,.07) !important;
+}
+
+@media (max-width: 720px), (pointer: coarse) {
+  .kbProductEntrance {
+    animation-duration: 980ms;
+  }
+  .kbEntranceField {
+    width: 118vw;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kbProductEntrance { display: none !important; }
+  .emptyPrompts button::after { display: none !important; }
+}
