@@ -77,128 +77,207 @@
 }
 
 @keyframes kbTypingRail {
-  0% {
-    opacity: 0;
-    transform: rotate(-24deg) scale(.975);
-  }
+  0% { opacity: 0; transform: rotate(-24deg) scale(.975); }
   28% { opacity: .95; }
-  100% {
-    opacity: .48;
-    transform: rotate(18deg) scale(1);
-  }
+  100% { opacity: .48; transform: rotate(18deg) scale(1); }
 }
 
 @keyframes kbTypingCore {
-  from {
-    opacity: 0;
-    transform: translateX(-24%) scaleX(.52);
-  }
-  to {
-    opacity: .78;
-    transform: translateX(72%) scaleX(1.12);
-  }
+  from { opacity: 0; transform: translateX(-24%) scaleX(.52); }
+  to { opacity: .78; transform: translateX(72%) scaleX(1.12); }
 }
 
 @keyframes kbSendCharge {
-  0% {
-    transform: scale(.985);
-    filter: brightness(1);
-  }
+  0% { transform: scale(.985); filter: brightness(1); }
   46% {
     transform: scale(1.018);
     filter: brightness(1.1);
     box-shadow: inset 0 1px 0 rgba(255,255,255,.28), 0 0 22px rgba(127,75,247,.28);
   }
-  100% {
-    transform: scale(1);
-    filter: brightness(1.04);
-  }
+  100% { transform: scale(1); filter: brightness(1.04); }
 }
 
 @media (max-width: 720px), (pointer: coarse) {
+  .typingEnergyRail,
+  .typingEnergyCore {
+    inset: 0;
+    width: auto;
+    height: auto;
+    left: 0;
+    bottom: 0;
+    border-radius: inherit;
+    padding: 0;
+    -webkit-mask: none;
+    mask: none;
+    transform: none;
+  }
+
   .typingEnergyRail {
-    inset: -1px;
-    padding: 1.5px;
-    background: conic-gradient(
-      from 198deg,
-      transparent 0 11%,
-      rgba(113, 55, 246, .08) 18%,
-      rgba(179, 126, 255, .52) 27%,
-      rgba(231, 216, 255, .98) 34%,
-      rgba(153, 91, 255, .62) 41%,
-      rgba(102, 48, 224, .14) 50%,
-      transparent 60% 100%
-    );
+    background:
+      conic-gradient(
+        from 238deg at 78% 42%,
+        transparent 0 8%,
+        rgba(222, 204, 255, .16) 16%,
+        rgba(153, 96, 255, .52) 24%,
+        transparent 34% 57%,
+        rgba(104, 52, 226, .24) 67%,
+        transparent 79% 100%
+      ),
+      repeating-linear-gradient(
+        104deg,
+        transparent 0 18px,
+        rgba(210, 188, 255, .05) 19px 20px,
+        transparent 21px 44px
+      );
+    background-size: 132% 132%, 180% 100%;
+    background-position: 72% 44%, 0 0;
+    mix-blend-mode: screen;
     filter:
-      drop-shadow(0 0 6px rgba(215, 190, 255, .38))
-      drop-shadow(0 0 14px rgba(126, 65, 255, .42));
+      saturate(1.18)
+      drop-shadow(0 0 8px rgba(190, 151, 255, .16));
   }
 
   .typingEnergyCore {
-    width: 62%;
-    height: 48px;
-    left: -2%;
-    bottom: -22px;
     background:
-      radial-gradient(ellipse at 72% 50%, rgba(218, 191, 255, .42), rgba(151, 88, 255, .2) 28%, rgba(105, 49, 226, .08) 52%, transparent 76%);
-    filter: blur(7px);
+      linear-gradient(112deg,
+        transparent 0 18%,
+        rgba(106, 54, 225, .08) 29%,
+        rgba(205, 178, 255, .24) 41%,
+        rgba(119, 62, 236, .13) 52%,
+        transparent 66%),
+      radial-gradient(ellipse at 82% 54%, rgba(196, 162, 255, .16), transparent 46%);
+    background-size: 145% 100%, 100% 100%;
+    background-position: -18% 0, 0 0;
+    filter: blur(.35px) saturate(1.15);
+    mix-blend-mode: screen;
   }
 
   .chatComposer.isTypingActive {
-    border-color: rgba(196, 159, 255, .78) !important;
+    border-color: rgba(205, 169, 255, .86) !important;
     box-shadow:
-      0 0 0 1px rgba(179, 126, 255, .15),
-      inset 0 1px 0 rgba(255,255,255,.12),
-      inset 0 -1px 0 rgba(122, 65, 244, .12),
+      0 0 0 1px rgba(180, 124, 255, .18),
+      inset 0 1px 0 rgba(255,255,255,.13),
+      inset 0 -1px 0 rgba(122, 65, 244, .16),
       0 18px 54px rgba(0,0,0,.52),
-      0 0 25px rgba(117,67,230,.24),
-      0 0 52px rgba(95,45,201,.11) !important;
+      0 0 26px rgba(117,67,230,.28),
+      0 0 58px rgba(95,45,201,.14) !important;
   }
 
   .chatComposer.isTypingActive .typingEnergyRail {
-    opacity: 1;
-    animation: kbMobileTypingRail 640ms linear infinite;
+    opacity: .96;
+    animation: kbMobileRefractionField 900ms linear infinite;
   }
 
   .chatComposer.isTypingActive .typingEnergyCore {
-    opacity: 1;
-    animation: kbMobileTypingCore 560ms cubic-bezier(.3,.75,.2,1) infinite alternate;
+    opacity: .9;
+    animation: kbMobileRefractionShear 760ms cubic-bezier(.3,.72,.2,1) infinite alternate;
   }
 
-  .chatComposer.isTypingActive textarea {
+  .chatComposer.isTypingSettling {
+    border-color: rgba(177, 133, 255, .58) !important;
+    box-shadow:
+      0 0 0 1px rgba(166, 105, 255, .08),
+      inset 0 1px 0 rgba(255,255,255,.1),
+      0 18px 54px rgba(0,0,0,.52),
+      0 0 32px rgba(106,60,218,.14) !important;
+    transition:
+      border-color 720ms cubic-bezier(.16,.7,.2,1),
+      box-shadow 760ms cubic-bezier(.16,.7,.2,1);
+  }
+
+  .chatComposer.isTypingSettling .typingEnergyRail {
+    animation: kbMobileRefractionSettle 760ms cubic-bezier(.16,.7,.2,1) both;
+  }
+
+  .chatComposer.isTypingSettling .typingEnergyCore {
+    animation: kbMobileShearSettle 760ms cubic-bezier(.16,.7,.2,1) both;
+  }
+
+  .chatComposer.isTypingActive textarea,
+  .chatComposer.isTypingSettling textarea {
     text-shadow:
       0 0 12px rgba(211, 184, 255, .09),
       0 0 24px rgba(154, 97, 255, .05);
   }
 
   .chatComposer.isTypingActive .sendButton:not(:disabled) {
-    animation: kbMobileSendCharge 560ms cubic-bezier(.3,.75,.2,1) infinite alternate;
+    animation: kbMobileSendCharge 620ms cubic-bezier(.3,.75,.2,1) infinite alternate;
+  }
+
+  .chatComposer.isTypingSettling .sendButton:not(:disabled) {
+    transition: transform 620ms cubic-bezier(.16,.7,.2,1), filter 620ms ease, box-shadow 620ms ease;
+    transform: scale(1);
+    filter: brightness(1.03);
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,.24),
+      0 8px 24px rgba(94,52,205,.24);
   }
 }
 
-@keyframes kbMobileTypingRail {
+@keyframes kbMobileRefractionField {
   0% {
-    opacity: .5;
-    transform: rotate(-20deg) scale(.986);
+    opacity: .62;
+    background-position: 76% 44%, -24% 0;
+    transform: skewX(-1.2deg) scale(1.002);
   }
-  42% {
+  34% {
     opacity: 1;
-    transform: rotate(10deg) scale(1.003);
+    background-position: 58% 52%, 28% 0;
+    transform: skewX(.8deg) scale(1.006);
+  }
+  68% {
+    opacity: .82;
+    background-position: 84% 48%, 72% 0;
+    transform: skewX(-.45deg) scale(1.003);
   }
   100% {
-    opacity: .68;
-    transform: rotate(42deg) scale(.994);
+    opacity: .7;
+    background-position: 70% 44%, 124% 0;
+    transform: skewX(.5deg) scale(1.004);
   }
 }
 
-@keyframes kbMobileTypingCore {
+@keyframes kbMobileRefractionShear {
   from {
     opacity: .48;
-    transform: translateX(-12%) scaleX(.62);
+    background-position: -32% 0, 0 0;
+    transform: translateX(-1.5%) skewX(-1.5deg);
   }
   to {
     opacity: .96;
-    transform: translateX(72%) scaleX(1.18);
+    background-position: 72% 0, 0 0;
+    transform: translateX(1.8%) skewX(1.1deg);
+  }
+}
+
+@keyframes kbMobileRefractionSettle {
+  0% {
+    opacity: .72;
+    background-position: 72% 44%, 88% 0;
+    transform: skewX(.5deg) scale(1.004);
+  }
+  55% {
+    opacity: .34;
+    background-position: 68% 46%, 110% 0;
+    transform: skewX(-.18deg) scale(1.001);
+  }
+  100% {
+    opacity: 0;
+    background-position: 70% 48%, 128% 0;
+    transform: skewX(0) scale(1);
+  }
+}
+
+@keyframes kbMobileShearSettle {
+  0% {
+    opacity: .58;
+    background-position: 64% 0, 0 0;
+    transform: translateX(1.2%) skewX(.8deg);
+  }
+  100% {
+    opacity: 0;
+    background-position: 92% 0, 0 0;
+    transform: translateX(0) skewX(0);
   }
 }
 
@@ -211,11 +290,11 @@
       0 8px 24px rgba(94,52,205,.28);
   }
   to {
-    transform: scale(1.025);
-    filter: brightness(1.14);
+    transform: scale(1.022);
+    filter: brightness(1.13);
     box-shadow:
       inset 0 1px 0 rgba(255,255,255,.36),
-      0 0 20px rgba(177, 126, 255, .38),
+      0 0 22px rgba(177, 126, 255, .4),
       0 10px 30px rgba(100, 53, 220, .38);
   }
 }
@@ -226,7 +305,9 @@
     display: none !important;
   }
 
-  .chatComposer.isTypingActive .sendButton:not(:disabled) {
+  .chatComposer.isTypingActive .sendButton:not(:disabled),
+  .chatComposer.isTypingSettling .sendButton:not(:disabled) {
     animation: none !important;
+    transition: none !important;
   }
 }
