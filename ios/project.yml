@@ -1,0 +1,36 @@
+name: XiaoKB
+options:
+  bundleIdPrefix: com.xiaokb
+  deploymentTarget:
+    iOS: "17.0"
+settings:
+  base:
+    SWIFT_VERSION: 5.0
+    DEVELOPMENT_TEAM: ""
+targets:
+  XiaoKB:
+    type: application
+    platform: iOS
+    sources:
+      - XiaoKB
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.xiaokb.app
+        MARKETING_VERSION: 1.0
+        CURRENT_PROJECT_VERSION: 1
+        INFOPLIST_FILE: XiaoKB/Info.plist
+        GENERATE_INFOPLIST_FILE: NO
+        TARGETED_DEVICE_FAMILY: "1"
+        SUPPORTS_MACCATALYST: NO
+        CODE_SIGN_STYLE: Automatic
+    info:
+      path: XiaoKB/Info.plist
+      properties:
+        CFBundleDisplayName: 小KB
+        UILaunchScreen: {}
+        UIRequiresFullScreen: false
+        NSMotionUsageDescription: 小KB使用设备运动数据驱动空间折射与KB Core视觉效果。数据仅在设备本地用于界面响应。
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+        UIApplicationSceneManifest:
+          UIApplicationSupportsMultipleScenes: false
