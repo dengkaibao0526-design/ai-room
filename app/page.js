@@ -7,6 +7,7 @@ import MessageList from "./components/chat/MessageList";
 import ChatComposer from "./components/chat/ChatComposer";
 import FeedbackModal from "./components/chat/FeedbackModal";
 import IntroModal from "./components/chat/IntroModal";
+import KBStateCore from "./components/chat/KBStateCore";
 
 const DEFAULT_SETTINGS = {
   show_mbti: true,
@@ -58,6 +59,7 @@ export default function Home() {
   const [feedbackLoading, setFeedbackLoading] = useState(false);
   const [feedbackMessage, setFeedbackMessage] = useState("");
   const [showJump, setShowJump] = useState(false);
+  const [coreListening, setCoreListening] = useState(false);
 
   const scrollRef = useRef(null);
   const endRef = useRef(null);
@@ -70,6 +72,19 @@ export default function Home() {
   const hasUserMessage = messages.some((message) => message.role === "user");
   const effectiveMode = chatMode === "research" && settings.enable_research_mode ? "research" : "daily";
   const busy = loading || typing;
+  const coreState = loading
+    ? "thinking"
+    : typing
+      ? "responding"
+      : coreListening
+        ? "listening"
+        : effectiveMode === "research"
+          ? "research"
+          : "idle";
+
+  const handleListeningChange = useCallback((active) => {
+    setCoreListening(active);
+  }, []);
 
   const scrollToLatest = useCallback((behavior = "smooth") => {
     shouldStickRef.current = true;
@@ -140,6 +155,16 @@ export default function Home() {
   }, [effectiveMode]);
 
   useEffect(() => {
+    const root = document.documentElement;
+    root.dataset.kbCoreState = coreState;
+    root.dataset.kbCoreMode = effectiveMode;
+    return () => {
+      delete root.dataset.kbCoreState;
+      delete root.dataset.kbCoreMode;
+    };
+  }, [coreState, effectiveMode]);
+
+  useEffect(() => {
     if (!userId) return;
     async function ping() {
       try {
@@ -206,6 +231,7 @@ export default function Home() {
     if (!userText || busy) return;
     const history = messages.slice(-40);
     shouldStickRef.current = true;
+    setCoreListening(false);
     setMessages((previous) => [...previous, { role: "user", text: userText }]);
     setInput("");
     setLoading(true);
@@ -224,6 +250,7 @@ export default function Home() {
       await typeReply(data.reply);
     } catch (error) {
       setLoading(false);
+      setTyping(false);
       if (error.name === "AbortError") return;
       setMessages((previous) => [...previous, { role: "ai", text: "这次没有接稳，请检查网络后重试。", error: true, retryText: userText }]);
     } finally {
@@ -236,6 +263,7 @@ export default function Home() {
     localStorage.removeItem("kb-chat");
     setMessages([{ role: "ai", text: greeting() }]);
     setInput("");
+    setCoreListening(false);
   }
 
   function closeIntro() {
@@ -267,16 +295,23 @@ export default function Home() {
   }
 
   return (
-    <main className="chatAppShell">
+    <main className="chatAppShell" data-core-state={coreState} data-core-mode={effectiveMode}>
       <div className="ambientGrid" />
       <ChatHeader mode={effectiveMode} settings={settings} busy={busy} onModeChange={setChatMode} onReset={resetChat} onFeedback={() => setShowFeedback(true)} />
       <section className="chatWorkspace">
         {!hasUserMessage ? (
-          <div className="chatScroll emptyScroll"><EmptyState mode={effectiveMode} prompts={PROMPTS[effectiveMode]} disabled={busy} onPrompt={sendMessage} /></div>
+          <div className="chatScroll emptyScroll">
+            <EmptyState mode={effectiveMode} coreState={coreState} prompts={PROMPTS[effectiveMode]} disabled={busy} onPrompt={sendMessage} />
+          </div>
         ) : (
-          <MessageList messages={messages} loading={loading} scrollRef={scrollRef} endRef={endRef} showJump={showJump} onScroll={onScroll} onJump={() => scrollToLatest()} onRetry={sendMessage} />
+          <div className="conversationStage">
+            <div className="conversationCoreDock" aria-live="polite">
+              <KBStateCore state={coreState} mode={effectiveMode} variant="compact" />
+            </div>
+            <MessageList messages={messages} loading={loading} scrollRef={scrollRef} endRef={endRef} showJump={showJump} onScroll={onScroll} onJump={() => scrollToLatest()} onRetry={sendMessage} />
+          </div>
         )}
-        <ChatComposer value={input} placeholder={MODE[effectiveMode].placeholder} busy={loading} typing={typing} onChange={setInput} onSend={() => sendMessage()} onStop={stopOutput} />
+        <ChatComposer value={input} placeholder={MODE[effectiveMode].placeholder} busy={loading} typing={typing} onChange={setInput} onSend={() => sendMessage()} onStop={stopOutput} onListeningChange={handleListeningChange} />
       </section>
       <FeedbackModal open={showFeedback && settings.show_feedback} type={feedbackType} content={feedbackContent} contact={feedbackContact} loading={feedbackLoading} message={feedbackMessage} onType={setFeedbackType} onContent={setFeedbackContent} onContact={setFeedbackContact} onClose={() => !feedbackLoading && setShowFeedback(false)} onSubmit={submitFeedback} />
       <IntroModal open={showIntro && settings.show_intro_modal} researchEnabled={settings.enable_research_mode} onClose={closeIntro} />

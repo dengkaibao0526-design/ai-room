@@ -1,0 +1,546 @@
+/* KB Core state engine: one visual heartbeat shared by hero and conversation states. */
+
+.kbStateCore {
+  --core-aura: rgba(139, 88, 255, .2);
+  --core-aura-soft: rgba(92, 48, 205, .08);
+  --core-line: rgba(190, 158, 255, .28);
+  --core-line-soft: rgba(226, 213, 255, .12);
+  --core-mark-a: #bc9cff;
+  --core-mark-b: #8558f6;
+  --core-mark-c: #6236d5;
+  --core-scale: 1;
+  isolation: isolate;
+  will-change: transform, filter;
+}
+
+.kbStateCore::before,
+.kbStateCore::after {
+  display: none;
+}
+
+.kbStateCore .kbCoreAura,
+.kbStateCore .kbCoreOrbit,
+.kbStateCore .kbCoreFlux,
+.kbStateCore .kbCorePulse {
+  position: absolute;
+  pointer-events: none;
+}
+
+.kbStateCore .kbCoreAura {
+  inset: -34%;
+  z-index: -2;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 50% 50%, var(--core-aura) 0, var(--core-aura-soft) 36%, transparent 70%);
+  filter: blur(10px);
+  opacity: .74;
+  transform: scale(.92);
+  transition: opacity 280ms cubic-bezier(.2,.8,.2,1), transform 420ms cubic-bezier(.2,.8,.2,1), filter 280ms ease;
+}
+
+.kbStateCore .kbCoreOrbit {
+  inset: 3px;
+  z-index: 0;
+  border-radius: 50%;
+  border: 1px solid var(--core-line);
+  box-shadow: 0 0 25px rgba(111, 66, 226, .08);
+  transition: inset 320ms cubic-bezier(.2,.8,.2,1), border-color 260ms ease, opacity 260ms ease, filter 260ms ease;
+}
+
+.kbStateCore .kbCoreOrbit::before,
+.kbStateCore .kbCoreOrbit::after {
+  content: "";
+  position: absolute;
+  border-radius: 50%;
+}
+
+.kbStateCore .kbCoreOrbit::before {
+  width: 5px;
+  height: 5px;
+  top: 6px;
+  right: 10px;
+  background: #ddccff;
+  box-shadow: 0 0 11px rgba(209, 181, 255, .8);
+}
+
+.kbStateCore .kbCoreOrbit::after {
+  width: 3px;
+  height: 3px;
+  left: 5px;
+  bottom: 15px;
+  background: rgba(196, 164, 255, .76);
+  box-shadow: 0 0 9px rgba(178, 139, 255, .62);
+}
+
+.kbStateCore .kbCoreOrbitB {
+  inset: 13px -2px;
+  border-color: var(--core-line-soft);
+  transform: rotate(58deg);
+  opacity: .82;
+}
+
+.kbStateCore .kbCoreOrbitB::before {
+  top: auto;
+  right: 8px;
+  bottom: 5px;
+  width: 3px;
+  height: 3px;
+  opacity: .74;
+}
+
+.kbStateCore .kbCoreOrbitB::after {
+  display: none;
+}
+
+.kbStateCore .kbCoreFlux {
+  inset: 12px;
+  z-index: 1;
+  border-radius: 42% 58% 55% 45%;
+  opacity: .12;
+  background:
+    conic-gradient(from 40deg, transparent 0 18%, rgba(235,221,255,.68) 28%, transparent 37% 61%, rgba(141,85,255,.5) 72%, transparent 82% 100%);
+  filter: blur(1px);
+  mix-blend-mode: screen;
+  transition: opacity 220ms ease, inset 320ms cubic-bezier(.2,.8,.2,1), filter 220ms ease;
+}
+
+.kbStateCore .kbStateCoreMark {
+  background:
+    radial-gradient(circle at 48% 42%, rgba(255,255,255,.25), transparent 25%),
+    linear-gradient(145deg, var(--core-mark-a) 0%, var(--core-mark-b) 55%, var(--core-mark-c) 100%) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.26),
+    0 0 30px var(--core-aura),
+    0 18px 48px rgba(70,36,153,.26) !important;
+  transition: transform 320ms cubic-bezier(.2,.8,.2,1), filter 260ms ease, box-shadow 260ms ease, background 260ms ease;
+  will-change: transform, filter;
+}
+
+.kbStateCore .kbCorePulse {
+  inset: 9px;
+  z-index: -1;
+  border: 1px solid rgba(218, 195, 255, .34);
+  border-radius: 50%;
+  opacity: 0;
+  transform: scale(.8);
+}
+
+.kbStateCore > .emptyCoreDot {
+  display: none;
+}
+
+/* Hero and compact Core share state logic but occupy different roles. */
+.kbStateCore--hero {
+  width: 76px;
+  height: 76px;
+  margin-bottom: 22px;
+}
+
+.kbStateCore--hero .kbStateCoreMark {
+  width: 50px !important;
+  height: 50px !important;
+}
+
+.kbStateCore--compact {
+  width: 42px;
+  height: 42px;
+  margin: 0;
+  transform: none;
+  transition: opacity 220ms ease, filter 260ms ease, transform 260ms cubic-bezier(.2,.8,.2,1);
+}
+
+.kbStateCore--compact .kbStateCoreMark {
+  width: 28px !important;
+  height: 28px !important;
+  margin: 0 !important;
+  border-radius: 9px !important;
+  font-size: 8px !important;
+}
+
+.kbStateCore--compact .kbCoreOrbit::before {
+  width: 3px;
+  height: 3px;
+  top: 3px;
+  right: 6px;
+}
+
+.kbStateCore--compact .kbCoreOrbit::after {
+  width: 2px;
+  height: 2px;
+  left: 3px;
+  bottom: 9px;
+}
+
+.conversationStage {
+  min-height: 0;
+  position: relative;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr);
+  overflow: hidden;
+}
+
+.conversationStage > .chatScroll {
+  min-height: 0;
+}
+
+.conversationCoreDock {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  z-index: 6;
+  width: 48px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+  transform: translateX(-50%);
+  opacity: .92;
+  filter: drop-shadow(0 12px 28px rgba(0,0,0,.38));
+}
+
+.conversationStage .chatScroll {
+  padding-top: 62px;
+}
+
+/* IDLE — slow breathing, nearly still orbits. */
+.kbStateCore[data-core-state="idle"] .kbStateCoreMark {
+  animation: kbCoreIdleBreath 7.2s ease-in-out infinite;
+}
+
+.kbStateCore[data-core-state="idle"] .kbCoreOrbitA {
+  animation: kbCoreOrbitForward 28s linear infinite;
+}
+
+.kbStateCore[data-core-state="idle"] .kbCoreOrbitB {
+  animation: kbCoreOrbitReverse 38s linear infinite;
+}
+
+/* LISTENING — the core contracts and gathers energy instead of spinning. */
+.kbStateCore[data-core-state="listening"] {
+  --core-aura: rgba(171, 121, 255, .34);
+  --core-aura-soft: rgba(119, 65, 238, .15);
+  --core-line: rgba(217, 190, 255, .48);
+}
+
+.kbStateCore[data-core-state="listening"] .kbCoreAura {
+  opacity: 1;
+  transform: scale(1.08);
+  filter: blur(8px);
+}
+
+.kbStateCore[data-core-state="listening"] .kbCoreOrbitA {
+  inset: 7px;
+  transform: rotate(-8deg) scale(.93);
+}
+
+.kbStateCore[data-core-state="listening"] .kbCoreOrbitB {
+  inset: 15px 1px;
+  transform: rotate(48deg) scale(.9);
+}
+
+.kbStateCore[data-core-state="listening"] .kbCoreFlux {
+  inset: 10px;
+  opacity: .55;
+  filter: blur(.6px) brightness(1.2);
+  animation: kbCoreListeningFlux 1.25s ease-in-out infinite alternate;
+}
+
+.kbStateCore[data-core-state="listening"] .kbStateCoreMark {
+  transform: scale(1.045);
+  filter: brightness(1.08) saturate(1.08);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.3),
+    0 0 38px rgba(158, 103, 255, .4),
+    0 20px 52px rgba(76,38,166,.3) !important;
+}
+
+/* THINKING — counter-rotating orbit mechanics and visible internal computation. */
+.kbStateCore[data-core-state="thinking"] {
+  --core-aura: rgba(145, 91, 255, .42);
+  --core-aura-soft: rgba(77, 37, 171, .19);
+  --core-line: rgba(220, 196, 255, .58);
+  --core-line-soft: rgba(156, 105, 255, .34);
+}
+
+.kbStateCore[data-core-state="thinking"] .kbCoreAura {
+  opacity: 1;
+  transform: scale(1.18);
+  filter: blur(12px);
+  animation: kbCoreThinkingField 2.8s ease-in-out infinite alternate;
+}
+
+.kbStateCore[data-core-state="thinking"] .kbCoreOrbitA {
+  animation: kbCoreOrbitForward 6.8s linear infinite;
+  filter: drop-shadow(0 0 8px rgba(201, 171, 255, .28));
+}
+
+.kbStateCore[data-core-state="thinking"] .kbCoreOrbitB {
+  animation: kbCoreOrbitReverse 9.6s linear infinite;
+  opacity: 1;
+}
+
+.kbStateCore[data-core-state="thinking"] .kbCoreFlux {
+  inset: 9px;
+  opacity: .78;
+  filter: blur(.5px) brightness(1.28);
+  animation: kbCoreFluxCompute 2.2s linear infinite;
+}
+
+.kbStateCore[data-core-state="thinking"] .kbStateCoreMark {
+  filter: brightness(1.12) saturate(1.16);
+  animation: kbCoreThinkingMark 1.9s ease-in-out infinite alternate;
+}
+
+/* RESPONDING — one state-entry pulse, then a stable transmitting shimmer. */
+.kbStateCore[data-core-state="responding"] {
+  --core-aura: rgba(184, 137, 255, .35);
+  --core-aura-soft: rgba(116, 64, 231, .13);
+  --core-line: rgba(207, 177, 255, .4);
+}
+
+.kbStateCore[data-core-state="responding"] .kbCorePulse {
+  animation: kbCoreResponsePulse 720ms cubic-bezier(.16,.82,.22,1) 1 both;
+}
+
+.kbStateCore[data-core-state="responding"] .kbCoreOrbitA {
+  transform: rotate(24deg);
+  opacity: .88;
+}
+
+.kbStateCore[data-core-state="responding"] .kbCoreOrbitB {
+  transform: rotate(38deg) scale(1.04);
+  opacity: .66;
+}
+
+.kbStateCore[data-core-state="responding"] .kbCoreFlux {
+  opacity: .43;
+  animation: kbCoreTransmit 2.4s ease-in-out infinite;
+}
+
+.kbStateCore[data-core-state="responding"] .kbStateCoreMark {
+  animation: kbCoreRespondingShimmer 2.8s ease-in-out infinite;
+}
+
+/* RESEARCH — colder, concentrated and slower. */
+.kbStateCore[data-core-state="research"] {
+  --core-aura: rgba(108, 127, 255, .25);
+  --core-aura-soft: rgba(61, 73, 188, .09);
+  --core-line: rgba(164, 179, 255, .38);
+  --core-line-soft: rgba(119, 135, 238, .2);
+  --core-mark-a: #aeb9ff;
+  --core-mark-b: #786ff4;
+  --core-mark-c: #5142c2;
+}
+
+.kbStateCore[data-core-state="research"] .kbCoreAura {
+  opacity: .66;
+  transform: scale(.9);
+  filter: blur(8px);
+}
+
+.kbStateCore[data-core-state="research"] .kbCoreOrbitA {
+  inset: 1px;
+  animation: kbCoreOrbitForward 32s linear infinite;
+}
+
+.kbStateCore[data-core-state="research"] .kbCoreOrbitB {
+  inset: 11px -4px;
+  animation: kbCoreOrbitReverse 44s linear infinite;
+}
+
+.kbStateCore[data-core-state="research"] .kbCoreFlux {
+  inset: 7px;
+  opacity: .25;
+  background:
+    repeating-conic-gradient(from 0deg, rgba(201,208,255,.5) 0 1deg, transparent 1deg 29deg);
+  animation: kbCoreOrbitForward 24s linear infinite;
+}
+
+.kbStateCore[data-core-state="research"] .kbStateCoreMark {
+  filter: saturate(.9) brightness(1.02);
+  animation: kbCoreResearchBreath 9s ease-in-out infinite;
+}
+
+/* The rest of the product receives energy from the Core state instead of lighting independently. */
+.chatWorkspace::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0;
+  background: radial-gradient(38rem 22rem at 50% 18%, rgba(134, 80, 255, .16), transparent 72%);
+  transform: scale(.9);
+  transition: opacity 360ms ease, transform 520ms cubic-bezier(.2,.8,.2,1), filter 360ms ease;
+}
+
+.chatWorkspace > * {
+  position: relative;
+  z-index: 1;
+}
+
+html[data-kb-core-state="listening"] .chatWorkspace::before {
+  opacity: .48;
+  transform: scale(.95);
+}
+
+html[data-kb-core-state="thinking"] .chatWorkspace::before {
+  opacity: .82;
+  transform: scale(.86);
+  filter: saturate(1.15);
+  animation: kbCoreWorkspaceThink 2.8s ease-in-out infinite alternate;
+}
+
+html[data-kb-core-state="responding"] .chatWorkspace::before {
+  opacity: .55;
+  transform: scale(1.04);
+}
+
+html[data-kb-core-state="research"] .chatWorkspace::before {
+  opacity: .25;
+  background: radial-gradient(34rem 20rem at 50% 18%, rgba(96, 111, 255, .12), transparent 74%);
+}
+
+html[data-kb-core-state="thinking"] .ambientGrid {
+  opacity: .11 !important;
+  filter: brightness(1.16) saturate(1.08);
+}
+
+html[data-kb-core-state="responding"] .ambientGrid {
+  opacity: .085 !important;
+}
+
+html[data-kb-core-state="research"] .ambientGrid {
+  filter: hue-rotate(18deg) saturate(.88);
+}
+
+html[data-kb-core-state="listening"] .chatComposer {
+  border-color: rgba(181, 140, 255, .58) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.09),
+    0 20px 64px rgba(0,0,0,.5),
+    0 0 32px rgba(125, 73, 237, .12) !important;
+}
+
+html[data-kb-core-state="thinking"] .chatComposer {
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.07),
+    0 20px 64px rgba(0,0,0,.5),
+    0 0 42px rgba(103, 58, 215, .08) !important;
+}
+
+html[data-kb-core-state="responding"] .isAi:last-of-type .messageContent::before {
+  box-shadow: 0 0 16px rgba(165, 111, 255, .28);
+  animation: kbCoreMessageLine 1.8s ease-in-out infinite alternate;
+}
+
+@keyframes kbCoreIdleBreath {
+  0%, 100% { transform: scale(1); filter: brightness(1); }
+  50% { transform: scale(1.025); filter: brightness(1.055); }
+}
+
+@keyframes kbCoreResearchBreath {
+  0%, 100% { transform: scale(.99); filter: brightness(.98) saturate(.88); }
+  50% { transform: scale(1.012); filter: brightness(1.035) saturate(.94); }
+}
+
+@keyframes kbCoreOrbitForward {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes kbCoreOrbitReverse {
+  from { transform: rotate(58deg); }
+  to { transform: rotate(-302deg); }
+}
+
+@keyframes kbCoreListeningFlux {
+  from { transform: rotate(-8deg) scale(.86); opacity: .34; }
+  to { transform: rotate(12deg) scale(1.05); opacity: .68; }
+}
+
+@keyframes kbCoreThinkingField {
+  from { transform: scale(1.04); opacity: .72; }
+  to { transform: scale(1.24); opacity: 1; }
+}
+
+@keyframes kbCoreFluxCompute {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes kbCoreThinkingMark {
+  from { transform: scale(.985); box-shadow: inset 0 1px 0 rgba(255,255,255,.24), 0 0 26px rgba(133,83,246,.26), 0 18px 48px rgba(70,36,153,.24); }
+  to { transform: scale(1.045); box-shadow: inset 0 1px 0 rgba(255,255,255,.32), 0 0 42px rgba(166,115,255,.42), 0 20px 56px rgba(70,36,153,.34); }
+}
+
+@keyframes kbCoreResponsePulse {
+  0% { opacity: 0; transform: scale(.68); }
+  24% { opacity: .92; }
+  100% { opacity: 0; transform: scale(2.25); }
+}
+
+@keyframes kbCoreTransmit {
+  0%, 100% { transform: rotate(0deg) scale(.94); opacity: .25; }
+  50% { transform: rotate(28deg) scale(1.08); opacity: .52; }
+}
+
+@keyframes kbCoreRespondingShimmer {
+  0%, 100% { filter: brightness(1.02) saturate(1.02); }
+  50% { filter: brightness(1.1) saturate(1.12); }
+}
+
+@keyframes kbCoreWorkspaceThink {
+  from { transform: scale(.84); filter: saturate(1.02); }
+  to { transform: scale(.91); filter: saturate(1.2); }
+}
+
+@keyframes kbCoreMessageLine {
+  from { opacity: .62; }
+  to { opacity: 1; }
+}
+
+@media (max-width: 720px), (pointer: coarse) {
+  .kbStateCore--hero {
+    width: 80px;
+    height: 80px;
+  }
+
+  .kbStateCore--hero .kbStateCoreMark {
+    width: 52px !important;
+    height: 52px !important;
+  }
+
+  .conversationCoreDock {
+    top: 8px;
+  }
+
+  .conversationStage .chatScroll {
+    padding-top: 58px;
+  }
+
+  html[data-kb-core-state="thinking"] .chatWorkspace::before {
+    opacity: .94;
+    background:
+      radial-gradient(25rem 18rem at 50% 18%, rgba(145, 86, 255, .2), rgba(73, 37, 163, .07) 46%, transparent 74%);
+  }
+
+  html[data-kb-core-state="responding"] .chatWorkspace::before {
+    opacity: .68;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kbStateCore *,
+  .chatWorkspace::before,
+  html[data-kb-core-state] .ambientGrid,
+  html[data-kb-core-state] .chatComposer,
+  html[data-kb-core-state] .messageContent::before {
+    animation: none !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  .kbStateCore[data-core-state="thinking"] .kbCoreFlux,
+  .kbStateCore[data-core-state="listening"] .kbCoreFlux,
+  .kbStateCore[data-core-state="responding"] .kbCoreFlux {
+    opacity: .42;
+  }
+}

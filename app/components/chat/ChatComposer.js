@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 
-export default function ChatComposer({ value, placeholder, busy, typing, onChange, onSend, onStop }) {
+export default function ChatComposer({ value, placeholder, busy, typing, onChange, onSend, onStop, onListeningChange }) {
   const textareaRef = useRef(null);
   const typingPulseTimerRef = useRef(null);
   const typingSettleTimerRef = useRef(null);
@@ -15,11 +15,16 @@ export default function ChatComposer({ value, placeholder, busy, typing, onChang
   }, [value]);
 
   useEffect(() => {
+    onListeningChange?.(typingPhase === "active");
+  }, [typingPhase, onListeningChange]);
+
+  useEffect(() => {
     return () => {
       window.clearTimeout(typingPulseTimerRef.current);
       window.clearTimeout(typingSettleTimerRef.current);
+      onListeningChange?.(false);
     };
-  }, []);
+  }, [onListeningChange]);
 
   function stopTypingEnergy() {
     window.clearTimeout(typingPulseTimerRef.current);

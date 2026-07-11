@@ -1,12 +1,10 @@
-export default function EmptyState({ mode, prompts, disabled, onPrompt }) {
+import KBStateCore from "./KBStateCore";
+
+export default function EmptyState({ mode, coreState, prompts, disabled, onPrompt }) {
   const research = mode === "research";
   return (
     <section className="chatEmptyState">
-      <div className="emptyCore" data-logo-core>
-        <span className="emptyCoreDot one" aria-hidden="true" />
-        <span className="emptyCoreDot two" aria-hidden="true" />
-        <div className="emptyMark">KB</div>
-      </div>
+      <KBStateCore state={coreState} mode={mode} variant="hero" />
       <p className="emptyEyebrow">{research ? "RESEARCH MODE" : "XIAOKB AI"}</p>
       <h1>{research ? "把复杂问题，交给小KB拆开" : "今天想聊点什么？"}</h1>
       <p className="emptyDescription">
