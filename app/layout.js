@@ -19,6 +19,7 @@ import AIBreathEngine from "../components/AIBreathEngine";
 import MemoryCenter from "../components/MemoryCenter";
 import MemoryRequestBridge from "../components/MemoryRequestBridge";
 import AppleInstallPrompt from "../components/AppleInstallPrompt";
+import NativeShareBridge from "../components/NativeShareBridge";
 
 export const metadata = {
   title: "万能的KB",
@@ -45,6 +46,7 @@ export default function RootLayout({ children }) {
         <MemoryRequestBridge />
         <MemoryCenter />
         <AppleInstallPrompt />
+        <NativeShareBridge />
       </body>
     </html>
   );
