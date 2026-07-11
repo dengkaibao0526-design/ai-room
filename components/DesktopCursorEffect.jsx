@@ -84,7 +84,9 @@ export default function DesktopCursorEffect() {
     const magneticLeave = (event) => {
       const target = event.target instanceof Element ? event.target.closest(MAGNET_SELECTOR) : null;
       if (target) target.style.transform = "";
-      if (!(event.relatedTarget instanceof Element)?.closest?.(FIELD_TARGET_SELECTOR)) {
+
+      const relatedTarget = event.relatedTarget instanceof Element ? event.relatedTarget : null;
+      if (!relatedTarget?.closest(FIELD_TARGET_SELECTOR)) {
         energyTargetRef.current = 0;
       }
     };
