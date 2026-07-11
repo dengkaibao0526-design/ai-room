@@ -42,11 +42,11 @@ export default function AppleInstallPrompt() {
 
   return (
     <div className="appleInstallPromptBackdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && close()}>
-      <section className="appleInstallPrompt" role="dialog" aria-modal="true" aria-label="安装小KB">
+      <section className="appleInstallPrompt" role="dialog" aria-modal="true" aria-label="下载小KB">
         <div className="appleInstallPromptGlow" aria-hidden="true" />
-        <div className="appleInstallPromptEyebrow"> iPhone</div>
-        <strong>把小KB放到主屏幕</strong>
-        <p>以后点一下就能进来，打开方式更像 App。安装的只是小KB主屏幕入口，不会给你的手机加任何设备管理。</p>
+        <div className="appleInstallPromptEyebrow"> 给 iPhone 的朋友</div>
+        <strong>小KB可以放到主屏幕了</strong>
+        <p>点进去有完整安装教程。不会安装 VPN、证书或设备管理，装好后还是打开 xiaokb.xyz，只是用起来更像 App。</p>
         <div className="appleInstallPromptActions">
           <button className="appleInstallPrimary" type="button" onClick={install}>看看怎么装</button>
           <button className="appleInstallSecondary" type="button" onClick={close}>先不用</button>
