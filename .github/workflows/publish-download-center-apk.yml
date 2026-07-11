@@ -1,0 +1,63 @@
+name: Publish Download Center APK
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/publish-download-center-apk.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  publish-apk:
+    if: github.event_name == 'workflow_dispatch' || github.head_ref == 'agent/download-center'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - name: Checkout PR branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref || github.ref_name }}
+          fetch-depth: 0
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android 16 platform
+        run: yes | sdkmanager "platforms;android-36" "build-tools;36.0.0"
+
+      - name: Install Gradle 8.11.1
+        run: |
+          curl -fsSL https://services.gradle.org/distributions/gradle-8.11.1-bin.zip -o /tmp/gradle.zip
+          unzip -q /tmp/gradle.zip -d "$HOME"
+          echo "$HOME/gradle-8.11.1/bin" >> "$GITHUB_PATH"
+
+      - name: Build latest Android APK
+        working-directory: android
+        run: gradle --no-daemon :app:assembleDebug
+
+      - name: Publish APK into website static downloads
+        run: |
+          mkdir -p public/downloads
+          cp android/app/build/outputs/apk/debug/app-debug.apk public/downloads/xiaokb-android16-motion120.apk
+          sha256sum public/downloads/xiaokb-android16-motion120.apk > public/downloads/xiaokb-android16-motion120.sha256
+
+      - name: Commit generated APK to PR branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/downloads/xiaokb-android16-motion120.apk public/downloads/xiaokb-android16-motion120.sha256
+          if git diff --cached --quiet; then
+            echo "APK already current"
+            exit 0
+          fi
+          git commit -m "build: publish Android Motion120 APK for download center"
+          git push origin "HEAD:${GITHUB_HEAD_REF:-${GITHUB_REF_NAME}}"
