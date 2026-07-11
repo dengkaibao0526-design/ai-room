@@ -866,6 +866,26 @@ export default function CopywriterPage() {
           }
         }
       `}</style>
+      <style jsx global>{`
+        .copyPage { background: radial-gradient(circle at 50% -15%, rgba(159,107,255,.11), transparent 34%), #08080b !important; }
+        .copyShell { width: min(1320px, 100%) !important; padding: 24px !important; }
+        .copyHero { padding: 22px 24px !important; margin-bottom: 14px !important; border-radius: 14px !important; background: #101015 !important; border-color: rgba(255,255,255,.085) !important; box-shadow: none !important; }
+        .copyHero::after { width: 180px !important; height: 180px !important; background: rgba(159,107,255,.1) !important; filter: blur(40px) !important; }
+        .copyHero h1 { margin-top: 12px !important; font-size: clamp(34px, 4vw, 54px) !important; line-height: .98 !important; letter-spacing: -.065em !important; }
+        .copyHero p { margin-top: 12px !important; line-height: 1.6 !important; color: #8d8d9a !important; }
+        .copyBadge { color: #b99aff !important; background: rgba(159,107,255,.1) !important; border-color: rgba(159,107,255,.22) !important; }
+        .copyGrid { grid-template-columns: minmax(0, .95fr) minmax(440px, 1.05fr) !important; gap: 14px !important; align-items: stretch !important; }
+        .controlPanel, .resultPanel { padding: 22px !important; border-radius: 14px !important; background: #101015 !important; border-color: rgba(255,255,255,.085) !important; box-shadow: none !important; }
+        .resultPanel { top: 16px !important; max-height: calc(100vh - 32px); overflow: auto; }
+        .mainTextarea, .softInput, .resultText { background: #0a0a0e !important; border-color: rgba(255,255,255,.09) !important; border-radius: 10px !important; }
+        .choiceBtn, .emojiRow button, .exampleRow button { border-radius: 9px !important; background: rgba(255,255,255,.025) !important; }
+        .activeChoice { background: rgba(159,107,255,.13) !important; border-color: rgba(159,107,255,.38) !important; box-shadow: none !important; }
+        .primaryBtn { height: 48px !important; min-height: 48px !important; border-radius: 10px !important; background: #9f6bff !important; box-shadow: none !important; }
+        .ghostBtn, .copyBtn { min-height: 42px !important; height: 42px !important; border-radius: 9px !important; }
+        .emptyState, .loadingState, .resultText { min-height: 480px !important; border-radius: 10px !important; }
+        @media (max-width: 960px) { .copyGrid { grid-template-columns: 1fr !important; } .resultPanel { max-height: none; } }
+        @media (max-width: 640px) { .copyShell { padding: 12px !important; } .copyHero, .controlPanel, .resultPanel { padding: 18px !important; border-radius: 12px !important; } .copyHero h1 { font-size: 38px !important; } }
+      `}</style>
     </main>
   );
 }

@@ -1,4 +1,6 @@
 import OpenAI from "openai";
+import { checkRateLimit, rateLimitResponse } from "../../lib/rate-limit";
+import { readServerSettings } from "../../lib/public-settings";
 
 export const dynamic = "force-dynamic";
 
@@ -309,12 +311,21 @@ function getModel(mode) {
 }
 
 export async function POST(req) {
+  const rateLimit = checkRateLimit(req, {
+    name: "chat",
+    limit: 20,
+    windowMs: 60 * 1000,
+  });
+
+  if (!rateLimit.allowed) return rateLimitResponse(rateLimit);
+
   const startedAt = Date.now();
 
   let userMessage = "";
   let userId = "anonymous";
   let mode = "daily";
   let model = DAILY_MODEL;
+  let enableChatLogging = true;
 
   try {
     const body = await req.json().catch(() => ({}));
@@ -322,7 +333,16 @@ export async function POST(req) {
     userMessage = safeText(body.message, 6000);
     userId = safeText(body.user_id || body.userId, 300) || "anonymous";
 
-    mode = body.mode === "research" ? "research" : "daily";
+    const serverSettings = await readServerSettings({
+      enable_research_mode: true,
+      enable_chat_logging: true,
+    });
+
+    enableChatLogging = serverSettings.enable_chat_logging;
+    mode =
+      body.mode === "research" && serverSettings.enable_research_mode
+        ? "research"
+        : "daily";
     model = getModel(mode);
 
     if (!userMessage) {
@@ -339,7 +359,7 @@ export async function POST(req) {
     if (!process.env.DEEPSEEK_API_KEY && !process.env.OPENAI_API_KEY) {
       const latencyMs = Date.now() - startedAt;
 
-      await saveChatLog({
+      if (enableChatLogging) await saveChatLog({
         userId,
         userMessage,
         aiReply: "",
@@ -387,7 +407,7 @@ const openai = createOpenAIClient();
 
     const latencyMs = Date.now() - startedAt;
 
-    await saveChatLog({
+    if (enableChatLogging) await saveChatLog({
       userId,
       userMessage,
       aiReply,
@@ -412,7 +432,7 @@ const openai = createOpenAIClient();
 
     console.error("CHAT_API_ERROR:", error);
 
-    await saveChatLog({
+    if (enableChatLogging) await saveChatLog({
       userId,
       userMessage,
       aiReply: "",
