@@ -1,3 +1,6 @@
+import { checkRateLimit, rateLimitResponse } from "../../lib/rate-limit";
+import { readServerSettings } from "../../lib/public-settings";
+
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
@@ -7,6 +10,14 @@ function safeText(value, maxLength = 2000) {
 }
 
 export async function POST(req) {
+  const rateLimit = checkRateLimit(req, {
+    name: "feedback",
+    limit: 5,
+    windowMs: 10 * 60 * 1000,
+  });
+
+  if (!rateLimit.allowed) return rateLimitResponse(rateLimit);
+
   try {
     if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
       return Response.json(
@@ -15,6 +26,17 @@ export async function POST(req) {
           error: "Supabase 环境变量没有配置完整",
         },
         { status: 500 }
+      );
+    }
+
+    const { show_feedback: showFeedback } = await readServerSettings({
+      show_feedback: true,
+    });
+
+    if (!showFeedback) {
+      return Response.json(
+        { ok: false, error: "反馈入口暂时关闭" },
+        { status: 403 }
       );
     }
 
