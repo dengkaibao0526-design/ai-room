@@ -39,10 +39,31 @@ jobs:
           echo "$HOME/gradle-8.9/bin" >> "$GITHUB_PATH"
 
       - name: Assemble debug APK
+        id: assemble
         working-directory: android
-        run: gradle --no-daemon :app:assembleDebug
+        shell: bash
+        run: |
+          set +e
+          set -o pipefail
+          gradle --no-daemon :app:assembleDebug 2>&1 | tee "$RUNNER_TEMP/android-build.log"
+          status=${PIPESTATUS[0]}
+          echo "status=$status" >> "$GITHUB_OUTPUT"
+          exit 0
+
+      - name: Upload Gradle build log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: xiaokb-android-build-log
+          path: ${{ runner.temp }}/android-build.log
+          if-no-files-found: error
+
+      - name: Fail when Android compile fails
+        if: steps.assemble.outputs.status != '0'
+        run: exit 1
 
       - name: Upload debug APK
+        if: steps.assemble.outputs.status == '0'
         uses: actions/upload-artifact@v4
         with:
           name: xiaokb-android-debug
