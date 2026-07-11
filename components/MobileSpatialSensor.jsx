@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 
 const SENSOR_EVENT = "kb-spatial-sensor-change";
+const NATIVE_MOTION_EVENT = "kb-native-motion";
 const SENSOR_STORAGE_KEY = "xiaokb_spatial_sensor";
 
 function clamp(value, min, max) {
@@ -14,6 +15,7 @@ export default function MobileSpatialSensor() {
   const targetRef = useRef({ x: 0, y: 0 });
   const currentRef = useRef({ x: 0, y: 0 });
   const enabledRef = useRef(false);
+  const nativeAppRef = useRef(false);
 
   useEffect(() => {
     const coarsePointer = window.matchMedia("(pointer: coarse)");
@@ -21,6 +23,11 @@ export default function MobileSpatialSensor() {
     if (!coarsePointer.matches || reducedMotion.matches) return undefined;
 
     const root = document.documentElement;
+    const nativeUserAgent = /XiaoKBAndroid\//i.test(navigator.userAgent || "");
+    nativeAppRef.current = nativeUserAgent
+      || window.__XIAOKB_NATIVE_APP__ === true
+      || window.__XIAOKB_IOS_APP__ === true
+      || window.__XIAOKB_ANDROID_APP__ === true;
 
     const resetVariables = () => {
       [
@@ -35,7 +42,7 @@ export default function MobileSpatialSensor() {
     };
 
     const onOrientation = (event) => {
-      if (!enabledRef.current) return;
+      if (!enabledRef.current || nativeAppRef.current) return;
       const gamma = typeof event.gamma === "number" ? event.gamma : 0;
       const beta = typeof event.beta === "number" ? event.beta : 0;
       targetRef.current = {
@@ -44,12 +51,24 @@ export default function MobileSpatialSensor() {
       };
     };
 
+    const onNativeMotion = (event) => {
+      if (!nativeAppRef.current) return;
+      const x = Number(event.detail?.x);
+      const y = Number(event.detail?.y);
+      if (!Number.isFinite(x) || !Number.isFinite(y)) return;
+      targetRef.current = {
+        x: clamp(x, -1, 1),
+        y: clamp(y, -1, 1),
+      };
+    };
+
     const setEnabled = (enabled) => {
-      if (enabledRef.current === enabled) return;
-      enabledRef.current = enabled;
-      if (enabled) {
+      const nextEnabled = nativeAppRef.current ? true : enabled;
+      if (enabledRef.current === nextEnabled) return;
+      enabledRef.current = nextEnabled;
+      if (nextEnabled) {
         root.dataset.kbSpatialSensor = "on";
-        window.addEventListener("deviceorientation", onOrientation, true);
+        if (!nativeAppRef.current) window.addEventListener("deviceorientation", onOrientation, true);
       } else {
         window.removeEventListener("deviceorientation", onOrientation, true);
         resetVariables();
@@ -82,11 +101,13 @@ export default function MobileSpatialSensor() {
     };
 
     window.addEventListener(SENSOR_EVENT, onSensorChange);
-    setEnabled(localStorage.getItem(SENSOR_STORAGE_KEY) === "true");
+    window.addEventListener(NATIVE_MOTION_EVENT, onNativeMotion);
+    setEnabled(nativeAppRef.current || localStorage.getItem(SENSOR_STORAGE_KEY) === "true");
     frameRef.current = window.requestAnimationFrame(animate);
 
     return () => {
       window.removeEventListener(SENSOR_EVENT, onSensorChange);
+      window.removeEventListener(NATIVE_MOTION_EVENT, onNativeMotion);
       window.removeEventListener("deviceorientation", onOrientation, true);
       if (frameRef.current) window.cancelAnimationFrame(frameRef.current);
       resetVariables();
