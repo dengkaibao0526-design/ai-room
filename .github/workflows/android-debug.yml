@@ -39,8 +39,6 @@ jobs:
           echo "$HOME/gradle-8.9/bin" >> "$GITHUB_PATH"
 
       - name: Assemble debug APK
-        id: assemble
-        continue-on-error: true
         working-directory: android
         shell: bash
         run: |
@@ -56,13 +54,8 @@ jobs:
           if-no-files-found: error
 
       - name: Upload debug APK
-        if: steps.assemble.outcome == 'success'
         uses: actions/upload-artifact@v4
         with:
           name: xiaokb-android-debug
           path: android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
-
-      - name: Fail when Android compile fails
-        if: steps.assemble.outcome == 'failure'
-        run: exit 1
