@@ -7,6 +7,7 @@ import "./mobile-motion.css";
 import "./typing-energy.css";
 import "./desktop-spatial-field.css";
 import "./mobile-spatial-sensor.css";
+import "./mobile-spatial-grand-field.css";
 import DesktopCursorEffect from "../components/DesktopCursorEffect";
 import ProductEntrance from "../components/ProductEntrance";
 import MobileSpatialSensor from "../components/MobileSpatialSensor";
