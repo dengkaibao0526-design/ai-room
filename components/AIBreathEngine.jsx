@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 
 const START_DELAY_MS = 2600;
 const LONG_IDLE_MS = 120000;
@@ -24,20 +25,17 @@ function smoothstep(value) {
 }
 
 function breathingCurve(elapsedMs, research) {
+  if (elapsedMs <= 0) return 0;
+
   const inhale = research ? 3600 : 2800;
   const topHold = research ? 320 : 250;
   const exhale = research ? 5700 : 4700;
   const bottomHold = research ? 780 : 400;
   const cycle = inhale + topHold + exhale + bottomHold;
-  const phase = ((elapsedMs % cycle) + cycle) % cycle;
+  const phase = elapsedMs % cycle;
 
-  if (phase < inhale) {
-    return smoothstep(phase / inhale);
-  }
-
-  if (phase < inhale + topHold) {
-    return 1;
-  }
+  if (phase < inhale) return smoothstep(phase / inhale);
+  if (phase < inhale + topHold) return 1;
 
   if (phase < inhale + topHold + exhale) {
     const progress = (phase - inhale - topHold) / exhale;
@@ -49,28 +47,40 @@ function breathingCurve(elapsedMs, research) {
 
 export default function AIBreathEngine() {
   const frameRef = useRef(null);
+  const [shell, setShell] = useState(null);
+
+  useEffect(() => {
+    setShell(document.querySelector(".chatAppShell"));
+  }, []);
 
   useEffect(() => {
     const root = document.documentElement;
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const startedAt = performance.now();
-    let idleSince = startedAt;
+    const mountedAt = performance.now();
+    let idleSince = mountedAt;
+    let cycleStartedAt = mountedAt + START_DELAY_MS;
     let previousState = root.dataset.kbCoreState || "idle";
-    let releaseHoldUntil = 0;
+    let releaseHoldUntil = cycleStartedAt;
+    let wasActive = false;
     let visible = document.visibilityState === "visible";
 
+    const writeValue = (name, value) => {
+      root.style.setProperty(`--kb-breath-${name}`, value.toFixed(4));
+    };
+
     const reset = () => {
-      root.style.setProperty("--kb-breath-core", "0");
-      root.style.setProperty("--kb-breath-space", "0");
-      root.style.setProperty("--kb-breath-refraction", "0");
-      root.style.setProperty("--kb-breath-top", "0");
-      root.style.setProperty("--kb-breath-composer", "0");
+      Object.keys(CHANNELS).forEach((name) => writeValue(name, 0));
       root.style.setProperty("--kb-breath-presence", "0");
       delete root.dataset.kbBreathing;
+      wasActive = false;
     };
 
     const onVisibility = () => {
       visible = document.visibilityState === "visible";
+      if (visible) {
+        cycleStartedAt = performance.now();
+        idleSince = cycleStartedAt;
+      }
     };
 
     const animate = (now) => {
@@ -87,28 +97,32 @@ export default function AIBreathEngine() {
         if (previousState === "responding" && (state === "idle" || state === "research")) {
           releaseHoldUntil = now + RESPONDING_RELEASE_HOLD_MS;
         }
+
         if (state !== "idle" && state !== "research") idleSince = now;
         if ((state === "idle" || state === "research") && previousState !== "idle" && previousState !== "research") idleSince = now;
         previousState = state;
       }
 
       const isBreathingState = state === "idle" || state === "research";
-      const initialDelayDone = now - startedAt >= START_DELAY_MS;
+      const initialDelayDone = now - mountedAt >= START_DELAY_MS;
       const releaseReady = now >= releaseHoldUntil;
       const active = isBreathingState && initialDelayDone && releaseReady;
+
+      if (active && !wasActive) cycleStartedAt = now;
+      wasActive = active;
+
       const idleDuration = Math.max(0, now - idleSince);
       const longIdleAttenuation = idleDuration > LONG_IDLE_MS ? 0.62 : 1;
       const modeAmplitude = research ? 0.48 : 1;
       const amplitude = active ? longIdleAttenuation * modeAmplitude : 0;
-      const timeline = now - startedAt;
+      const timeline = now - cycleStartedAt;
 
       Object.entries(CHANNELS).forEach(([name, delay]) => {
         const value = breathingCurve(timeline - delay, research) * amplitude;
-        root.style.setProperty(`--kb-breath-${name}`, value.toFixed(4));
+        writeValue(name, value);
       });
 
-      const presence = active ? 1 : 0;
-      root.style.setProperty("--kb-breath-presence", String(presence));
+      root.style.setProperty("--kb-breath-presence", active ? "1" : "0");
       if (active) root.dataset.kbBreathing = research ? "research" : "idle";
       else delete root.dataset.kbBreathing;
 
@@ -125,5 +139,14 @@ export default function AIBreathEngine() {
     };
   }, []);
 
-  return null;
+  if (!shell) return null;
+
+  return createPortal(
+    <>
+      <div className="kbBreathSpace" aria-hidden="true" />
+      <div className="kbBreathRefraction" aria-hidden="true" />
+      <div className="kbBreathTopLight" aria-hidden="true" />
+    </>,
+    shell,
+  );
 }
