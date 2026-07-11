@@ -55,17 +55,28 @@
     isolation: isolate;
   }
 
+  /* Keep the local refraction response above the opaque composer surface,
+     but below typing energy, text, caret and action buttons. */
   .chatComposer::after {
     content: "";
     position: absolute;
-    inset: -1px;
-    z-index: -1;
+    inset: 0;
+    z-index: 0;
     border-radius: inherit;
     pointer-events: none;
-    background: conic-gradient(from var(--kb-field-angle), transparent 0 24%, rgba(203,175,255,.16) 32%, transparent 41% 67%, rgba(123,75,238,.12) 76%, transparent 86% 100%);
-    filter: blur(9px);
-    opacity: calc(.08 + .22 * var(--kb-field-energy, 0));
+    background:
+      radial-gradient(9rem 4.6rem at var(--composer-x, 50%) 50%, rgba(212,190,255,.13), rgba(136,82,255,.065) 34%, transparent 70%),
+      conic-gradient(from var(--kb-field-angle), transparent 0 24%, rgba(203,175,255,.14) 32%, transparent 41% 67%, rgba(123,75,238,.11) 76%, transparent 86% 100%);
+    mix-blend-mode: screen;
+    filter: blur(7px);
+    opacity: calc(.11 + .3 * var(--kb-field-energy, 0));
+    transform: scale(1.015);
     transition: opacity 180ms cubic-bezier(.2,.8,.2,1);
+  }
+
+  .chatComposer:hover::after,
+  .chatComposer:focus-within::after {
+    opacity: calc(.3 + .26 * var(--kb-field-energy, 0));
   }
 }
 
