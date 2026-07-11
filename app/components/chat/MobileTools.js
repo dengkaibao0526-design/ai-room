@@ -68,6 +68,7 @@ export default function MobileTools({ open, settings, onClose, onFeedback, onRes
         </div>
         <div className="mobileToolGrid">
           <button type="button" onClick={() => { onClose(); onMemory(); }}><span>记忆中心<small>小KB记得的事</small></span><em>◌</em></button>
+          <a href="/game/zero"><span>KB // ZERO<small>实验性 FPS 训练场</small></span><em>◎</em></a>
           <a href="/install"><span>下载小KB<small>iPhone / Android</small></span><em>↓</em></a>
           {settings.show_copywriter && <a href="/tool/copywriter"><span>文案工作台</span><em>↗</em></a>}
           {settings.show_mbti && <a href="/game/mbti"><span>MBTI</span><em>↗</em></a>}
