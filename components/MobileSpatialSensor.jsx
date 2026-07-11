@@ -16,6 +16,7 @@ export default function MobileSpatialSensor() {
   const currentRef = useRef({ x: 0, y: 0 });
   const enabledRef = useRef(false);
   const nativeAppRef = useRef(false);
+  const motion120Ref = useRef(false);
 
   useEffect(() => {
     const coarsePointer = window.matchMedia("(pointer: coarse)");
@@ -28,6 +29,8 @@ export default function MobileSpatialSensor() {
       || window.__XIAOKB_NATIVE_APP__ === true
       || window.__XIAOKB_IOS_APP__ === true
       || window.__XIAOKB_ANDROID_APP__ === true;
+    motion120Ref.current = /Motion120/i.test(navigator.userAgent || "")
+      || window.__XIAOKB_MOTION_ENGINE_120__ === true;
 
     const resetVariables = () => {
       [
@@ -81,8 +84,9 @@ export default function MobileSpatialSensor() {
       if (enabledRef.current) {
         const target = targetRef.current;
         const current = currentRef.current;
-        current.x += (target.x - current.x) * 0.12;
-        current.y += (target.y - current.y) * 0.12;
+        const response = motion120Ref.current ? 0.3 : 0.12;
+        current.x += (target.x - current.x) * response;
+        current.y += (target.y - current.y) * response;
         const energy = Math.min(1, Math.hypot(current.x, current.y));
         root.style.setProperty("--kb-sensor-x", current.x.toFixed(4));
         root.style.setProperty("--kb-sensor-y", current.y.toFixed(4));
