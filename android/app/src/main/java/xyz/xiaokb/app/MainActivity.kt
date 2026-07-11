@@ -40,10 +40,10 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     private lateinit var splashView: CoreSplashView
     private lateinit var errorPanel: View
     private lateinit var sensorManager: SensorManager
+    private lateinit var motionEngine: MotionFrameEngine
     private var gravitySensor: Sensor? = null
     private var fileCallback: ValueCallback<Array<Uri>>? = null
     private var firstPageReadyAt = 0L
-    private var lastMotionDispatchAt = 0L
     private var sharedText: String? = null
     private var mainPageLoaded = false
     private var lastSafeTop = 0
@@ -72,7 +72,9 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             ?: sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
         sharedText = extractSharedText(intent)
 
+        motionEngine = MotionFrameEngine(webView)
         configureWebView()
+        requestHighRefreshMode()
         installBackBehavior()
 
         if (savedInstanceState == null) {
@@ -93,6 +95,17 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             isAppearanceLightNavigationBars = false
             systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
         }
+    }
+
+    private fun requestHighRefreshMode() {
+        val display = if (Build.VERSION.SDK_INT >= 30) display else @Suppress("DEPRECATION") windowManager.defaultDisplay
+        val bestMode = display?.supportedModes?.maxByOrNull { it.refreshRate }
+        if (Build.VERSION.SDK_INT >= 23 && bestMode != null) {
+            window.attributes = window.attributes.apply {
+                preferredDisplayModeId = bestMode.modeId
+            }
+        }
+        MotionFrameEngine.requestHighestRefresh(display, webView)
     }
 
     private fun installAndroid16Insets() {
@@ -137,7 +150,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             setSupportZoom(false)
             builtInZoomControls = false
             displayZoomControls = false
-            userAgentString = "$userAgentString XiaoKBAndroid/0.3 Android16"
+            userAgentString = "$userAgentString XiaoKBAndroid/0.4 Android16 Motion120"
         }
         webView.addJavascriptInterface(NativeBridge(this), "XiaoKBNative")
         webView.webChromeClient = object : WebChromeClient() {
@@ -167,6 +180,8 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             }
 
             override fun onPageStarted(view: WebView, url: String, favicon: android.graphics.Bitmap?) {
+                mainPageLoaded = false
+                motionEngine.setPageReady(false)
                 errorPanel.visibility = View.GONE
                 webView.visibility = View.VISIBLE
             }
@@ -178,6 +193,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             override fun onPageFinished(view: WebView, url: String) {
                 mainPageLoaded = true
                 injectNativeBootstrap()
+                motionEngine.setPageReady(true)
                 dispatchNativeInsetsIfReady()
                 dispatchSharedTextIfNeeded()
                 if (firstPageReadyAt == 0L) firstPageReadyAt = SystemClock.elapsedRealtime()
@@ -201,6 +217,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
 
     private fun showConnectionError() {
         mainPageLoaded = false
+        motionEngine.setPageReady(false)
         splashView.dismiss()
         webView.visibility = View.INVISIBLE
         errorPanel.visibility = View.VISIBLE
@@ -227,17 +244,21 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     override fun onResume() {
         super.onResume()
         webView.onResume()
-        gravitySensor?.let { sensorManager.registerListener(this, it, SensorManager.SENSOR_DELAY_GAME) }
+        requestHighRefreshMode()
+        motionEngine.start()
+        gravitySensor?.let { sensorManager.registerListener(this, it, SensorManager.SENSOR_DELAY_FASTEST) }
         ViewCompat.requestApplyInsets(findViewById(R.id.root))
     }
 
     override fun onPause() {
         sensorManager.unregisterListener(this)
+        motionEngine.stop()
         webView.onPause()
         super.onPause()
     }
 
     override fun onDestroy() {
+        motionEngine.stop()
         fileCallback?.onReceiveValue(null)
         fileCallback = null
         webView.removeJavascriptInterface("XiaoKBNative")
@@ -247,15 +268,10 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     }
 
     override fun onSensorChanged(event: SensorEvent) {
-        val now = SystemClock.elapsedRealtime()
-        if (!mainPageLoaded || now - lastMotionDispatchAt < 33L || event.values.size < 2) return
-        lastMotionDispatchAt = now
+        if (event.values.size < 2) return
         val x = clamp(event.values[0] / 7.2f, -1f, 1f)
         val y = clamp(-event.values[1] / 7.2f, -1f, 1f)
-        webView.evaluateJavascript(
-            "window.dispatchEvent(new CustomEvent('kb-native-motion',{detail:{x:$x,y:$y}}));",
-            null,
-        )
+        motionEngine.updateSensor(x, y)
     }
 
     override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) = Unit
@@ -266,6 +282,24 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
               window.__XIAOKB_ANDROID_APP__ = true;
               window.__XIAOKB_NATIVE_APP__ = true;
               window.__XIAOKB_ANDROID_16_SHELL__ = true;
+              window.__XIAOKB_MOTION_ENGINE_120__ = true;
+              document.documentElement.classList.add('xiaokb-android-native', 'xiaokb-motion-120');
+
+              if (!document.getElementById('xiaokbAndroidNativePolish')) {
+                const style = document.createElement('style');
+                style.id = 'xiaokbAndroidNativePolish';
+                style.textContent = `
+                  .xiaokb-android-native .kbStateCore--hero { width: 70px !important; height: 70px !important; }
+                  .xiaokb-android-native .kbStateCore--hero .kbStateCoreMark { width: 42px !important; height: 42px !important; }
+                  .xiaokb-android-native .kbStateCore--hero .kbCoreOrbitA { inset: 0 !important; }
+                  .xiaokb-android-native .kbStateCore--hero .kbCoreOrbitB { inset: 9px -5px !important; }
+                  .xiaokb-motion-120 .kbStateCore,
+                  .xiaokb-motion-120 .kbCoreOrbit,
+                  .xiaokb-motion-120 .kbCoreFlux { transform-style: preserve-3d; backface-visibility: hidden; }
+                `;
+                document.head.appendChild(style);
+              }
+
               window.xiaokbNative = window.xiaokbNative || {};
               window.xiaokbNative.haptic = (style = 'light') => {
                 try { window.XiaoKBNative?.haptic(String(style)); } catch (_) {}
