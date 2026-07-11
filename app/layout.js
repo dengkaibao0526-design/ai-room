@@ -9,9 +9,11 @@ import "./desktop-spatial-field.css";
 import "./mobile-spatial-sensor.css";
 import "./mobile-spatial-grand-field.css";
 import "./kb-core-state.css";
+import "./ai-breathing.css";
 import DesktopCursorEffect from "../components/DesktopCursorEffect";
 import ProductEntrance from "../components/ProductEntrance";
 import MobileSpatialSensor from "../components/MobileSpatialSensor";
+import AIBreathEngine from "../components/AIBreathEngine";
 
 export const metadata = {
   title: "万能的KB",
@@ -26,6 +28,7 @@ export default function RootLayout({ children }) {
         <ProductEntrance />
         <DesktopCursorEffect />
         <MobileSpatialSensor />
+        <AIBreathEngine />
       </body>
     </html>
   );
