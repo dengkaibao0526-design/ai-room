@@ -11,7 +11,7 @@ const MAP = [
 ];
 const FIXED_DT = 1 / 120;
 const PLAYER_RADIUS = 0.22;
-const SENS_KEY = "xiaokb_zero_sensitivity_v4";
+const SENS_KEY = "xiaokb_zero_sensitivity_v5";
 const DEFAULT_SENS = { mouse: 1, touch: 1, gyro: 1, ads: 0.68 };
 const WEAPONS = [
   { id: "VX-01", mode: "AUTO", mag: 30, interval: 0.092, damage: 34, spread: 0.010, adsSpread: 0.0025, recoil: 0.31, pitch: 128 },
@@ -20,6 +20,7 @@ const WEAPONS = [
 const clamp = (v, min, max) => Math.min(max, Math.max(min, v));
 const angleDelta = (a, b) => Math.atan2(Math.sin(a - b), Math.cos(a - b));
 const degreeDelta = (a, b) => ((a - b + 540) % 360) - 180;
+const orientationAngle = () => ((screen.orientation?.angle ?? window.orientation ?? 0) % 360 + 360) % 360;
 const isWall = (x, y) => {
   const ix = Math.floor(x), iy = Math.floor(y);
   return iy < 0 || ix < 0 || iy >= MAP.length || ix >= MAP[0].length || MAP[iy][ix] === "1";
@@ -59,7 +60,7 @@ function makeAudio() {
 }
 
 export default function KBZeroArena() {
-  const canvasRef = useRef(null), engineRef = useRef(null), audioRef = useRef(null), wsRef = useRef(null), gyroLastRef = useRef(null), gyroEnabledRef = useRef(false);
+  const canvasRef = useRef(null), engineRef = useRef(null), audioRef = useRef(null), wsRef = useRef(null), gyroBaseRef = useRef(null), gyroEnabledRef = useRef(false);
   const [mobile, setMobile] = useState(false), [started, setStarted] = useState(false), [mode, setMode] = useState("solo"), [settingsOpen, setSettingsOpen] = useState(false), [gyroActive, setGyroActive] = useState(false);
   const [sens, setSens] = useState(DEFAULT_SENS), [matchOpen, setMatchOpen] = useState(false), [matchStatus, setMatchStatus] = useState("idle"), [notice, setNotice] = useState("连接服务器开始 1v1。"), [playerId, setPlayerId] = useState(null), [players, setPlayers] = useState([]), [roomId, setRoomId] = useState(null);
   const [hud, setHud] = useState({ ammo: 30, reserve: 120, hp: 100, score: 0, kills: 0, deaths: 0, fps: 0, weapon: 0, reloading: false });
@@ -68,11 +69,12 @@ export default function KBZeroArena() {
   useEffect(() => {
     const saved = loadSens(); setSens(saved);
     const isMobile = matchMedia("(pointer: coarse)").matches || innerWidth < 860; setMobile(isMobile);
-    const canvas = canvasRef.current, ctx = canvas?.getContext("2d", { alpha: false, desynchronized: true }); if (!canvas || !ctx) return;
+    const canvas = canvasRef.current, ctx = canvas?.getContext("2d", { alpha: false, desynchronized: true }); if (!canvas || !ctx) return undefined;
     document.body.style.overflow = "hidden"; canvas.tabIndex = 0;
     const keys = new Set(), audio = makeAudio(); audioRef.current = audio;
     const state = { running: true, started: false, mode: "solo", px: 1.5, py: 1.5, angle: 0, pitch: 0, vx: 0, vy: 0, recoil: 0, recoilVel: 0, bob: 0, muzzle: 0, hitFlash: 0, hp: 100, score: 0, kills: 0, deaths: 0, weapon: 0, ammo: [30, 12], reserve: [120, 48], reloadTimer: 0, nextShot: 0, fireHeld: false, ads: false, mobileMove: { x: 0, y: 0 }, sens: saved, now: 0, last: performance.now(), accumulator: 0, fpsFrames: 0, fpsClock: performance.now(), fps: 0, lastHud: 0, lastNet: 0, remote: null, localId: null, enemies: [{ x: 8.5, y: 2.8, hp: 100, alive: true }, { x: 12.4, y: 5.6, hp: 100, alive: true }, { x: 5.6, y: 9.2, hp: 100, alive: true }] };
     engineRef.current = state;
+    window.__kbZeroEngine = state;
     const weapon = () => WEAPONS[state.weapon];
     const resize = () => { const dpr = Math.min(devicePixelRatio || 1, isMobile ? 1.35 : 1.75); canvas.width = Math.floor(innerWidth * dpr); canvas.height = Math.floor(innerHeight * dpr); canvas.style.width = `${innerWidth}px`; canvas.style.height = `${innerHeight}px`; ctx.setTransform(dpr, 0, 0, dpr, 0, 0); };
     const beginReload = () => { const w = weapon(); if (state.reloadTimer > 0 || state.ammo[state.weapon] === w.mag || state.reserve[state.weapon] <= 0) return; state.reloadTimer = state.weapon ? 1.16 : 1.42; audio.reload(); };
@@ -84,7 +86,7 @@ export default function KBZeroArena() {
       const spread = state.ads ? w.adsSpread : w.spread, shotAngle = state.angle + (Math.random() - .5) * spread, wallDist = castRay(state.px, state.py, shotAngle).distance;
       if (state.mode === "pvp") {
         const target = state.remote; let hit = false;
-        if (target?.alive) { const dx = target.x - state.px, dy = target.y - state.py, dist = Math.hypot(dx, dy), delta = Math.abs(angleDelta(Math.atan2(dy, dx), shotAngle)); hit = dist < wallDist + .1 && delta < Math.atan2(.38, dist); }
+        if (target?.alive) { const dx = target.x - state.px, dy = target.y - state.py, dist = Math.hypot(dx, dy), delta = Math.abs(angleDelta(Math.atan2(dy, dx), shotAngle)); hit = dist < wallDist + .1 && delta < Math.atan2(.42, dist); }
         if (hit) { state.hitFlash = 1; audio.hit(); }
         const ws = wsRef.current; if (ws?.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ type: "shoot", hit, damage: w.damage }));
         return;
@@ -124,24 +126,32 @@ export default function KBZeroArena() {
       if (state.now - state.lastHud > .08) { state.lastHud = state.now; setHud({ ammo: state.ammo[state.weapon], reserve: state.reserve[state.weapon], hp: state.hp, score: state.score, kills: state.kills, deaths: state.deaths, fps: state.fps, weapon: state.weapon, reloading: state.reloadTimer > 0 }); }
     };
     const onGyro = (e) => {
-      if (!gyroEnabledRef.current || !state.started) return; const beta = Number(e.beta), gamma = Number(e.gamma); if (!Number.isFinite(beta) || !Number.isFinite(gamma)) return;
-      const last = gyroLastRef.current; gyroLastRef.current = { beta, gamma }; if (!last) return;
-      const dBeta = clamp(degreeDelta(beta, last.beta), -3, 3), dGamma = clamp(degreeDelta(gamma, last.gamma), -3, 3), orientation = screen.orientation?.angle ?? window.orientation ?? 0, rad = orientation * Math.PI / 180;
-      const yawAxis = dGamma * Math.cos(rad) - dBeta * Math.sin(rad), pitchAxis = dBeta * Math.cos(rad) + dGamma * Math.sin(rad), scale = .0042 * state.sens.gyro * (state.ads ? state.sens.ads : 1);
-      state.angle += yawAxis * scale; state.pitch = clamp(state.pitch - pitchAxis * scale * .82, -.19, .19);
+      if (!gyroEnabledRef.current || !state.started) return;
+      const alpha = Number.isFinite(e.alpha) ? e.alpha : null, beta = Number(e.beta), gamma = Number(e.gamma);
+      if (!Number.isFinite(beta) || !Number.isFinite(gamma)) return;
+      if (!gyroBaseRef.current) gyroBaseRef.current = { alpha: alpha ?? 0, beta, gamma, angle: orientationAngle(), baseYaw: state.angle, basePitch: state.pitch };
+      const base = gyroBaseRef.current, screenAngle = orientationAngle();
+      const yawRel = alpha == null ? -degreeDelta(gamma, base.gamma) : -degreeDelta(alpha, base.alpha);
+      let pitchRel = degreeDelta(beta, base.beta);
+      if (screenAngle === 90) pitchRel = degreeDelta(gamma, base.gamma);
+      else if (screenAngle === 270) pitchRel = -degreeDelta(gamma, base.gamma);
+      const scale = .0062 * state.sens.gyro * (state.ads ? state.sens.ads : 1);
+      state.angle = base.baseYaw + clamp(yawRel, -38, 38) * scale;
+      state.pitch = clamp(base.basePitch - clamp(pitchRel, -30, 30) * scale * .82, -.19, .19);
     };
     const onKeyDown = (e) => { if (["KeyW","KeyA","KeyS","KeyD","ArrowUp","ArrowDown","ArrowLeft","ArrowRight","ShiftLeft","ShiftRight","KeyR","KeyQ","Digit1","Digit2"].includes(e.code)) e.preventDefault(); keys.add(e.code); if (e.code === "KeyR") beginReload(); if (e.code === "KeyQ") swap(); if (e.code === "Digit1") swap(0); if (e.code === "Digit2") swap(1); };
     const onKeyUp = (e) => keys.delete(e.code), onMouseMove = (e) => { if (document.pointerLockElement !== canvas) return; const s = (state.ads ? .00105 * state.sens.ads : .0017) * state.sens.mouse; state.angle += e.movementX * s; state.pitch = clamp(state.pitch - e.movementY * s, -.19, .19); }, onMouseDown = (e) => { if (!state.started) return; if (document.pointerLockElement !== canvas) { canvas.requestPointerLock?.(); return; } if (e.button === 0) { state.fireHeld = true; shoot(); } if (e.button === 2) state.ads = true; }, onMouseUp = (e) => { if (e.button === 0) state.fireHeld = false; if (e.button === 2) state.ads = false; };
     document.addEventListener("keydown", onKeyDown, true); document.addEventListener("keyup", onKeyUp, true); addEventListener("mousemove", onMouseMove); addEventListener("mousedown", onMouseDown); addEventListener("mouseup", onMouseUp); addEventListener("deviceorientation", onGyro, true); addEventListener("resize", resize); canvas.addEventListener("contextmenu", (e) => e.preventDefault()); resize();
     const frame = (ts) => { if (!state.running) return; const dt = Math.min(.05, (ts - state.last) / 1000); state.last = ts; state.now = ts / 1000; state.accumulator = Math.min(.15, state.accumulator + dt); while (state.accumulator >= FIXED_DT) { fixedUpdate(FIXED_DT); state.accumulator -= FIXED_DT; } draw(); requestAnimationFrame(frame); }; requestAnimationFrame(frame);
-    return () => { state.running = false; document.body.style.overflow = ""; document.removeEventListener("keydown", onKeyDown, true); document.removeEventListener("keyup", onKeyUp, true); removeEventListener("mousemove", onMouseMove); removeEventListener("mousedown", onMouseDown); removeEventListener("mouseup", onMouseUp); removeEventListener("deviceorientation", onGyro, true); removeEventListener("resize", resize); try { wsRef.current?.close(); } catch {} };
+    return () => { state.running = false; document.body.style.overflow = ""; if (window.__kbZeroEngine === state) delete window.__kbZeroEngine; document.removeEventListener("keydown", onKeyDown, true); document.removeEventListener("keyup", onKeyUp, true); removeEventListener("mousemove", onMouseMove); removeEventListener("mousedown", onMouseDown); removeEventListener("mouseup", onMouseUp); removeEventListener("deviceorientation", onGyro, true); removeEventListener("resize", resize); try { wsRef.current?.close(); } catch {} };
   }, []);
 
   const updateSens = (key, value) => { const next = { ...sens, [key]: Number(value) }; setSens(next); saveSens(next); if (engineRef.current) engineRef.current.sens = next; };
   const enterFullscreen = async () => { try { if (!document.fullscreenElement) await (canvasRef.current?.parentElement || document.documentElement).requestFullscreen?.({ navigationUI: "hide" }); } catch {} try { await screen.orientation?.lock?.("landscape"); } catch {} };
-  const startLocal = async () => { const s = engineRef.current; if (!s) return; audioRef.current?.unlock(); s.started = true; s.mode = "solo"; setMode("solo"); setStarted(true); await enterFullscreen(); canvasRef.current?.focus({ preventScroll: true }); if (!mobile) canvasRef.current?.requestPointerLock?.(); };
-  const enableGyro = async () => { try { if (typeof DeviceOrientationEvent !== "undefined" && typeof DeviceOrientationEvent.requestPermission === "function" && await DeviceOrientationEvent.requestPermission() !== "granted") return; gyroLastRef.current = null; gyroEnabledRef.current = true; setGyroActive(true); await enterFullscreen(); } catch {} };
-  const disableGyro = () => { gyroEnabledRef.current = false; gyroLastRef.current = null; setGyroActive(false); };
+  const resetGyroCenter = () => { gyroBaseRef.current = null; };
+  const startLocal = async () => { const s = engineRef.current; if (!s) return; audioRef.current?.unlock(); s.started = true; s.mode = "solo"; setMode("solo"); setStarted(true); await enterFullscreen(); resetGyroCenter(); canvasRef.current?.focus({ preventScroll: true }); if (!mobile) canvasRef.current?.requestPointerLock?.(); };
+  const enableGyro = async () => { try { if (typeof DeviceOrientationEvent !== "undefined" && typeof DeviceOrientationEvent.requestPermission === "function" && await DeviceOrientationEvent.requestPermission() !== "granted") return; gyroBaseRef.current = null; gyroEnabledRef.current = true; setGyroActive(true); await enterFullscreen(); } catch {} };
+  const disableGyro = () => { gyroEnabledRef.current = false; gyroBaseRef.current = null; setGyroActive(false); };
   const connectAndMatch = () => {
     setMatchOpen(true); setMatchStatus("matching"); setNotice("正在连接 1v1 服务器…"); try { wsRef.current?.close(); } catch {}
     const ws = new WebSocket(SERVER_WS); wsRef.current = ws;
@@ -149,17 +159,18 @@ export default function KBZeroArena() {
     ws.onmessage = async (event) => { let d; try { d = JSON.parse(event.data); } catch { return; }
       if (d.type === "hello") setPlayerId(d.playerId);
       if (d.type === "joined") { setPlayerId(d.playerId); setRoomId(d.roomId); if (engineRef.current) engineRef.current.localId = d.playerId; setNotice(d.slot === 1 ? "已进入房间，等待对手。" : "已匹配，准备开始。"); }
-      if (d.type === "room_update" || d.type === "snapshot") { const list = d.players || []; setPlayers(list); const me = list.find((p) => p.id === (engineRef.current?.localId || playerId)), other = list.find((p) => p.id !== (engineRef.current?.localId || playerId)); if (engineRef.current) { if (me) { engineRef.current.hp = me.hp; if (Math.hypot(engineRef.current.px - me.x, engineRef.current.py - me.y) > 3) { engineRef.current.px = me.x; engineRef.current.py = me.y; engineRef.current.angle = me.yaw; engineRef.current.pitch = me.pitch; } engineRef.current.kills = me.score; engineRef.current.deaths = me.deaths; } engineRef.current.remote = other || null; } if (d.status) setMatchStatus(d.status); }
+      if (d.type === "room_update" || d.type === "snapshot") { const list = d.players || []; setPlayers(list); const me = list.find((p) => p.id === (engineRef.current?.localId || playerId)), other = list.find((p) => p.id !== (engineRef.current?.localId || playerId)); if (engineRef.current) { if (me) { engineRef.current.hp = me.hp; if (Math.hypot(engineRef.current.px - me.x, engineRef.current.py - me.y) > 3) { engineRef.current.px = me.x; engineRef.current.py = me.y; engineRef.current.angle = me.yaw; engineRef.current.pitch = me.pitch; } engineRef.current.kills = me.score; engineRef.current.deaths = me.deaths; } engineRef.current.remote = other || null; } if (d.status) setMatchStatus(d.status); if (d.status === "playing") await enterPvP(); }
       if (d.type === "countdown") { setMatchStatus("countdown"); setNotice("对手已加入，3 秒后进入实战。"); }
-      if (d.type === "match_start") { const s = engineRef.current; if (s) { s.mode = "pvp"; s.started = true; s.enemies.forEach((e) => { e.alive = false; }); } setMode("pvp"); setStarted(true); setMatchStatus("playing"); setMatchOpen(false); setNotice("1v1 实战中"); audioRef.current?.unlock(); await enterFullscreen(); if (!mobile) canvasRef.current?.requestPointerLock?.(); }
+      if (d.type === "match_start") await enterPvP();
       if (d.type === "shot" && d.targetId === engineRef.current?.localId && d.hit) { if (engineRef.current) engineRef.current.hp = d.targetHp; }
       if (d.type === "kill") { setNotice(d.killerId === engineRef.current?.localId ? "你击败了对手" : "你被击败，等待复活"); audioRef.current?.kill(); }
-      if (d.type === "respawn" && d.playerId === engineRef.current?.localId && engineRef.current) { engineRef.current.px = d.player.x; engineRef.current.py = d.player.y; engineRef.current.angle = d.player.yaw; engineRef.current.pitch = 0; engineRef.current.hp = 100; }
+      if (d.type === "respawn" && d.playerId === engineRef.current?.localId && engineRef.current) { engineRef.current.px = d.player.x; engineRef.current.py = d.player.y; engineRef.current.angle = d.player.yaw; engineRef.current.pitch = 0; engineRef.current.hp = 100; resetGyroCenter(); }
       if (d.type === "match_end") { setPlayers(d.players || []); setMatchStatus("finished"); setMatchOpen(true); setNotice(d.winnerId === engineRef.current?.localId ? "胜利" : "失败"); if (engineRef.current) engineRef.current.started = false; setStarted(false); }
     };
-    ws.onerror = () => { setMatchStatus("error"); setNotice("服务器连接失败，请重试。"); };
+    ws.onerror = () => { setMatchStatus("error"); setNotice("服务器连接失败，请重试。Render 免费实例冷启动时可能需要几十秒。 "); };
     ws.onclose = () => setMatchStatus((v) => v === "finished" ? v : "idle");
   };
+  const enterPvP = async () => { const s = engineRef.current; if (s) { s.mode = "pvp"; s.started = true; s.enemies.forEach((e) => { e.alive = false; }); } setMode("pvp"); setStarted(true); setMatchStatus("playing"); setMatchOpen(false); setNotice("1v1 实战中"); audioRef.current?.unlock(); await enterFullscreen(); resetGyroCenter(); if (!mobile) canvasRef.current?.requestPointerLock?.(); };
   const leaveMatch = () => { try { wsRef.current?.send(JSON.stringify({ type: "leave" })); wsRef.current?.close(); } catch {} const s = engineRef.current; if (s) { s.mode = "solo"; s.remote = null; } setMode("solo"); setMatchStatus("idle"); setPlayers([]); setRoomId(null); setMatchOpen(false); };
   const mobileLook = (dx, dy) => { const s = engineRef.current; if (!s) return; const base = .0042 * s.sens.touch * (s.ads ? s.sens.ads : 1); s.angle += dx * base; s.pitch = clamp(s.pitch - dy * base * .72, -.19, .19); };
   const setMobileMove = (x, y) => { if (engineRef.current) engineRef.current.mobileMove = { x, y }; };
@@ -174,16 +185,17 @@ export default function KBZeroArena() {
     {!started && <a className="zeroBack" href="/">← 小KB</a>}
     <button className="zeroSettingsToggle" type="button" onClick={() => setSettingsOpen((v) => !v)}>SENS</button>
     {mobile && started && <button type="button" onClick={gyroActive ? disableGyro : enableGyro} style={{ position:"absolute", right:92, top:22, zIndex:10, color:"#fff", background:"rgba(8,6,14,.62)", border:"1px solid rgba(255,255,255,.12)", borderRadius:999, padding:"9px 13px" }}>{gyroActive ? "GYRO ON" : "GYRO"}</button>}
+    {mobile && started && gyroActive && <button type="button" onClick={resetGyroCenter} style={{ position:"absolute", right:188, top:22, zIndex:10, color:"#fff", background:"rgba(8,6,14,.62)", border:"1px solid rgba(255,255,255,.12)", borderRadius:999, padding:"9px 13px" }}>校准</button>}
     {settingsOpen && <div className="zeroSensPanel"><strong>灵敏度</strong><Sens label="鼠标" value={sens.mouse} min=.35 max={2.2} onChange={(v) => updateSens("mouse", v)} /><Sens label="触摸视角" value={sens.touch} min=.35 max={2.6} onChange={(v) => updateSens("touch", v)} /><Sens label="陀螺仪" value={sens.gyro} min=.2 max={3} onChange={(v) => updateSens("gyro", v)} /><Sens label="开镜" value={sens.ads} min=.35 max={1.2} onChange={(v) => updateSens("ads", v)} /></div>}
-    <div className="zeroLandscapeHint">请旋转手机进入横屏<br />KB ZERO 使用横屏陀螺仪轴映射</div>
+    <div className="zeroLandscapeHint">请旋转手机进入横屏<br />若竖屏锁定，也可以继续操作</div>
     <div className="zeroTopHud"><span>KB // ZERO {mode === "pvp" ? "1V1" : "SOLO"}</span><em>{hud.fps || "—"} FPS</em></div>
     <div style={{ position:"absolute", left:"50%", top:58, transform:"translateX(-50%)", zIndex:7, padding:"7px 12px", border:"1px solid rgba(214,189,255,.12)", borderRadius:999, background:"rgba(8,6,14,.48)", fontSize:11, letterSpacing:".14em" }}>{mode === "pvp" ? scoreText : `KB ${hud.kills} : ${hud.deaths} CORE`}</div>
     <div className="zeroHealth"><i style={{ width:`${hud.hp}%` }} /><span>{hud.hp}</span></div>
     <div className="zeroScore"><small>SCORE</small><strong>{String(hud.score).padStart(6,"0")}</strong></div>
     <div className={`zeroAmmo${hud.reloading ? " isReloading" : ""}`}><strong>{hud.ammo}</strong><span>/ {hud.reserve}</span><small>{hud.reloading ? "RECALIBRATING" : `${currentWeapon.id} // ${currentWeapon.mode}`}</small></div>
     <div className="zeroWeaponSlots"><span className={hud.weapon === 0 ? "active" : ""}>1&nbsp; VX-01</span><span className={hud.weapon === 1 ? "active" : ""}>2&nbsp; K-9</span></div>
-    {!started && <section className="zeroIntro"><span>KB LAB // COMBAT</span><h1>KB // ZERO</h1><p>单人训练或直接进入真实 1v1。匹配成功后会关闭 AI，切换到联网玩家实战。</p><button type="button" onClick={startLocal}>进入训练场</button><button type="button" onClick={connectAndMatch} style={{ marginLeft:10 }}>开始 1v1 匹配</button><small>{mobile ? "横屏 · 四指键位 · GYRO 横屏轴映射 · SENS 独立陀螺仪灵敏度" : "WASD · 鼠标视角 · 左键开火 · 右键开镜"}</small></section>}
-    {matchOpen && <section style={{ position:"absolute", right:24, top:70, zIndex:30, width:300, padding:18, border:"1px solid rgba(210,185,255,.16)", borderRadius:18, background:"rgba(8,6,14,.94)", backdropFilter:"blur(22px)" }}><strong>KB ZERO 1v1</strong><p style={{ color:"rgba(230,220,248,.62)", fontSize:12, lineHeight:1.6 }}>{notice}</p><div style={{ fontSize:28, fontWeight:700 }}>{scoreText}</div><small>{roomId ? `ROOM ${roomId}` : matchStatus}</small><div style={{ display:"flex", gap:8, marginTop:14 }}><button type="button" onClick={connectAndMatch}>重新匹配</button><button type="button" onClick={leaveMatch}>离开</button></div></section>}
+    {!started && <section className="zeroIntro"><span>KB LAB // COMBAT</span><h1>KB // ZERO</h1><p>单人训练或直接进入真实 1v1。匹配成功后会自动进入实战画面，不再卡在匹配面板。</p><button type="button" onClick={startLocal}>进入训练场</button><button type="button" onClick={connectAndMatch} style={{ marginLeft:10 }}>开始 1v1 匹配</button><small>{mobile ? "横屏 · 四指键位 · GYRO 当前姿态校准 · SENS 独立陀螺仪灵敏度" : "WASD · 鼠标视角 · 左键开火 · 右键开镜"}</small></section>}
+    {matchOpen && <section style={{ position:"absolute", right:24, top:70, zIndex:30, width:300, padding:18, border:"1px solid rgba(210,185,255,.16)", borderRadius:18, background:"rgba(8,6,14,.94)", backdropFilter:"blur(22px)" }}><strong>KB ZERO 1v1</strong><p style={{ color:"rgba(230,220,248,.62)", fontSize:12, lineHeight:1.6 }}>{notice}</p><div style={{ fontSize:28, fontWeight:700 }}>{scoreText}</div><small>{roomId ? `ROOM ${roomId}` : matchStatus}</small><div style={{ display:"flex", gap:8, marginTop:14 }}><button type="button" onClick={connectAndMatch}>重新匹配</button><button type="button" onClick={enterPvP} disabled={matchStatus !== "playing" && matchStatus !== "countdown"}>进入对战</button><button type="button" onClick={leaveMatch}>离开</button></div></section>}
     {started && mobile && <MobileControls onMove={setMobileMove} onLook={mobileLook} onFire={fireMobile} onAds={adsMobile} onReload={reloadMobile} onSwap={swapMobile} />}
   </main>;
 }
