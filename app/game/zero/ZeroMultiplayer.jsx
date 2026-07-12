@@ -45,6 +45,16 @@ export default function ZeroMultiplayer() {
     try { wakeWsRef.current?.close(); } catch {}
   }, []);
 
+  function enterCombat() {
+    setOpen(false);
+    window.dispatchEvent(new CustomEvent("kbzero:pvp:match-start", { detail: { roomId, playerId } }));
+    setTimeout(() => {
+      const introButton = [...document.querySelectorAll(".zeroIntro button")].find((button) => button.textContent?.includes("进入"));
+      introButton?.click();
+      document.querySelector(".zeroCanvas")?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    }, 80);
+  }
+
   function connectAndMatch() {
     setOpen(true);
     setStatus("matching");
@@ -88,13 +98,14 @@ export default function ZeroMultiplayer() {
 
       if (data.type === "countdown") {
         setStatus("countdown");
-        setNotice("对手已加入，3 秒后开始。打开两个设备/窗口即可实测。");
+        setNotice("对手已加入，3 秒后自动进入实战。");
         return;
       }
 
       if (data.type === "match_start") {
         setStatus("playing");
-        setNotice("1v1 已开始。当前先完成联网匹配、比分和状态同步。下一步接入真实位置/射击判定。");
+        setNotice("1v1 已开始，正在进入实战画面。");
+        setTimeout(enterCombat, 80);
         return;
       }
 
@@ -102,6 +113,7 @@ export default function ZeroMultiplayer() {
         setRoomId(data.roomId);
         setPlayers(data.players || []);
         if (data.status) setStatus(data.status);
+        if (data.status === "playing") setTimeout(enterCombat, 80);
         return;
       }
 
@@ -116,11 +128,13 @@ export default function ZeroMultiplayer() {
         setPlayers(data.players || []);
         setNotice(data.winnerId === playerId ? "胜利。" : "失败。再来一局。");
         clearInterval(stateTimerRef.current);
+        setOpen(true);
         return;
       }
 
       if (data.type === "player_left") {
         setNotice("对手离开，房间已回到等待状态。");
+        setOpen(true);
       }
     };
 
@@ -138,16 +152,17 @@ export default function ZeroMultiplayer() {
   function startStateLoop(ws) {
     clearInterval(stateTimerRef.current);
     stateTimerRef.current = setInterval(() => {
+      const engine = window.__kbZeroEngine;
       const t = performance.now() / 1000;
       send(ws, {
         type: "state",
-        x: 1.5 + Math.cos(t) * 0.08,
-        y: 1.5 + Math.sin(t) * 0.08,
-        yaw: t % (Math.PI * 2),
-        pitch: 0,
-        weapon: 0,
+        x: engine?.px ?? 1.5 + Math.cos(t) * 0.08,
+        y: engine?.py ?? 1.5 + Math.sin(t) * 0.08,
+        yaw: engine?.angle ?? t % (Math.PI * 2),
+        pitch: engine?.pitch ?? 0,
+        weapon: engine?.weapon ?? 0,
       });
-    }, 1000 / 12);
+    }, 1000 / 20);
   }
 
   function leave() {
@@ -158,6 +173,7 @@ export default function ZeroMultiplayer() {
     setPlayers([]);
     setRoomId(null);
     setNotice("已离开 1v1 房间。");
+    setOpen(true);
   }
 
   function wakeServer() {
@@ -215,6 +231,7 @@ export default function ZeroMultiplayer() {
           </div>
           <div className="zeroMpActions">
             <button type="button" onClick={connectAndMatch}>{status === "idle" || status === "error" || status === "finished" ? "开始匹配" : "重新匹配"}</button>
+            <button type="button" onClick={enterCombat} disabled={status !== "playing" && status !== "countdown"}>进入对战</button>
             <button type="button" onClick={wakeServer}>唤醒</button>
             <button type="button" onClick={leave}>离开</button>
           </div>
