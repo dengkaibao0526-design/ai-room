@@ -2,8 +2,8 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 
-const SERVER_HTTP = "https://xiaokb-zero-server.onrender.com";
 const SERVER_WS = "wss://xiaokb-zero-server.onrender.com";
+const WAKE_TIMEOUT_MS = 70_000;
 
 function send(ws, payload) {
   if (!ws || ws.readyState !== WebSocket.OPEN) return false;
@@ -23,6 +23,7 @@ function label(status) {
 
 export default function ZeroMultiplayer() {
   const wsRef = useRef(null);
+  const wakeWsRef = useRef(null);
   const stateTimerRef = useRef(null);
   const [open, setOpen] = useState(false);
   const [status, setStatus] = useState("idle");
@@ -41,12 +42,13 @@ export default function ZeroMultiplayer() {
   useEffect(() => () => {
     clearInterval(stateTimerRef.current);
     try { wsRef.current?.close(); } catch {}
+    try { wakeWsRef.current?.close(); } catch {}
   }, []);
 
   function connectAndMatch() {
     setOpen(true);
     setStatus("matching");
-    setNotice("正在连接 KB ZERO 1v1 服务器…");
+    setNotice("正在连接 KB ZERO 1v1 服务器…免费实例休眠时首次连接可能需要约 50 秒。");
     setWinnerId(null);
 
     try { wsRef.current?.close(); } catch {}
@@ -86,13 +88,13 @@ export default function ZeroMultiplayer() {
 
       if (data.type === "countdown") {
         setStatus("countdown");
-        setNotice("对手已加入，3 秒后开始。打开两个设备/窗口即可实测。 ");
+        setNotice("对手已加入，3 秒后开始。打开两个设备/窗口即可实测。");
         return;
       }
 
       if (data.type === "match_start") {
         setStatus("playing");
-        setNotice("1v1 已开始。当前先完成联网匹配、比分和状态同步。下一步接入真实位置/射击判定。 ");
+        setNotice("1v1 已开始。当前先完成联网匹配、比分和状态同步。下一步接入真实位置/射击判定。");
         return;
       }
 
@@ -104,7 +106,7 @@ export default function ZeroMultiplayer() {
       }
 
       if (data.type === "kill") {
-        setNotice(data.killerId === playerId ? "你击败了对手。" : "你被对手击败。等待复活。 ");
+        setNotice(data.killerId === playerId ? "你击败了对手。" : "你被对手击败。等待复活。");
         return;
       }
 
@@ -112,27 +114,24 @@ export default function ZeroMultiplayer() {
         setStatus("finished");
         setWinnerId(data.winnerId);
         setPlayers(data.players || []);
-        setNotice(data.winnerId === playerId ? "胜利。" : "失败。再来一局。 ");
+        setNotice(data.winnerId === playerId ? "胜利。" : "失败。再来一局。");
         clearInterval(stateTimerRef.current);
         return;
       }
 
       if (data.type === "player_left") {
-        setNotice("对手离开，房间已回到等待状态。 ");
-        return;
+        setNotice("对手离开，房间已回到等待状态。");
       }
     };
 
     ws.onerror = () => {
       setStatus("error");
-      setNotice("连接失败。Render 免费服务如果休眠，第一次唤醒可能要等几十秒。 ");
+      setNotice("WebSocket 连接失败。服务器可能仍在冷启动，请等待几秒后重新匹配。");
     };
 
     ws.onclose = () => {
       clearInterval(stateTimerRef.current);
-      if (status !== "finished") {
-        setStatus((s) => (s === "error" ? s : "idle"));
-      }
+      setStatus((s) => (s === "error" || s === "finished" ? s : "idle"));
     };
   }
 
@@ -158,15 +157,42 @@ export default function ZeroMultiplayer() {
     setStatus("idle");
     setPlayers([]);
     setRoomId(null);
-    setNotice("已离开 1v1 房间。 ");
+    setNotice("已离开 1v1 房间。");
   }
 
   function wakeServer() {
-    setNotice("正在唤醒 Render 免费服务器…");
-    fetch(`${SERVER_HTTP}/health`, { cache: "no-store" })
-      .then((res) => res.json())
-      .then((data) => setNotice(`服务器在线：${data.clients ?? 0} 连接，${data.rooms ?? 0} 房间。`))
-      .catch(() => setNotice("服务器暂时没响应，稍后再试。"));
+    setOpen(true);
+    setNotice("正在通过 WebSocket 唤醒 Render 服务器…免费实例冷启动最多可能需要约 50 秒。");
+    try { wakeWsRef.current?.close(); } catch {}
+
+    const probe = new WebSocket(SERVER_WS);
+    wakeWsRef.current = probe;
+    let answered = false;
+    const timer = setTimeout(() => {
+      if (answered) return;
+      try { probe.close(); } catch {}
+      setNotice("服务器唤醒超时。请直接点“开始匹配”再试一次；匹配连接也会自动唤醒服务器。");
+    }, WAKE_TIMEOUT_MS);
+
+    probe.onmessage = (event) => {
+      let data;
+      try { data = JSON.parse(event.data); } catch { return; }
+      if (data.type !== "hello") return;
+      answered = true;
+      clearTimeout(timer);
+      setNotice("服务器已在线，WebSocket 响应正常。现在可以开始匹配。");
+      try { probe.close(); } catch {}
+    };
+
+    probe.onerror = () => {
+      if (answered) return;
+      setNotice("服务器正在启动或网络连接未建立。可以直接点“开始匹配”，它会继续尝试连接。");
+    };
+
+    probe.onclose = () => {
+      if (!answered) return;
+      clearTimeout(timer);
+    };
   }
 
   return (
