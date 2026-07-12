@@ -1,3 +1,4 @@
+import GyroSensitivityBridge from "./GyroSensitivityBridge";
 import KBZeroGame from "./KBZeroGame";
 import ZeroMultiplayer from "./ZeroMultiplayer";
 import "./zero.css";
@@ -11,6 +12,7 @@ export const metadata = {
 export default function KBZeroPage() {
   return (
     <>
+      <GyroSensitivityBridge />
       <KBZeroGame />
       <ZeroMultiplayer />
     </>
