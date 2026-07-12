@@ -1,0 +1,23 @@
+@media(max-width:900px) and (orientation:portrait){
+  .zeroShell.isPlaying .zeroCanvas,
+  .zeroShell.isPlaying .zeroTopHud,
+  .zeroShell.isPlaying .zeroHealth,
+  .zeroShell.isPlaying .zeroScore,
+  .zeroShell.isPlaying .zeroAmmo,
+  .zeroShell.isPlaying .zeroWeaponSlots,
+  .zeroShell.isPlaying .zeroKillFeed,
+  .zeroShell.isPlaying .zeroMobileControls{
+    filter:none!important;
+    opacity:1!important;
+  }
+  .zeroShell.isPlaying .zeroLandscapeHint{
+    pointer-events:none!important;
+    background:linear-gradient(180deg,rgba(3,3,5,.62),rgba(3,3,5,.08) 44%,rgba(3,3,5,0))!important;
+    backdrop-filter:none!important;
+    place-items:start center!important;
+    padding-top:42vh!important;
+    opacity:.62!important;
+    font-size:14px!important;
+  }
+}
+.zeroMpActions button:disabled{opacity:.38;cursor:not-allowed}
