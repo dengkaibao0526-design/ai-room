@@ -1,0 +1,358 @@
+.kbCursorCanvas {
+  position: fixed;
+  inset: 0;
+  z-index: 9998;
+  pointer-events: none;
+  opacity: .96;
+}
+
+.thresholdEntrance {
+  --entrance-x: 0;
+  --entrance-y: 0;
+  position: relative;
+  isolation: isolate;
+  min-height: 100dvh;
+  overflow: hidden;
+  color: #f8f6ff;
+  background: #02030a;
+  font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+}
+
+.thresholdBackdrop,
+.thresholdRefraction,
+.thresholdParticles {
+  position: absolute;
+  inset: -3%;
+  pointer-events: none;
+}
+
+.thresholdBackdrop {
+  z-index: -3;
+  background: url("/entrance/threshold-desktop.webp") center / cover no-repeat;
+  transform: scale(1.055) translate3d(calc(var(--entrance-x) * -22px), calc(var(--entrance-y) * -14px), 0);
+  transition: filter .8s ease, transform .14s linear;
+  animation: thresholdReveal 1.9s cubic-bezier(.2,.72,.2,1) both;
+}
+
+.thresholdRefraction {
+  z-index: -2;
+  opacity: calc(.25 + var(--kb-cursor-strength, 1) * .4);
+  background:
+    radial-gradient(240px circle at var(--kb-mx, 50%) var(--kb-my, 50%), rgba(218,189,255,.2), transparent 54%),
+    linear-gradient(90deg, rgba(176,77,255,.06), transparent 43%, transparent 57%, rgba(45,105,255,.06));
+  mix-blend-mode: screen;
+  transition: opacity .45s ease;
+}
+
+.thresholdParticles {
+  z-index: -1;
+  opacity: .34;
+  background-image: url("/entrance/threshold-desktop.webp");
+  background-position: center;
+  background-size: cover;
+  filter: blur(1px) saturate(1.25);
+  mix-blend-mode: screen;
+  mask-image: radial-gradient(circle at var(--kb-mx, 50%) var(--kb-my, 50%), #000 0 10%, transparent 31%);
+  transform: scale(1.075) translate3d(calc(var(--entrance-x) * 31px), calc(var(--entrance-y) * 20px), 0);
+  transition: transform .12s linear;
+}
+
+.thresholdEntrance[data-focus="chat"] .thresholdBackdrop {
+  filter: saturate(1.25) brightness(1.08) hue-rotate(-4deg);
+  transform: scale(1.075) translate3d(1.2%, 0, 0);
+}
+
+.thresholdEntrance[data-focus="game"] .thresholdBackdrop {
+  filter: saturate(1.35) brightness(1.07) hue-rotate(4deg);
+  transform: scale(1.075) translate3d(-1.2%, 0, 0);
+}
+
+.thresholdTopbar {
+  position: absolute;
+  inset: 0 0 auto;
+  z-index: 6;
+  height: 84px;
+  padding: 0 clamp(24px, 4vw, 64px);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  animation: thresholdFadeIn .8s .95s both;
+}
+
+.thresholdWordmark {
+  color: #fff;
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 760;
+  letter-spacing: .32em;
+  transform: translate3d(var(--magnet-x, 0), var(--magnet-y, 0), 0);
+}
+
+.thresholdWordmark span { color: #a978ff; }
+
+.thresholdSound {
+  min-height: 38px;
+  padding: 0 13px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: 999px;
+  color: rgba(236,230,247,.68);
+  background: rgba(5,5,13,.34);
+  backdrop-filter: blur(14px);
+  cursor: pointer;
+  transform: translate3d(var(--magnet-x, 0), var(--magnet-y, 0), 0);
+  transition: color .25s ease, border-color .25s ease, background .25s ease;
+}
+
+.thresholdSound:hover { color: white; border-color: rgba(177,127,255,.36); background: rgba(130,75,225,.12); }
+.thresholdSound span { font-size: 12px; }
+
+.thresholdIntro {
+  position: absolute;
+  z-index: 4;
+  top: 9%;
+  left: 50%;
+  width: min(560px, 64vw);
+  text-align: center;
+  transform: translateX(-50%);
+  animation: thresholdTextIn .9s 1.02s both;
+}
+
+.thresholdIntro p {
+  margin: 0 0 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  color: #ae82ff;
+  font-size: 10px;
+  font-weight: 760;
+  letter-spacing: .2em;
+}
+
+.thresholdIntro h1 {
+  margin: 0;
+  font-size: clamp(42px, 4.5vw, 68px);
+  line-height: 1.02;
+  letter-spacing: -.065em;
+  text-shadow: 0 8px 38px rgba(0,0,0,.44);
+}
+
+.thresholdIntro > span {
+  display: block;
+  margin-top: 14px;
+  color: rgba(230,224,239,.6);
+  font-size: 15px;
+  letter-spacing: .02em;
+}
+
+.thresholdRealm {
+  position: absolute;
+  z-index: 5;
+  top: 41%;
+  width: min(330px, 26vw);
+  min-height: 236px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  text-align: center;
+  text-decoration: none;
+  outline: none;
+  transform: translate3d(var(--magnet-x, 0), var(--magnet-y, 0), 0);
+  transition: transform .55s cubic-bezier(.2,.8,.2,1), opacity .45s ease, filter .45s ease;
+  animation: thresholdRealmIn .95s 1.12s both;
+}
+
+.thresholdChat { left: 12.5%; }
+.thresholdGame { right: 12.5%; }
+
+.realmIcon {
+  width: 88px;
+  height: 88px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(255,255,255,.18);
+  border-radius: 50%;
+  background: rgba(8,7,20,.24);
+  box-shadow: 0 0 0 10px rgba(142,84,255,.04), 0 0 50px rgba(132,76,255,.22);
+  backdrop-filter: blur(7px);
+  transition: transform .55s cubic-bezier(.2,.9,.2,1), box-shadow .55s ease, background .55s ease;
+}
+
+.thresholdGame .realmIcon { box-shadow: 0 0 0 10px rgba(65,105,255,.04), 0 0 50px rgba(48,99,255,.22); }
+
+.realmCopy { margin-top: 18px; display: grid; gap: 8px; }
+.realmCopy strong { font-size: clamp(34px, 3vw, 48px); line-height: 1; letter-spacing: -.05em; }
+.realmCopy small { color: rgba(233,226,241,.62); font-size: 15px; letter-spacing: .03em; }
+
+.realmAction {
+  width: auto;
+  min-width: 138px;
+  height: 54px;
+  padding: 0 16px 0 20px;
+  margin-top: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  border: 1px solid rgba(204,169,255,.7);
+  border-radius: 50%;
+  color: white;
+  background: rgba(120,65,210,.2);
+  box-shadow: 0 0 28px rgba(155,85,255,.14);
+  transition: transform .4s ease, background .4s ease, box-shadow .4s ease;
+}
+
+.realmAction em { font-size: 13px; font-style: normal; font-weight: 720; letter-spacing: .02em; }
+
+.thresholdGame .realmAction { border-color: rgba(104,149,255,.72); background: rgba(42,86,210,.2); box-shadow: 0 0 28px rgba(64,110,255,.14); }
+
+.thresholdRealm:hover,
+.thresholdRealm:focus-visible { transform: translate3d(var(--magnet-x, 0), calc(var(--magnet-y, 0) - 8px), 0) scale(1.045); }
+.thresholdRealm:hover .realmIcon,
+.thresholdRealm:focus-visible .realmIcon { transform: scale(1.08) rotate(-3deg); background: rgba(133,72,235,.28); box-shadow: 0 0 0 14px rgba(155,91,255,.07), 0 0 80px rgba(160,92,255,.46); }
+.thresholdGame:hover .realmIcon,
+.thresholdGame:focus-visible .realmIcon { transform: scale(1.08) rotate(3deg); background: rgba(45,85,225,.28); box-shadow: 0 0 0 14px rgba(75,112,255,.07), 0 0 80px rgba(55,110,255,.48); }
+.thresholdRealm:hover .realmAction,
+.thresholdRealm:focus-visible .realmAction { transform: translateX(7px) scale(1.06); background: rgba(145,79,244,.48); box-shadow: 0 0 36px rgba(159,95,255,.42); }
+.thresholdGame:hover .realmAction,
+.thresholdGame:focus-visible .realmAction { background: rgba(49,91,230,.48); box-shadow: 0 0 36px rgba(60,117,255,.42); }
+
+.thresholdEntrance[data-focus="chat"] .thresholdGame,
+.thresholdEntrance[data-focus="game"] .thresholdChat { opacity: .46; filter: saturate(.7) brightness(.7); transform: scale(.96); }
+
+.thresholdCore {
+  position: absolute;
+  z-index: 5;
+  left: 50%;
+  top: 53.5%;
+  width: clamp(86px, 8vw, 124px);
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  transform: translate(-50%, -50%) translate3d(calc(var(--entrance-x) * 10px), calc(var(--entrance-y) * 8px), 0);
+  animation: thresholdCoreIn 1.25s .72s both, thresholdCoreBreath 4.6s 2s ease-in-out infinite;
+}
+
+.thresholdCore b {
+  color: white;
+  font-size: clamp(23px, 2.3vw, 34px);
+  font-weight: 850;
+  letter-spacing: -.05em;
+  text-shadow: 0 0 22px rgba(255,255,255,.65);
+}
+
+.thresholdFooter {
+  position: absolute;
+  z-index: 6;
+  bottom: clamp(24px, 4vh, 48px);
+  left: 50%;
+  display: grid;
+  justify-items: center;
+  gap: 17px;
+  transform: translateX(-50%);
+  animation: thresholdTextIn .8s 1.35s both;
+}
+
+.thresholdFooter span,
+.thresholdFooter a { display: inline-flex; align-items: center; gap: 7px; }
+.thresholdFooter span { padding: 8px 13px; border: 1px solid rgba(255,255,255,.09); border-radius: 999px; color: rgba(218,205,235,.64); background: rgba(4,4,12,.35); backdrop-filter: blur(12px); font-size: 12px; }
+.thresholdFooter a { color: rgba(225,217,236,.5); font-size: 12px; text-decoration: none; transition: color .2s ease; }
+.thresholdFooter a:hover { color: white; }
+
+.kbProductEntranceV2 {
+  z-index: 10000 !important;
+  display: grid !important;
+  place-items: center;
+  overflow: hidden;
+  background: #020208 !important;
+  animation: kbSplashExit 2.35s cubic-bezier(.68,0,.32,1) forwards !important;
+}
+
+.kbProductEntranceV2 .kbEntranceCore {
+  width: 92px;
+  height: 92px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(225,205,255,.54);
+  border-radius: 50%;
+  color: white;
+  background: radial-gradient(circle at 35% 28%, #f4eaff 0 4%, #bc8cff 18%, #723ada 50%, #180a3c 76%, #05020c 100%);
+  box-shadow: 0 0 36px rgba(158,86,255,.56), 0 0 110px rgba(106,57,245,.42), inset 0 0 22px rgba(255,255,255,.16);
+  animation: kbSplashCoreAssemble 1.25s cubic-bezier(.16,.88,.22,1) both;
+}
+
+.kbProductEntranceV2 .kbEntranceCore strong { font-size: 23px; letter-spacing: -.05em; }
+.kbSplashStars { position: absolute; inset: 0; background: url("/entrance/threshold-desktop.webp") center / cover; opacity: .16; transform: scale(1.25); animation: kbSplashStarsIn 1.7s ease both; }
+.kbSplashStream { position: absolute; top: 50%; width: 48vw; height: 2px; opacity: 0; filter: blur(1px); }
+.kbSplashStream.left { right: 50%; background: linear-gradient(90deg, transparent, #ad6cff); animation: kbStreamLeft .8s .25s ease-out both; }
+.kbSplashStream.right { left: 50%; background: linear-gradient(90deg, #5d7dff, transparent); animation: kbStreamRight .8s .25s ease-out both; }
+.kbSplashFracture { position: absolute; left: 50%; top: 0; width: 2px; height: 100%; background: linear-gradient(transparent, #b887ff 35%, white 50%, #6180ff 65%, transparent); box-shadow: 0 0 30px #9c6cff, 0 0 90px rgba(83,111,255,.66); transform: scaleY(0); animation: kbSplashCrack .62s 1.05s cubic-bezier(.2,.9,.2,1) both; }
+.kbProductEntranceV2 .kbEntranceLabel { position: absolute; top: calc(50% + 82px); margin: 0; opacity: 0; color: rgba(218,198,255,.74); font-size: 10px; font-weight: 740; letter-spacing: .32em; animation: kbSplashLabel .65s .72s ease both; }
+
+@keyframes thresholdReveal { from { opacity: 0; transform: scale(1.18); filter: blur(16px) brightness(.35); } to { opacity: 1; } }
+@keyframes thresholdFadeIn { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes thresholdTextIn { from { opacity: 0; transform: translate(-50%, 18px); } to { opacity: 1; } }
+@keyframes thresholdRealmIn { from { opacity: 0; transform: translateY(30px) scale(.94); } to { opacity: 1; } }
+@keyframes thresholdCoreIn { from { opacity: 0; transform: translate(-50%,-50%) scale(.25); filter: blur(8px); } to { opacity: 1; } }
+@keyframes thresholdCoreBreath { 0%,100% { filter: brightness(.9); } 48% { filter: brightness(1.3); } }
+@keyframes kbSplashCoreAssemble { 0% { opacity: 0; transform: scale(.08) rotate(-28deg); filter: blur(14px); } 64% { opacity: 1; transform: scale(1.16); filter: blur(0); } 82% { transform: scale(.94); } 100% { transform: scale(1); } }
+@keyframes kbSplashStarsIn { from { opacity: 0; transform: scale(1.45); } to { opacity: .16; transform: scale(1.1); } }
+@keyframes kbStreamLeft { from { opacity: 0; transform: translateX(-32%); } 45% { opacity: 1; } to { opacity: 0; transform: translateX(35%); } }
+@keyframes kbStreamRight { from { opacity: 0; transform: translateX(32%); } 45% { opacity: 1; } to { opacity: 0; transform: translateX(-35%); } }
+@keyframes kbSplashCrack { from { opacity: 0; transform: scaleY(0); } 55% { opacity: 1; } to { opacity: 0; transform: scaleY(1); } }
+@keyframes kbSplashLabel { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes kbSplashExit { 0%,72% { opacity: 1; visibility: visible; } 100% { opacity: 0; visibility: hidden; } }
+
+@media (max-width: 720px), (pointer: coarse) {
+  .kbCursorCanvas { display: none; }
+  .thresholdEntrance { min-height: 100dvh; }
+  .thresholdBackdrop { inset: 0; background-image: url("/entrance/threshold-mobile.webp"); transform: none; animation-duration: 1.35s; }
+  .thresholdParticles { display: none; }
+  .thresholdRefraction { inset: 0; background: linear-gradient(180deg, rgba(142,72,224,.06), transparent 45%, rgba(30,80,210,.06)); }
+  .thresholdTopbar { height: 62px; padding: max(8px, env(safe-area-inset-top)) 18px 0; }
+  .thresholdWordmark { font-size: 10px; }
+  .thresholdSound { width: 36px; height: 36px; min-height: 0; padding: 0; justify-content: center; }
+  .thresholdSound span { display: none; }
+  .thresholdIntro { top: 10%; width: calc(100% - 40px); }
+  .thresholdIntro p { font-size: 8px; margin-bottom: 8px; }
+  .thresholdIntro h1 { font-size: clamp(36px, 11vw, 48px); }
+  .thresholdIntro > span { margin-top: 9px; font-size: 12px; }
+  .thresholdRealm { width: 44%; min-height: 190px; top: auto; animation-delay: .8s; }
+  .thresholdChat { left: 3%; top: 27%; }
+  .thresholdGame { right: 3%; bottom: 15%; }
+  .realmIcon { width: 60px; height: 60px; }
+  .realmIcon svg { width: 30px; height: 30px; }
+  .realmCopy { margin-top: 12px; gap: 5px; }
+  .realmCopy strong { font-size: 30px; }
+  .realmCopy small { font-size: 11px; white-space: nowrap; }
+  .realmAction { width: 42px; min-width: 42px; height: 42px; padding: 0; margin-top: 14px; }
+  .realmAction em { display: none; }
+  .realmAction svg { width: 19px; }
+  .thresholdCore { top: 52%; width: 76px; animation-delay: .5s; }
+  .thresholdCore b { font-size: 21px; }
+  .thresholdFooter { bottom: max(18px, env(safe-area-inset-bottom)); gap: 8px; }
+  .thresholdFooter span { padding: 6px 10px; font-size: 10px; }
+  .thresholdFooter a { font-size: 10px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .thresholdBackdrop,
+  .thresholdParticles,
+  .thresholdTopbar,
+  .thresholdIntro,
+  .thresholdRealm,
+  .thresholdCore,
+  .thresholdFooter,
+  .kbProductEntranceV2,
+  .kbProductEntranceV2 * {
+    animation: none !important;
+    transition-duration: .01ms !important;
+  }
+  .kbProductEntranceV2 { display: none !important; }
+}

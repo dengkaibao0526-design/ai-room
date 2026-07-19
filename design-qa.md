@@ -1,0 +1,46 @@
+# Design QA
+
+- source visual truth path: `/Users/yuyu/.codex/generated_images/019f782e-ed9b-7573-ad7c-397ded6d04cf/exec-9dbb3a02-4e40-4bef-9774-ece8e8fd7fff.png`
+- implementation screenshot path: `qa-desktop-final.png`
+- mobile implementation screenshot path: `qa-mobile.png`
+- side-by-side comparison evidence: `qa-comparison.png`
+- viewport: desktop 1440 × 1024; mobile 390 × 844
+- state: entrance settled after splash; chat idle/thinking recovery tested separately
+
+**Findings**
+
+- No actionable P0/P1/P2 differences remain.
+- Fonts and typography: Chinese display hierarchy, body scale, weights, line height, and compact wordmark match the selected direction. The implementation uses the product's existing Inter/system Chinese stack so it remains consistent with the chat experience.
+- Spacing and layout rhythm: desktop preserves the central fracture, balanced two-realm composition, top controls, and bottom memory hint. Mobile uses a dedicated portrait asset and staggered realm placement; no horizontal scroll, clipping, or off-screen primary action was observed.
+- Colors and visual tokens: near-black base, warm violet chat field, cool electric-blue game field, and restrained translucent controls map closely to the source.
+- Image quality and asset fidelity: separate production raster assets are used for desktop and mobile. Both are sharp, correctly cropped, and contain no baked-in UI copy. Phosphor icons replace generic glyphs while preserving a single icon family.
+- Copy and content: `选择你的空间`, chat/game labels, descriptions, previous-mode hint, and entry actions are coherent and match the product goal.
+- Accessibility: both destinations are semantic links; sound is a labeled pressed-state button; keyboard focus uses the same visible emphasis as hover; `prefers-reduced-motion` removes the splash and continuous motion; mobile tap targets exceed 42px.
+- Interaction: chat and game navigation were exercised. During chat `thinking`, cursor-field strength settled at `0.162`; after returning to `idle`, it recovered to `1.000`. Browser console showed no app warnings or errors.
+
+**Comparison History**
+
+1. Initial desktop comparison found one P2: the implementation rendered circular arrow-only actions while the source used labeled entry pills. This reduced action clarity on desktop.
+2. Fixed by adding `进入聊天` and `进入游戏` labels to the desktop actions while retaining compact arrow controls on mobile.
+3. Post-fix evidence: `qa-desktop-final.png`; the labeled actions now match the source hierarchy and remain visually balanced.
+
+**Focused Region Comparison**
+
+- Focused review covered the central KB hub, both realm icon/copy/action groups, top wordmark/sound control, and bottom history/skip controls in the full-resolution source and implementation. No additional crop was required because all critical UI is legible at the 1440 × 1024 comparison size.
+
+**Primary Interactions Tested**
+
+- `/` → `/chat`
+- `/` → `/game/zero` link target presence
+- chat intro close
+- chat composer fill and send
+- cursor animation reduction during `thinking`
+- cursor animation recovery during `idle`
+- desktop and 390 × 844 responsive layouts
+- console error/warning check
+
+**Follow-up Polish**
+
+- P3: real sound can be added later; the current control intentionally exposes visual state only.
+
+final result: passed

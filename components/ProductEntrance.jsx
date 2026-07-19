@@ -7,25 +7,19 @@ export default function ProductEntrance() {
 
   useEffect(() => {
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
-    if (reducedMotion.matches) {
-      setVisible(false);
-      return undefined;
-    }
-
-    const timer = window.setTimeout(() => setVisible(false), 1180);
+    const timer = window.setTimeout(() => setVisible(false), reducedMotion.matches ? 220 : 2350);
     return () => window.clearTimeout(timer);
   }, []);
 
   if (!visible) return null;
 
   return (
-    <div className="kbProductEntrance" aria-hidden="true">
-      <div className="kbEntranceField" />
-      <div className="kbEntranceCore">
-        <span className="kbEntranceOrbit one" />
-        <span className="kbEntranceOrbit two" />
-        <strong>KB</strong>
-      </div>
+    <div className="kbProductEntrance kbProductEntranceV2" aria-hidden="true">
+      <div className="kbSplashStars" />
+      <div className="kbSplashStream left" />
+      <div className="kbSplashStream right" />
+      <div className="kbEntranceCore"><strong>KB</strong></div>
+      <div className="kbSplashFracture" />
       <div className="kbEntranceLabel">XIAOKB AI</div>
     </div>
   );

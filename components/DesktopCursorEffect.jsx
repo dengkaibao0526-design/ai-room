@@ -2,126 +2,126 @@
 
 import { useEffect, useRef } from "react";
 
-const MAGNET_SELECTOR = "button, .chatTools a, .chatBrand";
-const CARD_SELECTOR = "[data-spotlight-card]";
-const FIELD_TARGET_SELECTOR = "[data-logo-core], [data-spotlight-card], .chatComposer";
+const MAGNET_SELECTOR = "button, a, [data-logo-core], [data-spotlight-card], .chatComposer";
 
 export default function DesktopCursorEffect() {
-  const frameRef = useRef(null);
-  const pointerRef = useRef({ x: 0, y: 0 });
-  const coreRef = useRef({ x: 0, y: 0 });
-  const fieldRef = useRef({ x: 0, y: 0 });
-  const energyRef = useRef(0);
-  const energyTargetRef = useRef(0);
+  const canvasRef = useRef(null);
 
   useEffect(() => {
+    const canvas = canvasRef.current;
     const finePointer = window.matchMedia("(pointer: fine)");
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
-    if (!finePointer.matches || reducedMotion.matches) return undefined;
+    if (!canvas || !finePointer.matches || reducedMotion.matches) return undefined;
 
+    const context = canvas.getContext("2d", { alpha: true });
     const root = document.documentElement;
-    const initial = { x: window.innerWidth * 0.5, y: window.innerHeight * 0.28 };
-    pointerRef.current = initial;
-    coreRef.current = initial;
-    fieldRef.current = initial;
+    const pointer = { x: innerWidth / 2, y: innerHeight / 2, px: innerWidth / 2, py: innerHeight / 2 };
+    const trail = [];
+    let frame = 0;
+    let strength = 1;
+    let targetStrength = 1;
 
-    const writePosition = (nameX, nameY, point) => {
-      root.style.setProperty(nameX, `${point.x}px`);
-      root.style.setProperty(nameY, `${point.y}px`);
+    const resize = () => {
+      const ratio = Math.min(devicePixelRatio || 1, 2);
+      canvas.width = Math.round(innerWidth * ratio);
+      canvas.height = Math.round(innerHeight * ratio);
+      canvas.style.width = `${innerWidth}px`;
+      canvas.style.height = `${innerHeight}px`;
+      context.setTransform(ratio, 0, 0, ratio, 0, 0);
     };
 
-    writePosition("--kb-mx", "--kb-my", initial);
-    writePosition("--kb-fx", "--kb-fy", initial);
-    root.style.setProperty("--kb-field-energy", "0");
-    root.style.setProperty("--kb-field-angle", "0deg");
+    const onMove = (event) => {
+      pointer.px = pointer.x;
+      pointer.py = pointer.y;
+      pointer.x = event.clientX;
+      pointer.y = event.clientY;
+      root.style.setProperty("--kb-mx", `${pointer.x}px`);
+      root.style.setProperty("--kb-my", `${pointer.y}px`);
 
-    const move = (event) => {
-      pointerRef.current = { x: event.clientX, y: event.clientY };
-
-      const element = event.target instanceof Element ? event.target : null;
-      const card = element?.closest(CARD_SELECTOR);
-      if (card) {
-        const rect = card.getBoundingClientRect();
-        card.style.setProperty("--card-x", `${event.clientX - rect.left}px`);
-        card.style.setProperty("--card-y", `${event.clientY - rect.top}px`);
-      }
-
-      const composer = element?.closest(".chatComposer");
-      if (composer) {
-        const rect = composer.getBoundingClientRect();
-        composer.style.setProperty("--composer-x", `${event.clientX - rect.left}px`);
-      }
-
-      const fieldTarget = element?.closest(FIELD_TARGET_SELECTOR);
-      energyTargetRef.current = fieldTarget ? 1 : 0;
-
-      if (fieldTarget) {
-        const rect = fieldTarget.getBoundingClientRect();
-        const cx = rect.left + rect.width / 2;
-        const cy = rect.top + rect.height / 2;
-        const angle = Math.atan2(event.clientY - cy, event.clientX - cx) * (180 / Math.PI);
-        root.style.setProperty("--kb-field-angle", `${angle}deg`);
-      }
-
-      const logo = document.querySelector("[data-logo-core]");
-      if (logo) {
-        const dx = (event.clientX / window.innerWidth - 0.5) * 5;
-        const dy = (event.clientY / window.innerHeight - 0.5) * 4;
-        logo.style.setProperty("--kb-logo-x", `${dx}px`);
-        logo.style.setProperty("--kb-logo-y", `${dy}px`);
-      }
-    };
-
-    const magneticMove = (event) => {
       const target = event.target instanceof Element ? event.target.closest(MAGNET_SELECTOR) : null;
-      if (!target || target.matches(":disabled")) return;
-      const rect = target.getBoundingClientRect();
-      const dx = event.clientX - (rect.left + rect.width / 2);
-      const dy = event.clientY - (rect.top + rect.height / 2);
-      target.style.transform = `translate3d(${dx * 0.04}px, ${dy * 0.04}px, 0)`;
+      if (target && !target.matches(":disabled")) {
+        const rect = target.getBoundingClientRect();
+        const dx = event.clientX - rect.left - rect.width / 2;
+        const dy = event.clientY - rect.top - rect.height / 2;
+        target.style.setProperty("--magnet-x", `${dx * 0.055}px`);
+        target.style.setProperty("--magnet-y", `${dy * 0.055}px`);
+      }
     };
 
-    const magneticLeave = (event) => {
+    const onOut = (event) => {
       const target = event.target instanceof Element ? event.target.closest(MAGNET_SELECTOR) : null;
-      if (target) target.style.transform = "";
-
-      const relatedTarget = event.relatedTarget instanceof Element ? event.relatedTarget : null;
-      if (!relatedTarget?.closest(FIELD_TARGET_SELECTOR)) {
-        energyTargetRef.current = 0;
+      if (target) {
+        target.style.removeProperty("--magnet-x");
+        target.style.removeProperty("--magnet-y");
       }
     };
 
     const animate = () => {
-      const target = pointerRef.current;
-      const core = coreRef.current;
-      const field = fieldRef.current;
+      const shell = document.querySelector(".chatAppShell");
+      const state = shell?.dataset.coreState;
+      targetStrength = state === "thinking" || state === "responding" || state === "listening" ? 0.16 : 1;
+      strength += (targetStrength - strength) * 0.075;
+      root.style.setProperty("--kb-cursor-strength", strength.toFixed(3));
 
-      core.x += (target.x - core.x) * 0.22;
-      core.y += (target.y - core.y) * 0.22;
-      field.x += (target.x - field.x) * 0.075;
-      field.y += (target.y - field.y) * 0.075;
-      energyRef.current += (energyTargetRef.current - energyRef.current) * 0.12;
+      const speed = Math.hypot(pointer.x - pointer.px, pointer.y - pointer.py);
+      if (speed > 0.35 && trail.length < 70) {
+        trail.push({
+          x: pointer.x + (Math.random() - 0.5) * 8,
+          y: pointer.y + (Math.random() - 0.5) * 8,
+          vx: (pointer.x - pointer.px) * -0.025 + (Math.random() - 0.5) * 0.45,
+          vy: (pointer.y - pointer.py) * -0.025 + (Math.random() - 0.5) * 0.45,
+          life: 1,
+          size: 0.8 + Math.random() * 2.1,
+          blue: pointer.x > innerWidth / 2,
+        });
+      }
+      pointer.px += (pointer.x - pointer.px) * 0.75;
+      pointer.py += (pointer.y - pointer.py) * 0.75;
 
-      writePosition("--kb-mx", "--kb-my", core);
-      writePosition("--kb-fx", "--kb-fy", field);
-      root.style.setProperty("--kb-field-energy", energyRef.current.toFixed(3));
+      context.clearRect(0, 0, innerWidth, innerHeight);
+      context.globalCompositeOperation = "lighter";
+      trail.forEach((particle) => {
+        particle.x += particle.vx;
+        particle.y += particle.vy;
+        particle.vx *= 0.985;
+        particle.vy *= 0.985;
+        particle.life -= 0.018 + (1 - strength) * 0.035;
+        const alpha = Math.max(0, particle.life) * strength;
+        context.beginPath();
+        context.fillStyle = particle.blue ? `rgba(82,130,255,${alpha})` : `rgba(187,105,255,${alpha})`;
+        context.shadowBlur = 15 * strength;
+        context.shadowColor = particle.blue ? "#3977ff" : "#b86cff";
+        context.arc(particle.x, particle.y, particle.size * strength, 0, Math.PI * 2);
+        context.fill();
+      });
+      for (let index = trail.length - 1; index >= 0; index -= 1) {
+        if (trail[index].life <= 0) trail.splice(index, 1);
+      }
 
-      frameRef.current = window.requestAnimationFrame(animate);
+      const glow = context.createRadialGradient(pointer.x, pointer.y, 0, pointer.x, pointer.y, 42 * strength);
+      glow.addColorStop(0, `rgba(235,220,255,${0.3 * strength})`);
+      glow.addColorStop(0.18, `rgba(${pointer.x > innerWidth / 2 ? "75,120,255" : "174,90,255"},${0.22 * strength})`);
+      glow.addColorStop(1, "rgba(0,0,0,0)");
+      context.fillStyle = glow;
+      context.fillRect(pointer.x - 48, pointer.y - 48, 96, 96);
+
+      frame = requestAnimationFrame(animate);
     };
 
-    window.addEventListener("pointermove", move, { passive: true });
-    document.addEventListener("pointermove", magneticMove, { passive: true });
-    document.addEventListener("pointerout", magneticLeave, { passive: true });
-    frameRef.current = window.requestAnimationFrame(animate);
+    resize();
+    addEventListener("resize", resize, { passive: true });
+    addEventListener("pointermove", onMove, { passive: true });
+    document.addEventListener("pointerout", onOut, { passive: true });
+    frame = requestAnimationFrame(animate);
 
     return () => {
-      window.removeEventListener("pointermove", move);
-      document.removeEventListener("pointermove", magneticMove);
-      document.removeEventListener("pointerout", magneticLeave);
-      if (frameRef.current) window.cancelAnimationFrame(frameRef.current);
-      ["--kb-mx", "--kb-my", "--kb-fx", "--kb-fy", "--kb-field-energy", "--kb-field-angle"].forEach((name) => root.style.removeProperty(name));
+      removeEventListener("resize", resize);
+      removeEventListener("pointermove", onMove);
+      document.removeEventListener("pointerout", onOut);
+      cancelAnimationFrame(frame);
+      root.style.removeProperty("--kb-cursor-strength");
     };
   }, []);
 
-  return null;
+  return <canvas ref={canvasRef} className="kbCursorCanvas" aria-hidden="true" />;
 }
