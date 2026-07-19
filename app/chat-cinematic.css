@@ -1,0 +1,220 @@
+.chatAppShell {
+  --kb-chat-cosmos: .24;
+  --kb-chat-energy: .3;
+}
+
+.kbChatCosmos,
+.kbChatEnergyVeil,
+.kbChatShockwave {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.kbChatCosmos {
+  inset: -7%;
+  opacity: var(--kb-chat-cosmos);
+  background: url("/entrance/threshold-desktop.webp") 50% 49% / cover no-repeat;
+  filter: saturate(1.22) contrast(1.07) brightness(.73);
+  mix-blend-mode: screen;
+  transform: scale(1.09) translate3d(calc((var(--kb-mx, 50vw) - 50vw) * -.007), calc((var(--kb-my, 42vh) - 42vh) * -.005), 0);
+  transition: opacity .75s ease, filter .75s ease, transform .24s linear;
+}
+
+.kbChatEnergyVeil {
+  opacity: var(--kb-chat-energy);
+  background:
+    radial-gradient(34rem 25rem at 50% 34%, rgba(159,92,255,.24), transparent 68%),
+    radial-gradient(24rem 18rem at var(--kb-mx, 50%) var(--kb-my, 45%), rgba(213,185,255,.15), rgba(122,66,236,.08) 32%, transparent 70%),
+    linear-gradient(115deg, transparent 18%, rgba(172,112,255,.035) 40%, rgba(230,215,255,.06) 48%, transparent 58%);
+  mix-blend-mode: screen;
+  filter: blur(.25px) saturate(1.25);
+  transition: opacity .55s ease, filter .55s ease;
+}
+
+.kbChatShockwave {
+  left: 50%;
+  top: 42%;
+  width: 9rem;
+  height: 9rem;
+  inset: auto;
+  border: 1px solid rgba(207,171,255,.32);
+  border-radius: 50%;
+  opacity: 0;
+  box-shadow:
+    0 0 34px rgba(159,93,255,.16),
+    inset 0 0 30px rgba(173,121,255,.1);
+  transform: translate(-50%,-50%) scale(.35);
+}
+
+.chatAppShell[data-core-state="idle"] .kbChatCosmos,
+.chatAppShell[data-core-state="research"] .kbChatCosmos {
+  animation: kbCosmosDrift 16s ease-in-out infinite alternate;
+}
+
+.chatAppShell[data-core-state="listening"] {
+  --kb-chat-cosmos: .28;
+  --kb-chat-energy: .44;
+}
+
+.chatAppShell[data-core-state="listening"] .kbChatEnergyVeil {
+  animation: kbListeningPull 1.35s ease-in-out infinite alternate;
+}
+
+.chatAppShell[data-core-state="thinking"] {
+  --kb-chat-cosmos: .38;
+  --kb-chat-energy: .58;
+}
+
+.chatAppShell[data-core-state="thinking"] .kbChatCosmos {
+  filter: saturate(1.55) contrast(1.12) brightness(.78) hue-rotate(-5deg);
+  transform: scale(1.16);
+  animation: kbThinkingGravity 2.4s cubic-bezier(.45,0,.2,1) infinite;
+}
+
+.chatAppShell[data-core-state="thinking"] .kbChatEnergyVeil {
+  background:
+    repeating-conic-gradient(from 8deg at 50% 36%, transparent 0 12deg, rgba(177,126,255,.035) 13deg 14deg, transparent 15deg 28deg),
+    radial-gradient(20rem 20rem at 50% 36%, rgba(226,208,255,.2), rgba(132,75,243,.11) 34%, transparent 70%);
+  filter: saturate(1.5);
+  animation: kbThinkingLens 3.2s linear infinite;
+}
+
+.chatAppShell[data-core-state="responding"] {
+  --kb-chat-cosmos: .34;
+  --kb-chat-energy: .68;
+}
+
+.chatAppShell[data-core-state="responding"] .kbChatCosmos {
+  filter: saturate(1.48) contrast(1.08) brightness(.82);
+  animation: kbResponseRelease 1.05s cubic-bezier(.15,.82,.2,1) both;
+}
+
+.chatAppShell[data-core-state="responding"] .kbChatEnergyVeil {
+  background:
+    linear-gradient(90deg, transparent 0 49.7%, rgba(235,220,255,.34) 50%, transparent 50.3%),
+    repeating-conic-gradient(from 0deg at 50% 36%, transparent 0 7deg, rgba(182,133,255,.055) 8deg 9deg, transparent 10deg 18deg),
+    radial-gradient(28rem 25rem at 50% 36%, rgba(174,115,255,.2), transparent 70%);
+  animation: kbResponseRays 1.6s cubic-bezier(.2,.8,.2,1) infinite alternate;
+}
+
+.chatAppShell[data-core-state="responding"] .kbChatShockwave {
+  animation: kbShockwave 1.45s cubic-bezier(.13,.72,.25,1) infinite;
+}
+
+.chatAppShell[data-core-state="thinking"] .conversationCoreDock,
+.chatAppShell[data-core-state="responding"] .conversationCoreDock {
+  filter: drop-shadow(0 0 34px rgba(161,101,255,.34));
+}
+
+.chatAppShell[data-core-state="thinking"] .chatComposer {
+  border-color: rgba(151,98,255,.34) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.08),
+    0 22px 80px rgba(0,0,0,.55),
+    0 0 46px rgba(117,66,235,.16) !important;
+}
+
+.chatAppShell[data-core-state="responding"] .isAi:last-of-type .messageContent {
+  animation: kbMessageMaterialize .72s cubic-bezier(.18,.82,.2,1) both;
+  box-shadow: 0 0 0 1px rgba(179,137,255,.06), 0 20px 62px rgba(78,38,163,.1);
+}
+
+.chatMessage {
+  animation: kbMessageArrive .48s cubic-bezier(.2,.82,.2,1) both;
+}
+
+.chatComposer.isTypingActive::before {
+  content: "";
+  position: absolute;
+  left: 8%;
+  right: 8%;
+  top: -2px;
+  height: 2px;
+  z-index: 3;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent, rgba(207,176,255,.2), #d8bcff, rgba(120,70,238,.24), transparent);
+  box-shadow: 0 0 18px rgba(172,113,255,.56);
+  animation: kbComposerChargeLine 1.1s ease-in-out infinite;
+}
+
+@keyframes kbCosmosDrift {
+  from { transform: scale(1.09) translate3d(-.4%, -.25%, 0); }
+  to { transform: scale(1.115) translate3d(.5%, .35%, 0); }
+}
+
+@keyframes kbListeningPull {
+  from { filter: blur(.2px) saturate(1.2); transform: scale(1); }
+  to { filter: blur(.5px) saturate(1.52); transform: scale(1.025); }
+}
+
+@keyframes kbThinkingGravity {
+  0%,100% { transform: scale(1.115) rotate(-.18deg); }
+  48% { transform: scale(1.17) rotate(.16deg); }
+}
+
+@keyframes kbThinkingLens {
+  to { transform: rotate(360deg) scale(1.025); }
+}
+
+@keyframes kbResponseRelease {
+  0% { opacity: .12; transform: scale(1.22); filter: brightness(1.35) saturate(1.65); }
+  45% { opacity: .5; }
+  100% { opacity: var(--kb-chat-cosmos); transform: scale(1.1); }
+}
+
+@keyframes kbResponseRays {
+  from { opacity: .36; transform: scale(.98) rotate(-.3deg); }
+  to { opacity: .72; transform: scale(1.035) rotate(.3deg); }
+}
+
+@keyframes kbShockwave {
+  0% { opacity: .7; transform: translate(-50%,-50%) scale(.35); }
+  72%,100% { opacity: 0; transform: translate(-50%,-50%) scale(5.6); }
+}
+
+@keyframes kbMessageArrive {
+  from { opacity: 0; transform: translateY(13px) scale(.985); filter: blur(4px); }
+  to { opacity: 1; transform: none; filter: none; }
+}
+
+@keyframes kbMessageMaterialize {
+  0% { opacity: .3; transform: translateY(8px); filter: blur(3px) brightness(1.5); }
+  55% { filter: blur(0) brightness(1.12); }
+  100% { opacity: 1; transform: none; filter: none; }
+}
+
+@keyframes kbComposerChargeLine {
+  0%,100% { opacity: .38; transform: scaleX(.78); }
+  50% { opacity: 1; transform: scaleX(1); }
+}
+
+@media (max-width: 720px), (pointer: coarse) {
+  .kbChatCosmos {
+    inset: 0;
+    background-image: url("/entrance/threshold-mobile.webp");
+    background-position: 50% 50%;
+    opacity: calc(var(--kb-chat-cosmos) * .72);
+    transform: scale(1.04);
+  }
+
+  .kbChatEnergyVeil { opacity: calc(var(--kb-chat-energy) * .66); }
+  .kbChatShockwave { width: 6rem; height: 6rem; top: 31%; }
+  .chatAppShell[data-core-state="thinking"] .kbChatCosmos { transform: scale(1.08); }
+  .chatAppShell[data-core-state="responding"] .kbChatShockwave { animation-iteration-count: 2; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kbChatCosmos,
+  .kbChatEnergyVeil,
+  .kbChatShockwave,
+  .chatMessage,
+  .chatComposer.isTypingActive::before {
+    animation: none !important;
+    transform: none !important;
+  }
+  .kbChatShockwave,
+  .chatComposer.isTypingActive::before { display: none !important; }
+}

@@ -16,6 +16,7 @@ import "./mobile-tool-typography.css";
 import "./kb-zero.css";
 import "./kb-zero-entry.css";
 import "./entrance.css";
+import "./chat-cinematic.css";
 import DesktopCursorEffect from "../components/DesktopCursorEffect";
 import ProductEntrance from "../components/ProductEntrance";
 import MobileSpatialSensor from "../components/MobileSpatialSensor";

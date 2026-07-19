@@ -156,6 +156,9 @@ export default function AIBreathEngine() {
       <div className="kbBreathSpace" aria-hidden="true" />
       <div className="kbBreathRefraction" aria-hidden="true" />
       <div className="kbBreathTopLight" aria-hidden="true" />
+      <div className="kbChatCosmos" aria-hidden="true" />
+      <div className="kbChatEnergyVeil" aria-hidden="true" />
+      <div className="kbChatShockwave" aria-hidden="true" />
     </>,
     shell,
   );

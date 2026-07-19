@@ -44,3 +44,37 @@
 - P3: real sound can be added later; the current control intentionally exposes visual state only.
 
 final result: passed
+
+## Chat Cinematic Enhancement — 2026-07-19
+
+- source visual truth path: `qa-chat-source.png`
+- implementation screenshot path: `qa-chat-implementation.png`
+- side-by-side comparison evidence: `qa-chat-comparison.png`
+- viewport: desktop 1440 × 1024; mobile 390 × 844
+- state: empty chat, daily mode, intro dismissed; additional thinking/responding selectors and reduced-motion behavior inspected
+
+**Findings**
+
+- No actionable P0/P1/P2 issues remain.
+- Typography and copy remain unchanged and readable; the stronger environment does not alter wrapping or hierarchy.
+- Layout spacing and persistent composer placement match the source state. Desktop and 390px views have no horizontal overflow or clipped actions.
+- The new color treatment intentionally raises violet/indigo spatial contrast while preserving the existing near-black product tokens.
+- Image quality uses the existing generated entrance assets, correctly cropped for desktop and mobile. No placeholder imagery or custom SVG art was introduced.
+- State behavior now distinguishes idle breathing, listening pull, thinking gravity, responding release/shockwave, typing charge, and reduced-motion fallback.
+- Cursor particles remain attenuated during listening/thinking/responding so the stronger scene does not compete with chat copy.
+
+**Comparison History**
+
+1. Initial implementation review found the idle cosmos too subdued relative to the requested stronger visual direction.
+2. Increased idle cosmos opacity from `.16` to `.24`, energy veil from `.22` to `.30`, and raised background brightness/saturation.
+3. Post-fix evidence: `qa-chat-implementation.png`; the environmental split and central energy fracture are clearly visible while text contrast remains sufficient.
+
+**Interaction and Console Checks**
+
+- Empty chat reset and prompt actions present.
+- Composer remains usable and persistent.
+- Desktop and mobile routes render without browser console warnings/errors.
+- Mobile document width: 390px at a 390px viewport.
+- Reduced-motion selectors disable continuous drift, shockwave, message materialization, and typing charge.
+
+final result: passed
