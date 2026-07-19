@@ -106,11 +106,14 @@ async function decideWebSearch(openai, message, history) {
   }
 }
 
-async function searchWeb(query) {
+async function searchWeb(query, newsOnly = false) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), SEARCH_TIMEOUT_MS);
   try {
-    const response = await fetch(`https://www.bing.com/search?format=rss&q=${encodeURIComponent(query)}`, {
+    const endpoint = newsOnly
+      ? `https://news.google.com/rss/search?q=${encodeURIComponent(query)}&hl=zh-CN&gl=CN&ceid=CN:zh-Hans`
+      : `https://www.bing.com/search?format=rss&q=${encodeURIComponent(query)}`;
+    const response = await fetch(endpoint, {
       signal: controller.signal,
       cache: "no-store",
       headers: { "User-Agent": "Mozilla/5.0 (compatible; XiaokB/1.0; +https://ai-room-tau.vercel.app)" },
@@ -119,7 +122,7 @@ async function searchWeb(query) {
     const xml = await response.text();
     return [...xml.matchAll(/<item>([\s\S]*?)<\/item>/gi)]
       .slice(0, MAX_SEARCH_RESULTS)
-      .map((match) => ({ title: pickXml(match[1], "title"), url: pickXml(match[1], "link"), snippet: pickXml(match[1], "description") }))
+      .map((match) => ({ title: pickXml(match[1], "title"), url: pickXml(match[1], "link"), snippet: pickXml(match[1], "description"), publishedAt: pickXml(match[1], "pubDate") }))
       .filter((item) => item.title && /^https?:\/\//i.test(item.url));
   } finally {
     clearTimeout(timer);
@@ -127,7 +130,7 @@ async function searchWeb(query) {
 }
 
 function webContext(results) {
-  return results.map((item, index) => `[${index + 1}] ${item.title}\nURL: ${item.url}\n摘要: ${item.snippet}`).join("\n\n");
+  return results.map((item, index) => `[${index + 1}] ${item.title}\nURL: ${item.url}\n发布时间: ${item.publishedAt || "未知"}\n摘要: ${item.snippet}`).join("\n\n");
 }
 
 async function saveChatLog({
@@ -514,7 +517,7 @@ export async function POST(req) {
     let searchResults = [];
     if (shouldSearch) {
       try {
-        searchResults = await searchWeb(makeSearchQuery(userMessage));
+        searchResults = await searchWeb(makeSearchQuery(userMessage), /(新闻|news|消息|报道|事件)/i.test(userMessage));
       } catch (error) {
         console.error("WEB_SEARCH_ERROR:", error);
       }
