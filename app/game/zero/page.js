@@ -1,5 +1,6 @@
 import KBZeroArena from "./KBZeroArena";
 import "./zero.css";
+import "./zero-mobile-shooter.css";
 import "./zero-multiplayer.css";
 import "./zero-hotfix.css";
 
