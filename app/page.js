@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import {
   ArrowRight,
@@ -13,9 +14,11 @@ import {
 } from "@phosphor-icons/react";
 
 export default function EntrancePage() {
+  const router = useRouter();
   const shellRef = useRef(null);
   const [focus, setFocus] = useState("none");
   const [sound, setSound] = useState(false);
+  const [leaving, setLeaving] = useState("none");
 
   useEffect(() => {
     const shell = shellRef.current;
@@ -32,11 +35,21 @@ export default function EntrancePage() {
     return () => window.removeEventListener("pointermove", onMove);
   }, []);
 
+  const enterPortal = (event, target, realm) => {
+    event.preventDefault();
+    setFocus(realm);
+    setLeaving(realm);
+    window.setTimeout(() => router.push(target), 620);
+  };
+
   return (
-    <main ref={shellRef} className="thresholdEntrance" data-focus={focus}>
+    <main ref={shellRef} className="thresholdEntrance" data-focus={focus} data-leaving={leaving}>
       <div className="thresholdBackdrop" aria-hidden="true" />
       <div className="thresholdRefraction" aria-hidden="true" />
       <div className="thresholdParticles" aria-hidden="true" />
+      <div className="thresholdAurora" aria-hidden="true" />
+      <div className="thresholdThreads" aria-hidden="true" />
+      <div className="thresholdPortalExit" aria-hidden="true" />
 
       <header className="thresholdTopbar">
         <Link href="/" className="thresholdWordmark" aria-label="小KB 首页">
@@ -67,6 +80,7 @@ export default function EntrancePage() {
         onPointerLeave={() => setFocus("none")}
         onFocus={() => setFocus("chat")}
         onBlur={() => setFocus("none")}
+        onClick={(event) => enterPortal(event, "/chat", "chat")}
       >
         <span className="realmIcon"><ChatCircleDots size={42} weight="duotone" /></span>
         <span className="realmCopy">
@@ -83,6 +97,7 @@ export default function EntrancePage() {
         onPointerLeave={() => setFocus("none")}
         onFocus={() => setFocus("game")}
         onBlur={() => setFocus("none")}
+        onClick={(event) => enterPortal(event, "/game/zero", "game")}
       >
         <span className="realmIcon"><GameController size={42} weight="duotone" /></span>
         <span className="realmCopy">
@@ -96,7 +111,7 @@ export default function EntrancePage() {
 
       <footer className="thresholdFooter">
         <span><ClockCounterClockwise size={16} /> 上次：聊天</span>
-        <Link href="/chat">跳过开场 <ArrowRight size={14} /></Link>
+        <Link href="/chat" onClick={(event) => enterPortal(event, "/chat", "chat")}>跳过开场 <ArrowRight size={14} /></Link>
       </footer>
     </main>
   );
