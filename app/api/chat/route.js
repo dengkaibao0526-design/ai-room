@@ -80,29 +80,39 @@ function makeSearchQuery(text) {
 }
 
 async function decideWebSearch(openai, message, history) {
-  if (isSensitiveSearchQuery(message)) return false;
+  if (isSensitiveSearchQuery(message) || /(不要|不用|无需|别)\s*(联网|上网|搜索|查)/i.test(message)) {
+    return { useSearch: false, query: "", confidence: 1 };
+  }
 
-  const explicit = /(联网|上网|搜索|搜一下|查一下|查最新|最新消息|今天新闻|实时|现价|现在价格)/i.test(message);
-  if (explicit) return true;
+  const explicit = /(联网|上网|搜索|搜一下|查一下|查最新|帮我查|核实一下)/i.test(message);
 
   try {
     const recentContext = history.slice(-4).map((item) => `${item.role}: ${item.content}`).join("\n").slice(0, 1800);
     const decision = await openai.chat.completions.create({
       model: DAILY_MODEL,
       temperature: 0,
-      max_tokens: 12,
+      max_tokens: 120,
       messages: [
         {
           role: "system",
-          content: "判断用户问题是否必须联网才能可靠回答。新闻、天气、价格、赛程、人物现职、产品版本、法规、近期事件、网站内容、要求核实或推荐当前可用选项 => SEARCH。闲聊、情绪、写作、翻译、数学、稳定常识、已有材料总结 => NO_SEARCH。只输出 SEARCH 或 NO_SEARCH。私人或敏感内容一律 NO_SEARCH。",
+          content: `你是聊天助手的联网路由器。结合最近对话判断当前问题是否需要实时互联网信息。
+需要：新闻/近期事件、实时天气价格赛程、人物现职、软件与产品当前版本、现行法规、当前推荐、指定网页内容、事实核验。
+不需要：闲聊情绪、创作改写翻译、数学推理、稳定常识、用户已提供材料、无需外部事实的建议。
+不要因为句子里偶然出现“今天、现在、最新”就搜索，要看它是否真的询问外部变化信息。用户明确要求搜索时 search=true，除非涉及私人敏感内容。
+只输出合法 JSON，不要 Markdown：{"search":true或false,"confidence":0到1,"query":"精炼的搜索关键词，不要包含请搜索/一句话回答等指令"}`,
         },
         { role: "user", content: `${recentContext}\n当前问题：${message}` },
       ],
     });
-    return /^SEARCH\b/i.test(decision.choices?.[0]?.message?.content?.trim() || "");
+    const raw = decision.choices?.[0]?.message?.content?.trim() || "";
+    const parsed = JSON.parse(raw.match(/\{[\s\S]*\}/)?.[0] || "{}");
+    const confidence = Number(parsed.confidence) || 0;
+    const useSearch = parsed.search === true && (explicit || confidence >= .64);
+    return { useSearch, query: useSearch ? safeText(parsed.query, 260) || makeSearchQuery(message) : "", confidence };
   } catch (error) {
     console.error("WEB_SEARCH_DECISION_ERROR:", error);
-    return false;
+    const fallback = explicit || /(天气|气温|股价|汇率|比分|赛程|现任|版本号|新闻|热搜|票房)/i.test(message);
+    return { useSearch: fallback, query: fallback ? makeSearchQuery(message) : "", confidence: fallback ? .7 : 0 };
   }
 }
 
@@ -513,11 +523,11 @@ export async function POST(req) {
     const historyMessages = normalizeHistory(body.history);
 
     const openai = createOpenAIClient();
-    const shouldSearch = await decideWebSearch(openai, userMessage, historyMessages);
+    const searchDecision = await decideWebSearch(openai, userMessage, historyMessages);
     let searchResults = [];
-    if (shouldSearch) {
+    if (searchDecision.useSearch) {
       try {
-        searchResults = await searchWeb(makeSearchQuery(userMessage), /(新闻|news|消息|报道|事件)/i.test(userMessage));
+        searchResults = await searchWeb(searchDecision.query, /(新闻|news|消息|报道|事件)/i.test(`${userMessage} ${searchDecision.query}`));
       } catch (error) {
         console.error("WEB_SEARCH_ERROR:", error);
       }
@@ -569,6 +579,7 @@ export async function POST(req) {
       mode,
       model,
       web_search_used: searchResults.length > 0,
+      web_search_decision: searchDecision.useSearch ? "search" : "skip",
       sources: searchResults.map(({ title, url }) => ({ title, url })),
       latency_ms: latencyMs,
     });
