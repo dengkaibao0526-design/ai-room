@@ -16,6 +16,8 @@ export default function ProductEntrance() {
   return (
     <div className="kbProductEntrance kbProductEntranceV2" aria-hidden="true">
       <div className="kbSplashStars" />
+      <div className="kbSplashAurora" />
+      <div className="kbSplashThreads" />
       <div className="kbSplashStream left" />
       <div className="kbSplashStream right" />
       <div className="kbEntranceCore"><strong>KB</strong></div>
