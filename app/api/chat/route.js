@@ -68,6 +68,17 @@ function isSensitiveSearchQuery(text) {
   return /(前任|女朋友|男朋友|生日|纪念日|身份证|手机号|住址|隐私|密码|验证码|银行卡|我想她|分手|难受|焦虑|抑郁)/i.test(text);
 }
 
+function makeSearchQuery(text) {
+  const cleaned = text
+    .replace(/(请|帮我|你能不能|能不能)?\s*(联网|上网)?\s*(搜索|搜一下|查一下|查查|查询)/gi, " ")
+    .replace(/(只用|请用|用)\s*(一句话|简短|中文|几句话).*$/i, " ")
+    .replace(/[？?！!，,。；;]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  const needsFreshness = /(今天|今日|现在|当前|最新|近期|新闻|价格|天气|赛程|现任|版本)/i.test(text);
+  return `${cleaned || text}${needsFreshness ? ` ${new Date().toISOString().slice(0, 10)}` : ""}`.slice(0, 260);
+}
+
 async function decideWebSearch(openai, message, history) {
   if (isSensitiveSearchQuery(message)) return false;
 
@@ -503,7 +514,7 @@ export async function POST(req) {
     let searchResults = [];
     if (shouldSearch) {
       try {
-        searchResults = await searchWeb(userMessage);
+        searchResults = await searchWeb(makeSearchQuery(userMessage));
       } catch (error) {
         console.error("WEB_SEARCH_ERROR:", error);
       }
