@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 
 const SENSOR_EVENT = "kb-spatial-sensor-change";
 const SENSOR_STORAGE_KEY = "xiaokb_spatial_sensor";
@@ -78,7 +79,7 @@ export default function MobileTools({ open, settings, onClose, onFeedback, onRes
 
   if (!open) return null;
 
-  return (
+  const toolbox = (
     <div className="mobileToolBackdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
       <section className="mobileToolSheet" role="dialog" aria-modal="true" aria-label="小KB 工具">
         <div className="mobileToolSheetHeader">
@@ -123,4 +124,6 @@ export default function MobileTools({ open, settings, onClose, onFeedback, onRes
       </section>
     </div>
   );
+
+  return typeof document === "undefined" ? null : createPortal(toolbox, document.body);
 }
