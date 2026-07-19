@@ -19,6 +19,11 @@ const WEAPONS = [
   { id: "K-9", mode: "PRECISION", mag: 12, interval: 0.265, damage: 72, spread: 0.0045, adsSpread: 0.0008, recoil: 0.52, pitch: 82 },
 ];
 const WEAPON_MODE_LABELS = { AUTO: "自动", PRECISION: "精准" };
+const MATCH_QUEUES = [
+  { id: "quick", name: "快速房", desc: "优先补位，最快开战" },
+  { id: "rookie", name: "新手房", desc: "训练节奏，适合熟悉键位" },
+  { id: "ranked", name: "竞技房", desc: "高强度对枪，独立匹配池" },
+];
 const clamp = (v, min, max) => Math.min(max, Math.max(min, v));
 const angleDelta = (a, b) => Math.atan2(Math.sin(a - b), Math.cos(a - b));
 const degreeDelta = (a, b) => ((a - b + 540) % 360) - 180;
@@ -64,7 +69,7 @@ function makeAudio() {
 export default function KBZeroArena() {
   const canvasRef = useRef(null), engineRef = useRef(null), audioRef = useRef(null), wsRef = useRef(null), gyroBaseRef = useRef(null), gyroEnabledRef = useRef(false);
   const [mobile, setMobile] = useState(false), [started, setStarted] = useState(false), [mode, setMode] = useState("solo"), [settingsOpen, setSettingsOpen] = useState(false), [gyroActive, setGyroActive] = useState(false);
-  const [sens, setSens] = useState(DEFAULT_SENS), [matchOpen, setMatchOpen] = useState(false), [matchStatus, setMatchStatus] = useState("idle"), [notice, setNotice] = useState("连接服务器开始 1v1。"), [playerId, setPlayerId] = useState(null), [players, setPlayers] = useState([]), [roomId, setRoomId] = useState(null);
+  const [sens, setSens] = useState(DEFAULT_SENS), [matchOpen, setMatchOpen] = useState(false), [matchStatus, setMatchStatus] = useState("idle"), [notice, setNotice] = useState("选择房间后开始 1v1。"), [playerId, setPlayerId] = useState(null), [players, setPlayers] = useState([]), [roomId, setRoomId] = useState(null), [matchQueue, setMatchQueue] = useState("quick");
   const [hud, setHud] = useState({ ammo: 30, reserve: 120, hp: 100, score: 0, kills: 0, deaths: 0, fps: 0, weapon: 0, reloading: false });
   const scoreText = useMemo(() => { const me = players.find((p) => p.id === playerId), other = players.find((p) => p.id !== playerId); return `${me?.score ?? 0} : ${other?.score ?? 0}`; }, [players, playerId]);
 
@@ -74,15 +79,15 @@ export default function KBZeroArena() {
     const canvas = canvasRef.current, ctx = canvas?.getContext("2d", { alpha: false, desynchronized: true }); if (!canvas || !ctx) return undefined;
     document.body.style.overflow = "hidden"; canvas.tabIndex = 0;
     const keys = new Set(), audio = makeAudio(); audioRef.current = audio;
-    const state = { running: true, started: false, mode: "solo", px: 1.5, py: 1.5, angle: 0, pitch: 0, vx: 0, vy: 0, recoil: 0, recoilVel: 0, bob: 0, muzzle: 0, hitFlash: 0, damageFlash: 0, hp: 100, score: 0, kills: 0, deaths: 0, weapon: 0, ammo: [30, 12], reserve: [120, 48], reloadTimer: 0, nextShot: 0, fireHeld: false, ads: false, mobileSprint: false, mobileCrouch: false, mobileMove: { x: 0, y: 0 }, sens: saved, now: 0, last: performance.now(), accumulator: 0, fpsFrames: 0, fpsClock: performance.now(), fps: 0, lastHud: 0, lastNet: 0, respawnTimer: 0, remote: null, localId: null, enemies: [{ x: 8.5, y: 2.8, hp: 100, alive: true, nextShot: 0 }, { x: 12.4, y: 5.6, hp: 100, alive: true, nextShot: .5 }, { x: 5.6, y: 9.2, hp: 100, alive: true, nextShot: 1.1 }] };
+    const state = { running: true, started: false, mode: "solo", px: 1.5, py: 1.5, angle: 0, pitch: 0, vx: 0, vy: 0, recoil: 0, recoilVel: 0, bob: 0, muzzle: 0, hitFlash: 0, damageFlash: 0, hp: 100, score: 0, kills: 0, deaths: 0, weapon: 0, ammo: [30, 12], reserve: [120, 48], reloadTimer: 0, nextShot: 0, fireHeld: false, ads: false, mobileSprint: false, mobileCrouch: false, mobileMove: { x: 0, y: 0 }, sens: saved, now: 0, last: performance.now(), accumulator: 0, fpsFrames: 0, fpsClock: performance.now(), fps: 0, lastHud: 0, lastNet: 0, respawnTimer: 0, invulnerableTimer: 0, remote: null, localId: null, enemies: [{ x: 8.5, y: 2.8, hp: 100, alive: true, nextShot: 0 }, { x: 12.4, y: 5.6, hp: 100, alive: true, nextShot: .5 }, { x: 5.6, y: 9.2, hp: 100, alive: true, nextShot: 1.1 }] };
     engineRef.current = state;
     window.__kbZeroEngine = state;
     const weapon = () => WEAPONS[state.weapon];
     const resize = () => { const dpr = Math.min(devicePixelRatio || 1, isMobile ? 1.35 : 1.75); canvas.width = Math.floor(innerWidth * dpr); canvas.height = Math.floor(innerHeight * dpr); canvas.style.width = `${innerWidth}px`; canvas.style.height = `${innerHeight}px`; ctx.setTransform(dpr, 0, 0, dpr, 0, 0); };
     const beginReload = () => { const w = weapon(); if (state.reloadTimer > 0 || state.ammo[state.weapon] === w.mag || state.reserve[state.weapon] <= 0) return; state.reloadTimer = state.weapon ? 1.16 : 1.42; audio.reload(); };
     const swap = (index = (state.weapon + 1) % 2) => { state.weapon = clamp(index, 0, 1); state.fireHeld = false; audio.swap(); };
-    const respawnSoloPlayer = () => { state.px = 1.5; state.py = 1.5; state.angle = 0; state.pitch = 0; state.hp = 100; state.respawnTimer = 0; state.fireHeld = false; state.ads = false; state.damageFlash = 0; state.enemies.forEach((e, i) => { const spawns = [[8.5, 2.8], [12.4, 5.6], [5.6, 9.2]]; e.x = spawns[i][0]; e.y = spawns[i][1]; e.hp = 100; e.alive = true; e.nextShot = state.now + .7 + i * .45; }); };
-    const damagePlayer = (amount) => { if (state.respawnTimer > 0) return; state.hp = Math.max(0, state.hp - amount); state.damageFlash = 1; state.recoilVel -= .05; audio.hit(); if (state.hp <= 0) { state.deaths += 1; state.score = Math.max(0, state.score - 80); state.respawnTimer = 1.8; audio.kill(); } };
+    const respawnSoloPlayer = () => { state.px = 1.5; state.py = 1.5; state.angle = 0; state.pitch = 0; state.vx = 0; state.vy = 0; state.hp = 100; state.respawnTimer = 1.25; state.invulnerableTimer = 2.4; state.fireHeld = false; state.ads = false; state.mobileMove = { x: 0, y: 0 }; state.damageFlash = 0; state.enemies.forEach((e, i) => { const spawns = [[8.5, 2.8], [12.4, 5.6], [5.6, 9.2]]; e.x = spawns[i][0]; e.y = spawns[i][1]; e.hp = 100; e.alive = true; e.nextShot = state.now + 1.7 + i * .45; }); };
+    const damagePlayer = (amount) => { if (state.respawnTimer > 0 || state.invulnerableTimer > 0 || state.hp <= 0) return; state.hp = Math.max(0, state.hp - amount); state.damageFlash = 1; state.recoilVel -= .05; audio.hit(); if (state.hp <= 0) { state.deaths += 1; state.score = Math.max(0, state.score - 80); audio.kill(); respawnSoloPlayer(); } };
     const shoot = () => {
       const w = weapon(); if (!state.started || state.reloadTimer > 0 || state.now < state.nextShot) return;
       if (state.ammo[state.weapon] <= 0) { beginReload(); return; }
@@ -101,13 +106,14 @@ export default function KBZeroArena() {
     };
     const fixedUpdate = (dt) => {
       if (!state.started) return;
+      state.invulnerableTimer = Math.max(0, state.invulnerableTimer - dt);
+      if (state.respawnTimer > 0) { state.respawnTimer = Math.max(0, state.respawnTimer - dt); state.damageFlash = 0; return; }
       const f = (keys.has("KeyW") || keys.has("ArrowUp") ? 1 : 0) - (keys.has("KeyS") || keys.has("ArrowDown") ? 1 : 0) - state.mobileMove.y;
       const s = (keys.has("KeyD") || keys.has("ArrowRight") ? 1 : 0) - (keys.has("KeyA") || keys.has("ArrowLeft") ? 1 : 0) + state.mobileMove.x;
       const forward = clamp(f, -1, 1), strafe = clamp(s, -1, 1), sprint = ((keys.has("ShiftLeft") || keys.has("ShiftRight") || state.mobileSprint) && forward > 0 && !state.ads && !state.mobileCrouch), speed = (sprint ? 5.7 : state.mobileCrouch ? 1.85 : state.ads ? 2.2 : 3.8) * .9, len = Math.hypot(forward, strafe) || 1;
       const tvx = (Math.cos(state.angle) * forward + Math.cos(state.angle + Math.PI / 2) * strafe) / len * speed, tvy = (Math.sin(state.angle) * forward + Math.sin(state.angle + Math.PI / 2) * strafe) / len * speed;
       state.vx += (tvx - state.vx) * Math.min(1, 18 * dt); state.vy += (tvy - state.vy) * Math.min(1, 18 * dt);
       const nx = state.px + state.vx * dt, ny = state.py + state.vy * dt; if (canStand(nx, state.py)) state.px = nx; else state.vx = 0; if (canStand(state.px, ny)) state.py = ny; else state.vy = 0;
-      if (state.respawnTimer > 0) { state.respawnTimer -= dt; if (state.respawnTimer <= 0) respawnSoloPlayer(); return; }
       state.bob += Math.hypot(state.vx, state.vy) * dt * 2.2; state.recoilVel += -state.recoil * 42 * dt; state.recoilVel *= Math.exp(-12 * dt); state.recoil += state.recoilVel * dt; state.recoil = clamp(state.recoil, -.012, .14); state.muzzle *= Math.exp(-35 * dt); state.hitFlash *= Math.exp(-20 * dt); state.damageFlash *= Math.exp(-8 * dt);
       if (state.reloadTimer > 0) { state.reloadTimer -= dt; if (state.reloadTimer <= 0) { const w = weapon(), n = Math.min(w.mag - state.ammo[state.weapon], state.reserve[state.weapon]); state.ammo[state.weapon] += n; state.reserve[state.weapon] -= n; } }
       if (state.fireHeld) shoot();
@@ -129,7 +135,7 @@ export default function KBZeroArena() {
       ctx.save(); ctx.translate(gunX, gunY); ctx.rotate(-.09 - state.recoil * .12); const gg = ctx.createLinearGradient(-120, -50, 120, 70); gg.addColorStop(0, "#121018"); gg.addColorStop(.55, state.weapon ? "#1f2c4e" : "#33204d"); gg.addColorStop(1, state.weapon ? "#6aa7ff" : "#8155ef"); ctx.fillStyle = gg; ctx.beginPath(); ctx.moveTo(-86, 42); ctx.lineTo(-40, -22); ctx.lineTo(92, -30); ctx.lineTo(148, -5); ctx.lineTo(108, 23); ctx.lineTo(22, 34); ctx.lineTo(-22, 68); ctx.closePath(); ctx.fill(); ctx.restore();
       const cx = w / 2, cy = h / 2, gap = 7 + moveSpeed * .8; ctx.strokeStyle = state.hitFlash > .15 ? "#fff" : "rgba(221,201,255,.8)"; ctx.lineWidth = 1.4; ctx.beginPath(); ctx.moveTo(cx-gap-9,cy); ctx.lineTo(cx-gap,cy); ctx.moveTo(cx+gap,cy); ctx.lineTo(cx+gap+9,cy); ctx.moveTo(cx,cy-gap-9); ctx.lineTo(cx,cy-gap); ctx.moveTo(cx,cy+gap); ctx.lineTo(cx,cy+gap+9); ctx.stroke();
       state.fpsFrames += 1; if (performance.now() - state.fpsClock > 500) { state.fps = Math.round(state.fpsFrames * 1000 / (performance.now() - state.fpsClock)); state.fpsFrames = 0; state.fpsClock = performance.now(); }
-      if (state.respawnTimer > 0) { ctx.fillStyle = "rgba(5,4,10,.58)"; ctx.fillRect(0, 0, w, h); ctx.fillStyle = "#fff"; ctx.font = "700 18px system-ui"; ctx.textAlign = "center"; ctx.fillText("正在重生", w / 2, h / 2); }
+      if (state.respawnTimer > 0) { ctx.fillStyle = "rgba(5,4,10,.64)"; ctx.fillRect(0, 0, w, h); ctx.fillStyle = "#fff"; ctx.font = "700 18px system-ui"; ctx.textAlign = "center"; ctx.fillText("已返回出生点 · 重生保护", w / 2, h / 2); }
       if (state.now - state.lastHud > .08) { state.lastHud = state.now; setHud({ ammo: state.ammo[state.weapon], reserve: state.reserve[state.weapon], hp: state.hp, score: state.score, kills: state.kills, deaths: state.deaths, fps: state.fps, weapon: state.weapon, reloading: state.reloadTimer > 0 }); }
     };
     const onGyro = (e) => {
@@ -161,12 +167,12 @@ export default function KBZeroArena() {
   const enableGyro = async () => { try { if (typeof DeviceOrientationEvent !== "undefined" && typeof DeviceOrientationEvent.requestPermission === "function" && await DeviceOrientationEvent.requestPermission() !== "granted") return; gyroBaseRef.current = null; gyroEnabledRef.current = true; setGyroActive(true); await enterFullscreen(); } catch {} };
   const disableGyro = () => { gyroEnabledRef.current = false; gyroBaseRef.current = null; setGyroActive(false); };
   const exitGame = () => { try { document.exitPointerLock?.(); } catch {} try { if (document.fullscreenElement) document.exitFullscreen?.(); } catch {} disableGyro(); const s = engineRef.current; if (s) { s.started = false; s.fireHeld = false; s.ads = false; s.mobileMove = { x: 0, y: 0 }; s.mobileSprint = false; s.mobileCrouch = false; if (s.mode === "pvp") s.remote = null; s.mode = "solo"; } if (mode === "pvp") leaveMatch(); setStarted(false); setMode("solo"); setMatchOpen(false); canvasRef.current?.blur?.(); };
-  const connectAndMatch = () => {
-    setMatchOpen(true); setMatchStatus("matching"); setNotice("正在唤醒 1v1 服务器并寻找对手…"); try { wsRef.current?.close(); } catch {}
+  const connectAndMatch = (queue = matchQueue) => {
+    setMatchQueue(queue); setMatchOpen(true); setMatchStatus("matching"); setNotice(`正在进入${MATCH_QUEUES.find((q) => q.id === queue)?.name || "房间"}并寻找对手…`); try { wsRef.current?.close(); } catch {}
     fetch(SERVER_HTTP, { mode: "no-cors", cache: "no-store" }).catch(() => {});
     const ws = new WebSocket(SERVER_WS); wsRef.current = ws;
     const timeout = window.setTimeout(() => { if (ws.readyState !== WebSocket.OPEN) { setMatchStatus("error"); setNotice("服务器还在冷启动，请点“重新匹配”再试一次。"); try { ws.close(); } catch {} } }, 18000);
-    ws.onopen = () => { window.clearTimeout(timeout); setNotice("服务器已连接，正在进入房间…"); ws.send(JSON.stringify({ type: "matchmake", name: "KB Pilot" })); };
+    ws.onopen = () => { window.clearTimeout(timeout); setNotice("服务器已连接，正在进入房间…"); ws.send(JSON.stringify({ type: "matchmake", name: "KB Pilot", queue })); };
     ws.onmessage = async (event) => { let d; try { d = JSON.parse(event.data); } catch { return; }
       if (d.type === "hello") setPlayerId(d.playerId);
       if (d.type === "joined") { setPlayerId(d.playerId); setRoomId(d.roomId); if (engineRef.current) engineRef.current.localId = d.playerId; setNotice(d.slot === 1 ? "已进入房间。让另一个设备/浏览器也点“开始 1v1 匹配”，凑满 2 人会自动开战。" : "已匹配到对手，准备开始。"); }
@@ -208,8 +214,8 @@ export default function KBZeroArena() {
     <div className="zeroScore"><small>得分</small><strong>{String(hud.score).padStart(6,"0")}</strong></div>
     <div className={`zeroAmmo${hud.reloading ? " isReloading" : ""}`}><strong>{hud.ammo}</strong><span>/ {hud.reserve}</span><small>{hud.reloading ? "换弹中" : `${currentWeapon.id} // ${WEAPON_MODE_LABELS[currentWeapon.mode]}`}</small></div>
     <div className="zeroWeaponSlots"><span className={hud.weapon === 0 ? "active" : ""}>1&nbsp; VX-01</span><span className={hud.weapon === 1 ? "active" : ""}>2&nbsp; K-9</span></div>
-    {!started && <section className="zeroIntro"><span>KB 实验室 // 战斗</span><h1>KB // ZERO</h1><p>单人训练或直接进入真实 1v1。移动端已改成主流射击手游键位：左手移动，右手视角，右下开火与战术动作。</p><button type="button" onClick={startLocal}>进入训练场</button><button type="button" onClick={connectAndMatch} style={{ marginLeft:10 }}>开始 1v1 匹配</button><small>{mobile ? "横屏优先 · 左摇杆移动 · 右侧滑动瞄准 · 开火 / 开镜 / 换弹 / 切枪 / 跳跃 / 下蹲" : "WASD 移动 · 鼠标视角 · 左键开火 · 右键开镜 · R 换弹 · Q 切枪"}</small></section>}
-    {matchOpen && <section className="zeroMatchPanel"><strong>KB ZERO 1v1</strong><p>{notice}</p><div>{scoreText}</div><small>{roomId ? `房间 ${roomId} · ${players.length}/2` : matchStatus}</small><div><button type="button" onClick={connectAndMatch}>重新匹配</button><button type="button" onClick={enterPvP} disabled={matchStatus !== "playing" && matchStatus !== "countdown"}>{matchStatus === "waiting" ? "等待对手" : "进入对战"}</button><button type="button" onClick={leaveMatch}>离开房间</button></div></section>}
+    {!started && <section className="zeroIntro"><span>KB 实验室 // 战斗</span><h1>KB // ZERO</h1><p>单人训练或进入分区 1v1。移动端采用四指射击布局：双食指开火，左拇指移动，右拇指瞄准与战术动作。</p><button type="button" onClick={startLocal}>进入训练场</button><button type="button" onClick={() => setMatchOpen(true)} style={{ marginLeft:10 }}>选择匹配房间</button><small>{mobile ? "四指布局 · 左摇杆移动 · 右侧滑动瞄准 · 双侧开火 · 中文战术按键" : "WASD 移动 · 鼠标视角 · 左键开火 · 右键开镜 · R 换弹 · Q 切枪"}</small></section>}
+    {matchOpen && <section className="zeroMatchPanel"><strong>KB ZERO // 房间匹配</strong><p>{notice}</p><div className="zeroRoomChoices">{MATCH_QUEUES.map((queue) => <button className={matchQueue === queue.id ? "isSelected" : ""} type="button" key={queue.id} onClick={() => connectAndMatch(queue.id)}><b>{queue.name}</b><small>{queue.desc}</small></button>)}</div><div className="zeroMatchScore">{scoreText}</div><small>{roomId ? `${MATCH_QUEUES.find((q) => q.id === matchQueue)?.name} · 房间 ${roomId} · ${players.length}/2` : matchStatus}</small><div className="zeroMatchActions"><button type="button" onClick={() => connectAndMatch(matchQueue)}>重新匹配</button><button type="button" onClick={enterPvP} disabled={matchStatus !== "playing" && matchStatus !== "countdown"}>{matchStatus === "waiting" ? "等待对手" : "进入对战"}</button><button type="button" onClick={leaveMatch}>离开房间</button></div></section>}
     {started && mobile && <MobileControls onMove={setMobileMove} onLook={mobileLook} onFire={fireMobile} onAds={adsMobile} onReload={reloadMobile} onSwap={swapMobile} onSprint={sprintMobile} onCrouch={crouchMobile} onJump={jumpMobile} />}
   </main>;
 }
