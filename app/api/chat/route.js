@@ -6,7 +6,9 @@ export const dynamic = "force-dynamic";
 
 const DAILY_MODEL = "deepseek-v4-flash";
 const RESEARCH_MODEL = "deepseek-v4-pro";
-const VERSION = "chat-api-v8-easter-egg-memory-fetch";
+const VERSION = "chat-api-v9-auto-web-search";
+const SEARCH_TIMEOUT_MS = 8500;
+const MAX_SEARCH_RESULTS = 5;
 
 function createOpenAIClient() {
   return new OpenAI({
@@ -43,6 +45,78 @@ function normalizeHistory(history) {
       };
     })
     .filter(Boolean);
+}
+
+function decodeXml(value = "") {
+  return value
+    .replaceAll("&amp;", "&")
+    .replaceAll("&lt;", "<")
+    .replaceAll("&gt;", ">")
+    .replaceAll("&quot;", '"')
+    .replaceAll("&#39;", "'")
+    .replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, "$1")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function pickXml(block, tag) {
+  return decodeXml(block.match(new RegExp(`<${tag}[^>]*>([\\s\\S]*?)<\\/${tag}>`, "i"))?.[1] || "");
+}
+
+function isSensitiveSearchQuery(text) {
+  return /(前任|女朋友|男朋友|生日|纪念日|身份证|手机号|住址|隐私|密码|验证码|银行卡|我想她|分手|难受|焦虑|抑郁)/i.test(text);
+}
+
+async function decideWebSearch(openai, message, history) {
+  if (isSensitiveSearchQuery(message)) return false;
+
+  const explicit = /(联网|上网|搜索|搜一下|查一下|查最新|最新消息|今天新闻|实时|现价|现在价格)/i.test(message);
+  if (explicit) return true;
+
+  try {
+    const recentContext = history.slice(-4).map((item) => `${item.role}: ${item.content}`).join("\n").slice(0, 1800);
+    const decision = await openai.chat.completions.create({
+      model: DAILY_MODEL,
+      temperature: 0,
+      max_tokens: 12,
+      messages: [
+        {
+          role: "system",
+          content: "判断用户问题是否必须联网才能可靠回答。新闻、天气、价格、赛程、人物现职、产品版本、法规、近期事件、网站内容、要求核实或推荐当前可用选项 => SEARCH。闲聊、情绪、写作、翻译、数学、稳定常识、已有材料总结 => NO_SEARCH。只输出 SEARCH 或 NO_SEARCH。私人或敏感内容一律 NO_SEARCH。",
+        },
+        { role: "user", content: `${recentContext}\n当前问题：${message}` },
+      ],
+    });
+    return /^SEARCH\b/i.test(decision.choices?.[0]?.message?.content?.trim() || "");
+  } catch (error) {
+    console.error("WEB_SEARCH_DECISION_ERROR:", error);
+    return false;
+  }
+}
+
+async function searchWeb(query) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), SEARCH_TIMEOUT_MS);
+  try {
+    const response = await fetch(`https://www.bing.com/search?format=rss&q=${encodeURIComponent(query)}`, {
+      signal: controller.signal,
+      cache: "no-store",
+      headers: { "User-Agent": "Mozilla/5.0 (compatible; XiaokB/1.0; +https://ai-room-tau.vercel.app)" },
+    });
+    if (!response.ok) throw new Error(`SEARCH_HTTP_${response.status}`);
+    const xml = await response.text();
+    return [...xml.matchAll(/<item>([\s\S]*?)<\/item>/gi)]
+      .slice(0, MAX_SEARCH_RESULTS)
+      .map((match) => ({ title: pickXml(match[1], "title"), url: pickXml(match[1], "link"), snippet: pickXml(match[1], "description") }))
+      .filter((item) => item.title && /^https?:\/\//i.test(item.url));
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+function webContext(results) {
+  return results.map((item, index) => `[${index + 1}] ${item.title}\nURL: ${item.url}\n摘要: ${item.snippet}`).join("\n\n");
 }
 
 async function saveChatLog({
@@ -424,10 +498,25 @@ export async function POST(req) {
 
     const historyMessages = normalizeHistory(body.history);
 
+    const openai = createOpenAIClient();
+    const shouldSearch = await decideWebSearch(openai, userMessage, historyMessages);
+    let searchResults = [];
+    if (shouldSearch) {
+      try {
+        searchResults = await searchWeb(userMessage);
+      } catch (error) {
+        console.error("WEB_SEARCH_ERROR:", error);
+      }
+    }
+
+    const searchInstruction = searchResults.length
+      ? `\n\n你已获得联网搜索结果。先综合回答，不要照抄摘要。涉及最新事实时必须在对应句末用 Markdown 链接引用来源，格式为 [来源标题](URL)。如果结果不足或互相冲突，要坦白说明。\n\n联网结果：\n${webContext(searchResults)}`
+      : "";
+
     const messages = [
       {
         role: "system",
-        content: getSystemPrompt(mode),
+        content: `${getSystemPrompt(mode)}${searchInstruction}`,
       },
       ...historyMessages,
       {
@@ -435,17 +524,16 @@ export async function POST(req) {
         content: userMessage,
       },
     ];
-const openai = createOpenAIClient();
-    
     const completion = await openai.chat.completions.create({
       model,
       temperature: mode === "research" ? 0.55 : 0.78,
       messages,
     });
 
-    const aiReply =
+    const rawReply =
       completion.choices?.[0]?.message?.content?.trim() ||
       "刚刚有点卡，我没接稳。你再说一遍。";
+    const aiReply = searchResults.length ? `🌐 已联网搜索\n\n${rawReply}` : rawReply;
 
     const latencyMs = Date.now() - startedAt;
 
@@ -466,6 +554,8 @@ const openai = createOpenAIClient();
       reply: aiReply,
       mode,
       model,
+      web_search_used: searchResults.length > 0,
+      sources: searchResults.map(({ title, url }) => ({ title, url })),
       latency_ms: latencyMs,
     });
   } catch (error) {
