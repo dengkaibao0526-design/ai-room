@@ -1,1 +1,746 @@
-.zeroDuelPill{position:absolute;left:50%;top:58px;z-index:7;transform:translateX(-50%);padding:7px 12px;border:1px solid rgba(214,189,255,.12);border-radius:999px;background:rgba(8,6,14,.48);backdrop-filter:blur(16px);font-size:11px;letter-spacing:.12em;color:rgba(244,237,255,.86)}.zeroGyroToggle{position:absolute;right:92px;top:22px;z-index:10;color:#fff;background:rgba(8,6,14,.62);border:1px solid rgba(255,255,255,.12);border-radius:999px;padding:9px 13px;font:inherit;font-size:12px;letter-spacing:.05em}.zeroExitButton,.zeroMatchPanel button{border:1px solid rgba(222,198,255,.16);color:rgba(250,246,255,.92);background:rgba(8,6,14,.58);backdrop-filter:blur(16px);font:inherit;font-weight:760;letter-spacing:.07em}.zeroExitButton{position:absolute;left:24px;top:22px;z-index:18;border-radius:999px;padding:9px 14px;cursor:pointer}.zeroExitButton::before{content:"← ";opacity:.78}.zeroMatchPanel{position:absolute;right:24px;top:70px;z-index:30;width:min(330px,calc(100vw - 32px));padding:18px;border:1px solid rgba(210,185,255,.16);border-radius:18px;background:radial-gradient(circle at 80% 10%,rgba(130,83,255,.22),transparent 34%),rgba(8,6,14,.94);backdrop-filter:blur(22px);box-shadow:0 24px 80px rgba(0,0,0,.38),inset 0 1px 0 rgba(255,255,255,.06)}.zeroMatchPanel strong{display:block;color:#fff;letter-spacing:.08em}.zeroMatchPanel p{color:rgba(230,220,248,.66);font-size:12px;line-height:1.6}.zeroMatchPanel>div:first-of-type{font-size:28px;font-weight:800;color:#fff}.zeroMatchPanel small{display:block;margin-top:4px;color:rgba(229,216,255,.52)}.zeroMatchPanel>div:last-child{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}.zeroMatchPanel button{min-height:36px;border-radius:999px;padding:8px 11px}.zeroMatchPanel button:disabled{opacity:.48}.zeroMovePad span,.zeroLookPad span{position:absolute;pointer-events:none;color:rgba(238,229,255,.48);font-size:10px;font-weight:700;letter-spacing:.12em;text-shadow:0 2px 14px rgba(0,0,0,.5)}.zeroMovePad span{left:50%;bottom:-20px;transform:translateX(-50%)}.zeroLookPad span{right:34px;top:50%;transform:translateY(-50%)}.zeroJump,.zeroCrouch,.zeroSprint{position:absolute;z-index:8;pointer-events:auto;touch-action:none;border:1px solid rgba(222,198,255,.16);color:#fff;background:rgba(28,17,45,.5);backdrop-filter:blur(16px);font:inherit;font-weight:750;letter-spacing:.08em}.zeroJump{right:96px;bottom:176px;width:50px;height:50px;border-radius:50%;font-size:11px}.zeroCrouch{right:28px;bottom:186px;width:50px;height:50px;border-radius:50%;font-size:11px}.zeroSprint{left:36px;bottom:170px;width:58px;height:38px;border-radius:999px;font-size:11px}.zeroScore{width:max-content}.zeroFire,.zeroReload,.zeroSwap,.zeroAds,.zeroJump,.zeroCrouch,.zeroSprint{transition:transform 120ms ease,filter 120ms ease,border-color 120ms ease,box-shadow 120ms ease}.zeroFire:active,.zeroReload:active,.zeroSwap:active,.zeroAds:active,.zeroJump:active,.zeroCrouch:active,.zeroSprint:active{transform:scale(.92);filter:brightness(1.2);border-color:rgba(244,232,255,.4)}@media (max-width:900px),(pointer:coarse){.zeroSettingsToggle{right:max(12px,env(safe-area-inset-right));top:max(8px,env(safe-area-inset-top));font-size:11px}.zeroExitButton{left:max(12px,env(safe-area-inset-left));top:max(8px,env(safe-area-inset-top));padding:7px 11px;font-size:11px}.zeroGyroToggle{right:max(84px,calc(env(safe-area-inset-right)+72px));top:max(8px,env(safe-area-inset-top));padding:7px 10px;font-size:11px}.zeroTopHud{left:50%;top:max(8px,env(safe-area-inset-top));border-radius:999px}.zeroTopHud span{font-size:10px;letter-spacing:.1em}.zeroTopHud em{font-size:8px}.zeroDuelPill{top:max(42px,calc(env(safe-area-inset-top)+34px));font-size:10px;padding:6px 10px}.zeroScore{left:max(12px,env(safe-area-inset-left));top:max(42px,calc(env(safe-area-inset-top)+34px))}.zeroScore small{font-size:8px;color:rgba(220,205,255,.62)}.zeroScore strong{font-size:17px}.zeroAmmo{right:max(12px,env(safe-area-inset-right));top:max(42px,calc(env(safe-area-inset-top)+34px));bottom:auto;padding:8px 10px;border-radius:12px}.zeroAmmo strong{font-size:27px}.zeroAmmo small{font-size:8px;letter-spacing:.08em}.zeroWeaponSlots{right:max(12px,env(safe-area-inset-right));top:max(104px,calc(env(safe-area-inset-top)+96px));bottom:auto}.zeroWeaponSlots span{font-size:8px;padding:6px 8px}.zeroHealth{left:max(14px,env(safe-area-inset-left));bottom:max(154px,calc(env(safe-area-inset-bottom)+136px));width:136px}.zeroHealth span{font-size:9px;letter-spacing:.08em}.zeroLandscapeHint{position:absolute;inset:auto;left:50%;top:max(76px,calc(env(safe-area-inset-top)+62px));right:auto;bottom:auto;z-index:8;display:block;transform:translateX(-50%);padding:7px 11px;border:1px solid rgba(222,198,255,.12);border-radius:999px;background:rgba(8,6,14,.42);backdrop-filter:blur(14px);font-size:10px;line-height:1.3;color:rgba(244,237,255,.64);white-space:nowrap;pointer-events:none}.zeroMobileControls::before{content:"";position:absolute;right:max(12px,env(safe-area-inset-right));bottom:max(10px,env(safe-area-inset-bottom));width:242px;height:180px;border:1px solid rgba(223,203,255,.055);border-radius:24px;background:radial-gradient(circle at 74% 64%,rgba(156,91,255,.24),transparent 36%),linear-gradient(135deg,rgba(255,255,255,.045),rgba(255,255,255,0));opacity:.72;pointer-events:none}.zeroLookPad{right:0;top:15%;width:64%;height:72%;border:0;background:transparent}.zeroLookPad span{right:96px;top:38%;opacity:.55}.zeroMovePad{--zero-stick-x:0px;--zero-stick-y:0px;left:max(22px,env(safe-area-inset-left));bottom:max(26px,calc(env(safe-area-inset-bottom)+8px));width:132px;height:132px;border-color:rgba(226,203,255,.18);background:radial-gradient(circle at 50% 50%,rgba(226,205,255,.12),transparent 28%),radial-gradient(circle,rgba(135,75,240,.18),rgba(11,8,18,.38) 64%,rgba(8,6,13,.7));box-shadow:inset 0 0 34px rgba(169,105,255,.14),0 18px 52px rgba(0,0,0,.34),0 0 44px rgba(129,73,255,.12)}.zeroMovePad::after{content:"";position:absolute;inset:18px;border:1px dashed rgba(238,226,255,.14);border-radius:50%}.zeroMovePad i{width:48px;height:48px;transform:translate(calc(-50%+var(--zero-stick-x)),calc(-50%+var(--zero-stick-y)));background:radial-gradient(circle at 34% 28%,rgba(255,255,255,.34),transparent 36%),linear-gradient(145deg,rgba(177,113,255,.38),rgba(78,47,178,.28));box-shadow:0 0 28px rgba(160,92,255,.35),inset 0 1px 0 rgba(255,255,255,.18)}.zeroFireLeft{left:max(162px,calc(env(safe-area-inset-left)+148px));top:auto;bottom:max(42px,calc(env(safe-area-inset-bottom)+24px));width:54px;height:54px;font-size:11px;opacity:.82}.zeroFireRight{right:max(22px,env(safe-area-inset-right));bottom:max(28px,calc(env(safe-area-inset-bottom)+10px));width:88px;height:88px;border-color:rgba(246,229,255,.26);background:radial-gradient(circle at 38% 28%,rgba(255,255,255,.18),transparent 28%),linear-gradient(145deg,rgba(165,92,255,.84),rgba(70,36,158,.9));box-shadow:inset 0 1px 0 rgba(255,255,255,.22),0 20px 64px rgba(93,45,190,.36),0 0 60px rgba(151,79,255,.2);font-size:14px}.zeroAds{right:max(116px,calc(env(safe-area-inset-right)+94px));bottom:max(45px,calc(env(safe-area-inset-bottom)+27px));width:58px;height:58px;font-size:12px}.zeroReload{right:max(114px,calc(env(safe-area-inset-right)+92px));bottom:max(112px,calc(env(safe-area-inset-bottom)+94px));width:54px;height:54px;border-radius:50%;font-size:11px}.zeroSwap{right:max(26px,env(safe-area-inset-right));bottom:max(126px,calc(env(safe-area-inset-bottom)+108px));width:64px;height:42px;padding:0;border-radius:15px;font-size:11px}.zeroJump{right:max(94px,calc(env(safe-area-inset-right)+72px));bottom:max(174px,calc(env(safe-area-inset-bottom)+156px));width:50px;height:50px;border-radius:50%;font-size:11px}.zeroCrouch{right:max(24px,env(safe-area-inset-right));bottom:max(184px,calc(env(safe-area-inset-bottom)+166px));width:50px;height:50px;border-radius:50%;font-size:11px}.zeroSprint{left:max(36px,env(safe-area-inset-left));bottom:max(170px,calc(env(safe-area-inset-bottom)+152px));width:58px;height:38px;border-radius:999px;font-size:11px}.zeroIntro{width:min(560px,calc(100vw - 28px));padding:22px}.zeroIntro button{min-width:126px;margin-top:16px}.zeroIntro button+button{margin-left:8px !important}.zeroIntro small{font-size:10px;color:rgba(229,215,248,.5)}.zeroMatchPanel{left:50%;right:auto;top:max(54px,calc(env(safe-area-inset-top)+44px));transform:translateX(-50%);width:min(340px,calc(100vw - 24px));padding:14px}.zeroMatchPanel p{margin:8px 0}.zeroMatchPanel button{flex:1 1 92px;font-size:11px}}@media (max-width:900px) and (orientation:portrait){.zeroCanvas,.zeroTopHud,.zeroHealth,.zeroScore,.zeroAmmo,.zeroWeaponSlots,.zeroKillFeed,.zeroMobileControls{filter:none;opacity:1}.zeroLandscapeHint{top:max(86px,calc(env(safe-area-inset-top)+76px));background:rgba(8,6,14,.5)}.zeroMovePad{left:max(18px,env(safe-area-inset-left));bottom:max(38px,calc(env(safe-area-inset-bottom)+20px));width:122px;height:122px}.zeroFireRight{right:max(18px,env(safe-area-inset-right));bottom:max(48px,calc(env(safe-area-inset-bottom)+30px));width:82px;height:82px}.zeroFireLeft{left:max(156px,calc(env(safe-area-inset-left)+138px));bottom:max(58px,calc(env(safe-area-inset-bottom)+40px))}.zeroAds{right:max(104px,calc(env(safe-area-inset-right)+84px));bottom:max(68px,calc(env(safe-area-inset-bottom)+50px))}.zeroReload{right:max(104px,calc(env(safe-area-inset-right)+84px));bottom:max(132px,calc(env(safe-area-inset-bottom)+114px))}.zeroSwap{right:max(20px,env(safe-area-inset-right));bottom:max(144px,calc(env(safe-area-inset-bottom)+126px))}.zeroJump{right:max(88px,calc(env(safe-area-inset-right)+70px));bottom:max(194px,calc(env(safe-area-inset-bottom)+176px))}.zeroCrouch{right:max(18px,env(safe-area-inset-right));bottom:max(202px,calc(env(safe-area-inset-bottom)+184px))}.zeroHealth{bottom:max(176px,calc(env(safe-area-inset-bottom)+156px))}.zeroMobileControls::before{width:220px;height:210px}}@media (prefers-reduced-motion:reduce){.zeroFire,.zeroReload,.zeroSwap,.zeroAds,.zeroJump,.zeroCrouch,.zeroSprint{transition:none !important}}
+.zeroDuelPill {
+  position: absolute;
+  left: 50%;
+  top: 58px;
+  z-index: 7;
+  transform: translateX(-50%);
+  padding: 7px 12px;
+  border: 1px solid rgba(214, 189, 255, .12);
+  border-radius: 999px;
+  background: rgba(8, 6, 14, .48);
+  backdrop-filter: blur(16px);
+  font-size: 11px;
+  letter-spacing: .12em;
+  color: rgba(244, 237, 255, .86);
+}
+
+.zeroGyroToggle {
+  position: absolute;
+  right: 92px;
+  top: 22px;
+  z-index: 10;
+  color: #fff;
+  background: rgba(8, 6, 14, .62);
+  border: 1px solid rgba(255, 255, 255, .12);
+  border-radius: 999px;
+  padding: 9px 13px;
+  font: inherit;
+  font-size: 12px;
+  letter-spacing: .05em;
+}
+
+.zeroExitButton,
+.zeroMatchPanel button {
+  border: 1px solid rgba(222, 198, 255, .16);
+  color: rgba(250, 246, 255, .92);
+  background: rgba(8, 6, 14, .58);
+  backdrop-filter: blur(16px);
+  font: inherit;
+  font-weight: 760;
+  letter-spacing: .07em;
+}
+
+.zeroExitButton {
+  position: absolute;
+  left: 24px;
+  top: 22px;
+  z-index: 18;
+  border-radius: 999px;
+  padding: 9px 14px;
+  cursor: pointer;
+}
+
+.zeroExitButton::before {
+  content: "← ";
+  opacity: .78;
+}
+
+.zeroMatchPanel {
+  position: absolute;
+  right: 24px;
+  top: 70px;
+  z-index: 30;
+  width: min(330px, calc(100vw - 32px));
+  padding: 18px;
+  border: 1px solid rgba(210, 185, 255, .16);
+  border-radius: 18px;
+  background: radial-gradient(circle at 80% 10%, rgba(130, 83, 255, .22), transparent 34%), rgba(8, 6, 14, .94);
+  backdrop-filter: blur(22px);
+  box-shadow: 0 24px 80px rgba(0, 0, 0, .38), inset 0 1px 0 rgba(255, 255, 255, .06);
+}
+
+.zeroMatchPanel strong {
+  display: block;
+  color: #fff;
+  letter-spacing: .08em;
+}
+
+.zeroMatchPanel p {
+  color: rgba(230, 220, 248, .66);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.zeroMatchPanel > div:first-of-type {
+  font-size: 28px;
+  font-weight: 800;
+  color: #fff;
+}
+
+.zeroMatchPanel small {
+  display: block;
+  margin-top: 4px;
+  color: rgba(229, 216, 255, .52);
+}
+
+.zeroMatchPanel > div:last-child {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 14px;
+}
+
+.zeroMatchPanel button {
+  min-height: 36px;
+  border-radius: 999px;
+  padding: 8px 11px;
+}
+
+.zeroMatchPanel button:disabled {
+  opacity: .48;
+}
+
+.zeroMovePad span,
+.zeroLookPad span {
+  position: absolute;
+  pointer-events: none;
+  color: rgba(238, 229, 255, .48);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .12em;
+  text-shadow: 0 2px 14px rgba(0, 0, 0, .5);
+}
+
+.zeroMovePad span {
+  left: 50%;
+  bottom: -20px;
+  transform: translateX(-50%);
+}
+
+.zeroLookPad span {
+  right: 34px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.zeroJump,
+.zeroCrouch,
+.zeroSprint {
+  position: absolute;
+  z-index: 8;
+  pointer-events: auto;
+  touch-action: none;
+  border: 1px solid rgba(222, 198, 255, .16);
+  color: #fff;
+  background: rgba(28, 17, 45, .5);
+  backdrop-filter: blur(16px);
+  font: inherit;
+  font-weight: 750;
+  letter-spacing: .08em;
+}
+
+.zeroJump {
+  right: 96px;
+  bottom: 176px;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  font-size: 11px;
+}
+
+.zeroCrouch {
+  right: 28px;
+  bottom: 186px;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  font-size: 11px;
+}
+
+.zeroSprint {
+  left: 36px;
+  bottom: 170px;
+  width: 58px;
+  height: 38px;
+  border-radius: 999px;
+  font-size: 11px;
+}
+
+.zeroScore {
+  width: max-content;
+}
+
+.zeroFire,
+.zeroReload,
+.zeroSwap,
+.zeroAds,
+.zeroJump,
+.zeroCrouch,
+.zeroSprint {
+  transition: transform 120ms ease, filter 120ms ease, border-color 120ms ease, box-shadow 120ms ease;
+}
+
+.zeroFire:active,
+.zeroReload:active,
+.zeroSwap:active,
+.zeroAds:active,
+.zeroJump:active,
+.zeroCrouch:active,
+.zeroSprint:active {
+  transform: scale(.92);
+  filter: brightness(1.2);
+  border-color: rgba(244, 232, 255, .4);
+}
+
+@media (max-width: 900px), (pointer: coarse) {
+  .zeroSettingsToggle {
+    right: max(12px, env(safe-area-inset-right));
+    top: max(8px, env(safe-area-inset-top));
+    font-size: 11px;
+  }
+
+  .zeroExitButton {
+    left: max(12px, env(safe-area-inset-left));
+    top: max(8px, env(safe-area-inset-top));
+    padding: 7px 11px;
+    font-size: 11px;
+  }
+
+  .zeroGyroToggle {
+    right: max(84px, calc(env(safe-area-inset-right) + 72px));
+    top: max(8px, env(safe-area-inset-top));
+    padding: 7px 10px;
+    font-size: 11px;
+  }
+
+  .zeroTopHud {
+    left: 50%;
+    top: max(8px, env(safe-area-inset-top));
+    border-radius: 999px;
+  }
+
+  .zeroTopHud span {
+    font-size: 10px;
+    letter-spacing: .1em;
+  }
+
+  .zeroTopHud em {
+    font-size: 8px;
+  }
+
+  .zeroDuelPill {
+    top: max(42px, calc(env(safe-area-inset-top) + 34px));
+    font-size: 10px;
+    padding: 6px 10px;
+  }
+
+  .zeroScore {
+    left: max(12px, env(safe-area-inset-left));
+    top: max(42px, calc(env(safe-area-inset-top) + 34px));
+  }
+
+  .zeroScore small {
+    font-size: 8px;
+    color: rgba(220, 205, 255, .62);
+  }
+
+  .zeroScore strong {
+    font-size: 17px;
+  }
+
+  .zeroAmmo {
+    right: max(12px, env(safe-area-inset-right));
+    top: max(42px, calc(env(safe-area-inset-top) + 34px));
+    bottom: auto;
+    padding: 8px 10px;
+    border-radius: 12px;
+  }
+
+  .zeroAmmo strong {
+    font-size: 27px;
+  }
+
+  .zeroAmmo small {
+    font-size: 8px;
+    letter-spacing: .08em;
+  }
+
+  .zeroWeaponSlots {
+    right: max(12px, env(safe-area-inset-right));
+    top: max(104px, calc(env(safe-area-inset-top) + 96px));
+    bottom: auto;
+  }
+
+  .zeroWeaponSlots span {
+    font-size: 8px;
+    padding: 6px 8px;
+  }
+
+  .zeroHealth {
+    left: max(14px, env(safe-area-inset-left));
+    bottom: max(154px, calc(env(safe-area-inset-bottom) + 136px));
+    width: 136px;
+  }
+
+  .zeroHealth span {
+    font-size: 9px;
+    letter-spacing: .08em;
+  }
+
+  .zeroLandscapeHint {
+    position: absolute;
+    inset: auto;
+    left: 50%;
+    top: max(76px, calc(env(safe-area-inset-top) + 62px));
+    right: auto;
+    bottom: auto;
+    z-index: 8;
+    display: block;
+    transform: translateX(-50%);
+    padding: 7px 11px;
+    border: 1px solid rgba(222, 198, 255, .12);
+    border-radius: 999px;
+    background: rgba(8, 6, 14, .42);
+    backdrop-filter: blur(14px);
+    font-size: 10px;
+    line-height: 1.3;
+    color: rgba(244, 237, 255, .64);
+    white-space: nowrap;
+    pointer-events: none;
+  }
+
+  .zeroMobileControls::before {
+    content: "";
+    position: absolute;
+    right: max(12px, env(safe-area-inset-right));
+    bottom: max(10px, env(safe-area-inset-bottom));
+    width: 242px;
+    height: 180px;
+    border: 1px solid rgba(223, 203, 255, .055);
+    border-radius: 24px;
+    background: radial-gradient(circle at 74% 64%, rgba(156, 91, 255, .24), transparent 36%), linear-gradient(135deg, rgba(255, 255, 255, .045), rgba(255, 255, 255, 0));
+    opacity: .72;
+    pointer-events: none;
+  }
+
+  .zeroLookPad {
+    right: 0;
+    top: 15%;
+    width: 64%;
+    height: 72%;
+    border: 0;
+    background: transparent;
+  }
+
+  .zeroLookPad span {
+    right: 96px;
+    top: 38%;
+    opacity: .55;
+  }
+
+  .zeroMovePad {
+    --zero-stick-x: 0px;
+    --zero-stick-y: 0px;
+    left: max(22px, env(safe-area-inset-left));
+    bottom: max(26px, calc(env(safe-area-inset-bottom) + 8px));
+    width: 132px;
+    height: 132px;
+    border-color: rgba(226, 203, 255, .18);
+    background: radial-gradient(circle at 50% 50%, rgba(226, 205, 255, .12), transparent 28%), radial-gradient(circle, rgba(135, 75, 240, .18), rgba(11, 8, 18, .38) 64%, rgba(8, 6, 13, .7));
+    box-shadow: inset 0 0 34px rgba(169, 105, 255, .14), 0 18px 52px rgba(0, 0, 0, .34), 0 0 44px rgba(129, 73, 255, .12);
+  }
+
+  .zeroMovePad::after {
+    content: "";
+    position: absolute;
+    inset: 18px;
+    border: 1px dashed rgba(238, 226, 255, .14);
+    border-radius: 50%;
+  }
+
+  .zeroMovePad i {
+    width: 48px;
+    height: 48px;
+    transform: translate(calc(-50% + var(--zero-stick-x)), calc(-50% + var(--zero-stick-y)));
+    background: radial-gradient(circle at 34% 28%, rgba(255, 255, 255, .34), transparent 36%), linear-gradient(145deg, rgba(177, 113, 255, .38), rgba(78, 47, 178, .28));
+    box-shadow: 0 0 28px rgba(160, 92, 255, .35), inset 0 1px 0 rgba(255, 255, 255, .18);
+  }
+
+  .zeroFireLeft {
+    left: max(162px, calc(env(safe-area-inset-left) + 148px));
+    top: auto;
+    bottom: max(42px, calc(env(safe-area-inset-bottom) + 24px));
+    width: 54px;
+    height: 54px;
+    font-size: 11px;
+    opacity: .82;
+  }
+
+  .zeroFireRight {
+    right: max(22px, env(safe-area-inset-right));
+    bottom: max(28px, calc(env(safe-area-inset-bottom) + 10px));
+    width: 88px;
+    height: 88px;
+    border-color: rgba(246, 229, 255, .26);
+    background: radial-gradient(circle at 38% 28%, rgba(255, 255, 255, .18), transparent 28%), linear-gradient(145deg, rgba(165, 92, 255, .84), rgba(70, 36, 158, .9));
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .22), 0 20px 64px rgba(93, 45, 190, .36), 0 0 60px rgba(151, 79, 255, .2);
+    font-size: 14px;
+  }
+
+  .zeroAds {
+    right: max(116px, calc(env(safe-area-inset-right) + 94px));
+    bottom: max(45px, calc(env(safe-area-inset-bottom) + 27px));
+    width: 58px;
+    height: 58px;
+    font-size: 12px;
+  }
+
+  .zeroReload {
+    right: max(114px, calc(env(safe-area-inset-right) + 92px));
+    bottom: max(112px, calc(env(safe-area-inset-bottom) + 94px));
+    width: 54px;
+    height: 54px;
+    border-radius: 50%;
+    font-size: 11px;
+  }
+
+  .zeroSwap {
+    right: max(26px, env(safe-area-inset-right));
+    bottom: max(126px, calc(env(safe-area-inset-bottom) + 108px));
+    width: 64px;
+    height: 42px;
+    padding: 0;
+    border-radius: 15px;
+    font-size: 11px;
+  }
+
+  .zeroJump {
+    right: max(94px, calc(env(safe-area-inset-right) + 72px));
+    bottom: max(174px, calc(env(safe-area-inset-bottom) + 156px));
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    font-size: 11px;
+  }
+
+  .zeroCrouch {
+    right: max(24px, env(safe-area-inset-right));
+    bottom: max(184px, calc(env(safe-area-inset-bottom) + 166px));
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    font-size: 11px;
+  }
+
+  .zeroSprint {
+    left: max(36px, env(safe-area-inset-left));
+    bottom: max(170px, calc(env(safe-area-inset-bottom) + 152px));
+    width: 58px;
+    height: 38px;
+    border-radius: 999px;
+    font-size: 11px;
+  }
+
+  .zeroIntro {
+    width: min(560px, calc(100vw - 28px));
+    padding: 22px;
+  }
+
+  .zeroIntro button {
+    min-width: 126px;
+    margin-top: 16px;
+  }
+
+  .zeroIntro button + button {
+    margin-left: 8px !important;
+  }
+
+  .zeroIntro small {
+    font-size: 10px;
+    color: rgba(229, 215, 248, .5);
+  }
+
+  .zeroMatchPanel {
+    left: 50%;
+    right: auto;
+    top: max(54px, calc(env(safe-area-inset-top) + 44px));
+    transform: translateX(-50%);
+    width: min(340px, calc(100vw - 24px));
+    padding: 14px;
+  }
+
+  .zeroMatchPanel p {
+    margin: 8px 0;
+  }
+
+  .zeroMatchPanel button {
+    flex: 1 1 92px;
+    font-size: 11px;
+  }
+}
+
+@media (max-width: 900px) and (orientation: portrait) {
+  .zeroCanvas,
+  .zeroTopHud,
+  .zeroHealth,
+  .zeroScore,
+  .zeroAmmo,
+  .zeroWeaponSlots,
+  .zeroKillFeed,
+  .zeroMobileControls {
+    filter: none;
+    opacity: 1;
+  }
+
+  .zeroLandscapeHint {
+    top: max(86px, calc(env(safe-area-inset-top) + 76px));
+    background: rgba(8, 6, 14, .5);
+  }
+
+  .zeroMovePad {
+    left: max(18px, env(safe-area-inset-left));
+    bottom: max(38px, calc(env(safe-area-inset-bottom) + 20px));
+    width: 122px;
+    height: 122px;
+  }
+
+  .zeroFireRight {
+    right: max(18px, env(safe-area-inset-right));
+    bottom: max(48px, calc(env(safe-area-inset-bottom) + 30px));
+    width: 82px;
+    height: 82px;
+  }
+
+  .zeroFireLeft {
+    left: max(156px, calc(env(safe-area-inset-left) + 138px));
+    bottom: max(58px, calc(env(safe-area-inset-bottom) + 40px));
+  }
+
+  .zeroAds {
+    right: max(104px, calc(env(safe-area-inset-right) + 84px));
+    bottom: max(68px, calc(env(safe-area-inset-bottom) + 50px));
+  }
+
+  .zeroReload {
+    right: max(104px, calc(env(safe-area-inset-right) + 84px));
+    bottom: max(132px, calc(env(safe-area-inset-bottom) + 114px));
+  }
+
+  .zeroSwap {
+    right: max(20px, env(safe-area-inset-right));
+    bottom: max(144px, calc(env(safe-area-inset-bottom) + 126px));
+  }
+
+  .zeroJump {
+    right: max(88px, calc(env(safe-area-inset-right) + 70px));
+    bottom: max(194px, calc(env(safe-area-inset-bottom) + 176px));
+  }
+
+  .zeroCrouch {
+    right: max(18px, env(safe-area-inset-right));
+    bottom: max(202px, calc(env(safe-area-inset-bottom) + 184px));
+  }
+
+  .zeroHealth {
+    bottom: max(176px, calc(env(safe-area-inset-bottom) + 156px));
+  }
+
+  .zeroMobileControls::before {
+    width: 220px;
+    height: 210px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .zeroFire,
+  .zeroReload,
+  .zeroSwap,
+  .zeroAds,
+  .zeroJump,
+  .zeroCrouch,
+  .zeroSprint {
+    transition: none !important;
+  }
+}
+
+/* Final four-finger layout: left index fires, left thumb moves, right index fires,
+   right thumb aims and reaches the tactical cluster. */
+.zeroRoomChoices {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px !important;
+  margin: 14px 0 !important;
+}
+
+.zeroRoomChoices button {
+  min-width: 0;
+  min-height: 76px;
+  padding: 11px !important;
+  border-radius: 14px !important;
+  text-align: left;
+}
+
+.zeroRoomChoices button.isSelected {
+  border-color: rgba(196, 145, 255, .7);
+  background: linear-gradient(145deg, rgba(143, 76, 255, .34), rgba(15, 10, 26, .8));
+  box-shadow: 0 0 30px rgba(132, 68, 255, .18), inset 0 1px rgba(255, 255, 255, .1);
+}
+
+.zeroRoomChoices b,
+.zeroRoomChoices small {
+  display: block;
+}
+
+.zeroRoomChoices small {
+  margin-top: 6px;
+  font-size: 9px;
+  line-height: 1.35;
+  letter-spacing: 0;
+}
+
+.zeroMatchScore {
+  font-size: 28px;
+  font-weight: 800;
+  color: #fff;
+}
+
+.zeroMatchActions {
+  display: flex !important;
+  gap: 8px !important;
+  flex-wrap: wrap;
+  margin-top: 14px !important;
+}
+
+@media (max-width: 900px), (pointer: coarse) {
+  .zeroMobileControls {
+    position: absolute;
+    inset: 0;
+    z-index: 12;
+    pointer-events: none;
+    touch-action: none;
+  }
+
+  .zeroMobileControls::before {
+    right: max(14px, env(safe-area-inset-right));
+    bottom: max(14px, env(safe-area-inset-bottom));
+    width: 258px;
+    height: 232px;
+    border-radius: 32px;
+    opacity: .42;
+  }
+
+  .zeroLookPad {
+    right: 0;
+    top: 13%;
+    width: 58%;
+    height: 74%;
+    z-index: 10;
+    pointer-events: auto;
+  }
+
+  .zeroLookPad span { right: 42%; top: 38%; opacity: .36; }
+
+  .zeroMovePad,
+  .zeroFire,
+  .zeroAds,
+  .zeroReload,
+  .zeroSwap,
+  .zeroJump,
+  .zeroCrouch,
+  .zeroSprint {
+    z-index: 14;
+    pointer-events: auto;
+  }
+
+  .zeroMovePad {
+    left: max(30px, env(safe-area-inset-left));
+    bottom: max(26px, calc(env(safe-area-inset-bottom) + 10px));
+    width: 138px;
+    height: 138px;
+  }
+
+  .zeroFireLeft {
+    left: max(30px, env(safe-area-inset-left));
+    top: max(82px, calc(env(safe-area-inset-top) + 60px));
+    bottom: auto;
+    width: 72px;
+    height: 72px;
+    opacity: .92;
+  }
+
+  .zeroSprint {
+    left: max(54px, calc(env(safe-area-inset-left) + 24px));
+    bottom: max(180px, calc(env(safe-area-inset-bottom) + 164px));
+    width: 64px;
+    height: 42px;
+  }
+
+  .zeroFireRight {
+    right: max(28px, env(safe-area-inset-right));
+    bottom: max(28px, calc(env(safe-area-inset-bottom) + 12px));
+    width: 94px;
+    height: 94px;
+  }
+
+  .zeroAds {
+    right: max(136px, calc(env(safe-area-inset-right) + 108px));
+    bottom: max(48px, calc(env(safe-area-inset-bottom) + 32px));
+    width: 64px;
+    height: 64px;
+  }
+
+  .zeroReload {
+    right: max(126px, calc(env(safe-area-inset-right) + 98px));
+    bottom: max(126px, calc(env(safe-area-inset-bottom) + 110px));
+    width: 56px;
+    height: 56px;
+  }
+
+  .zeroSwap {
+    right: max(30px, env(safe-area-inset-right));
+    bottom: max(142px, calc(env(safe-area-inset-bottom) + 126px));
+    width: 72px;
+    height: 46px;
+  }
+
+  .zeroJump {
+    right: max(108px, calc(env(safe-area-inset-right) + 80px));
+    bottom: max(202px, calc(env(safe-area-inset-bottom) + 186px));
+    width: 58px;
+    height: 58px;
+  }
+
+  .zeroCrouch {
+    right: max(30px, env(safe-area-inset-right));
+    bottom: max(214px, calc(env(safe-area-inset-bottom) + 198px));
+    width: 56px;
+    height: 56px;
+  }
+
+  .zeroHealth { bottom: max(174px, calc(env(safe-area-inset-bottom) + 158px)); }
+  .zeroMatchPanel { width: min(520px, calc(100vw - 28px)); }
+}
+
+@media (max-width: 900px) and (orientation: portrait) {
+  .zeroRoomChoices { grid-template-columns: 1fr; }
+  .zeroRoomChoices button { min-height: 54px; }
+  .zeroLookPad { top: 18%; width: 62%; height: 62%; }
+  .zeroMovePad { left: max(18px, env(safe-area-inset-left)); width: 124px; height: 124px; }
+  .zeroFireLeft { left: max(20px, env(safe-area-inset-left)); top: max(130px, calc(env(safe-area-inset-top) + 100px)); width: 64px; height: 64px; }
+  .zeroFireRight { right: max(18px, env(safe-area-inset-right)); width: 86px; height: 86px; }
+  .zeroAds { right: max(112px, calc(env(safe-area-inset-right) + 92px)); width: 58px; height: 58px; }
+  .zeroReload { right: max(112px, calc(env(safe-area-inset-right) + 92px)); bottom: max(118px, calc(env(safe-area-inset-bottom) + 100px)); }
+  .zeroSwap { right: max(20px, env(safe-area-inset-right)); bottom: max(132px, calc(env(safe-area-inset-bottom) + 114px)); }
+  .zeroJump { right: max(96px, calc(env(safe-area-inset-right) + 76px)); bottom: max(188px, calc(env(safe-area-inset-bottom) + 170px)); }
+  .zeroCrouch { right: max(20px, env(safe-area-inset-right)); bottom: max(194px, calc(env(safe-area-inset-bottom) + 176px)); }
+}
