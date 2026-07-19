@@ -61,6 +61,7 @@ function roomSnapshot(room) {
     status: room.status,
     startsAt: room.startsAt,
     scoreLimit: SCORE_LIMIT,
+    queue: room.queue,
     players: [...room.players.values()].map(publicPlayer),
   };
 }
@@ -88,7 +89,11 @@ function createPlayer(ws, name = "KB Pilot") {
   };
 }
 
-function createRoom() {
+function normalizeQueue(value) {
+  return ["quick", "rookie", "ranked"].includes(value) ? value : "quick";
+}
+
+function createRoom(queue = "quick") {
   const id = `room_${nextRoomId++}`;
   const room = {
     id,
@@ -96,17 +101,19 @@ function createRoom() {
     startsAt: null,
     createdAt: now(),
     updatedAt: now(),
+    queue: normalizeQueue(queue),
     players: new Map(),
   };
   rooms.set(id, room);
   return room;
 }
 
-function findOpenRoom() {
+function findOpenRoom(queue = "quick") {
+  const normalizedQueue = normalizeQueue(queue);
   for (const room of rooms.values()) {
-    if (room.status === "waiting" && room.players.size < MAX_PLAYERS_PER_ROOM) return room;
+    if (room.queue === normalizedQueue && room.status === "waiting" && room.players.size < MAX_PLAYERS_PER_ROOM) return room;
   }
-  return createRoom();
+  return createRoom(normalizedQueue);
 }
 
 function addPlayerToRoom(player, room) {
@@ -126,12 +133,14 @@ function addPlayerToRoom(player, room) {
     roomId: room.id,
     tickRate: TICK_RATE,
     scoreLimit: SCORE_LIMIT,
+    queue: room.queue,
   });
 
   broadcast(room, {
     type: "room_update",
     roomId: room.id,
     status: room.status,
+    queue: room.queue,
     players: [...room.players.values()].map(publicPlayer),
   });
 
@@ -287,7 +296,7 @@ function handleMessage(player, raw) {
   if (data.type === "matchmake") {
     if (player.roomId) leaveRoom(player);
     player.name = String(data.name || player.name).slice(0, 20);
-    addPlayerToRoom(player, findOpenRoom());
+    addPlayerToRoom(player, findOpenRoom(data.queue));
     return;
   }
 
